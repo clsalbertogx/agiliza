@@ -1,0 +1,94 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agiliza-postgres
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: agiliza
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agiliza-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d agiliza"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: agiliza-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - agiliza-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: agiliza-evolution
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_URL: http://localhost:8080
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://dev:dev@postgres:5432/agiliza
+      CACHE_REDIS_URI: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - agiliza-net
+
+  backend:
+    build:
+      context: ../apps/backend
+    container_name: agiliza-backend
+    ports:
+      - "3333:3333"
+    environment:
+      DATABASE_URL: postgresql://dev:dev@postgres:5432/agiliza
+      REDIS_URL: redis://redis:6379
+      EVOLUTION_API_URL: http://evolution-api:8080
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3333
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - agiliza-net
+
+  frontend:
+    build:
+      context: ../apps/frontend
+    container_name: agiliza-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3333
+    depends_on:
+      - backend
+    networks:
+      - agiliza-net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  agiliza-net:
+    driver: bridge
