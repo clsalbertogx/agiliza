@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { env } from './config/env';
 import { registerRoutes } from './routes';
+import authPlugin from './infrastructure/plugins/auth.plugin';
 
 async function buildApp() {
   const app = Fastify({
@@ -16,6 +17,9 @@ async function buildApp() {
     credentials: true,
   });
 
+  // Auth (applies to all routes except public ones)
+  await app.register(authPlugin);
+
   // Routes
   await registerRoutes(app);
 
@@ -24,12 +28,12 @@ async function buildApp() {
 
 async function start() {
   const app = await buildApp();
-  
+
   try {
     await app.listen({ port: env.PORT, host: env.HOST });
-    app.log.info(`Server running at http://${env.HOST}:${env.PORT}`);
+    console.log(`Server running at http://${env.HOST}:${env.PORT}`);
   } catch (err) {
-    app.log.error(err);
+    console.error('Failed to start server:', err);
     process.exit(1);
   }
 }

@@ -1,7 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { BaseRepository } from './base.repository';
 
-export class ClientRepository extends BaseRepository<Prisma.ClientGetPayload<{}>> {
+export class ClientRepository extends BaseRepository<any> {
   constructor(prisma: PrismaClient) {
     super(prisma);
   }
