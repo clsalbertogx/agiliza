@@ -1,0 +1,332 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [pgvector, pgcrypto]
+}
+
+// ===================== ENUMS =====================
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  PIX
+  BOLETO
+  CREDIT_CARD
+}
+
+enum RiskScore {
+  GREEN
+  YELLOW
+  RED
+}
+
+enum MessageChannel {
+  WHATSAPP
+  EMAIL
+  SMS
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  CLICKED
+  FAILED
+}
+
+enum EventType {
+  MESSAGE_SENT
+  MESSAGE_DELIVERED
+  MESSAGE_READ
+  LINK_CLICKED
+  PAYMENT_CREATED
+  PAYMENT_PENDING
+  PAYMENT_CONFIRMED
+  PAYMENT_FAILED
+  INVOICE_CREATED
+  INVOICE_OVERDUE
+  INVOICE_PAID
+  CLIENT_CREATED
+  CLIENT_RISK_UPDATED
+  DECISION_MADE
+}
+
+// ===================== MODELS =====================
+
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  document  String?  // CNPJ/CPF
+  email     String
+  phone     String?
+  config    Json?    // Tenant-specific configuration (JSONB)
+  
+  // Payment provider configuration
+  paymentProvider   String  @default("asaas") // asaas, mercadopago, pagbank, polar
+  paymentProviderConfig Json? // API keys, webhook secrets (encrypted)
+  
+  // Decision engine configuration
+  decisionConfig Json? // Custom rules, channel preferences
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  clients         Client[]
+  invoices        Invoice[]
+  messages        Message[]
+  messageTemplates MessageTemplate[]
+  events          Event[]
+  decisionLogs    DecisionLog[]
+  
+  @@map("tenants")
+}
+
+model Client {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  name      String
+  phone     String
+  email     String?
+  document  String?  // CPF/CNPJ
+  
+  // Communication preferences (captured during onboarding)
+  preferredChannel  MessageChannel @default(WHATSAPP)
+  preferredTime     String?        // HH:MM format
+  preferredLeadDays Int            @default(3) // Days before due to send reminder
+  
+  // Risk scoring
+  riskScore         RiskScore @default(GREEN)
+  riskScoreReason   Json?     // Top 3 factors for current risk score
+  riskScoreUpdatedAt DateTime?
+  
+  // Derived metrics (updated by jobs)
+  totalInvoices     Int     @default(0)
+  paidInvoices      Int     @default(0)
+  avgPaymentDelay   Float?  // Average payment delay in days
+  lastPaymentAt     DateTime?
+  msgOpenRate7d     Float?  // Message open rate in last 7 days
+  daysSinceLastPayment Int? 
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  invoices     Invoice[]
+  payments     Payment[]
+  messages     Message[]
+  decisionLogs DecisionLog[]
+  events       Event[]
+  
+  @@unique([tenantId, phone])
+  @@map("clients")
+}
+
+model Invoice {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  clientId  String   @db.Uuid
+  
+  // Invoice details
+  amount        Decimal       @db.Decimal(10, 2)
+  dueDate       DateTime
+  description   String?
+  status        InvoiceStatus @default(PENDING)
+  
+  // Payment info
+  paymentMethod   PaymentMethod?
+  pixQRCode       String?       // Base64 of PIX QRCode
+  pixCopyPaste    String?       // PIX Copy & Paste key
+  pixExpiresAt    DateTime?     // When PIX code expires
+  externalPaymentId String?     // Payment gateway reference
+  paidAt          DateTime?
+  
+  // Metadata
+  metadata Json? // Flexible metadata (JSONB)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  client  Client  @relation(fields: [clientId], references: [id])
+  payment Payment?
+  
+  @@index([tenantId, status])
+  @@index([clientId])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model Payment {
+  id        String   @id @default(uuid()) @db.Uuid
+  invoiceId String   @unique @db.Uuid
+  tenantId  String   @db.Uuid
+  clientId  String   @db.Uuid
+  
+  // Payment details
+  amount      Decimal       @db.Decimal(10, 2)
+  method      PaymentMethod
+  provider    String        // asaas, mercadopago, etc.
+  providerPaymentId String? // Payment ID from provider
+  status      String        @default("pending") // pending, confirmed, failed, refunded
+  
+  // Fee tracking
+  fee         Decimal? @db.Decimal(10, 2)
+  netAmount   Decimal? @db.Decimal(10, 2)
+  
+  // Webhook tracking
+  webhookReceivedAt DateTime?
+  webhookRetryCount Int      @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  client  Client  @relation(fields: [clientId], references: [id])
+  
+  @@index([tenantId, status])
+  @@index([provider, providerPaymentId])
+  @@map("payments")
+}
+
+model Message {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  clientId  String   @db.Uuid
+  invoiceId String?  @db.Uuid
+  
+  // Message details
+  channel     MessageChannel @default(WHATSAPP)
+  templateName String         // friendly_reminder_d0, urgent_d2, etc.
+  status      MessageStatus   @default(QUEUED)
+  
+  // Content
+  content     String?  // Rendered message content
+  variables   Json?    // Template variables used
+  
+  // Scheduling
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  clickedAt   DateTime?
+  failedAt    DateTime?
+  errorMessage String?
+  
+  // External IDs
+  externalMessageId String? // Evolution API message ID
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  client  Client  @relation(fields: [clientId], references: [id])
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+  
+  @@index([tenantId, status])
+  @@index([clientId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model MessageTemplate {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  
+  name        String // friendly_reminder, urgent, etc.
+  channel     MessageChannel @default(WHATSAPP)
+  content     String // Template with {{variables}}
+  description String?
+  
+  isActive  Boolean @default(true)
+  version   Int     @default(1)
+  
+  // Performance metrics
+  sentCount     Int @default(0)
+  openRate      Float?
+  clickRate     Float?
+  paymentRate   Float? // % that led to payment
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  
+  @@unique([tenantId, name, version])
+  @@map("message_templates")
+}
+
+model DecisionLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  clientId  String   @db.Uuid
+  invoiceId String?  @db.Uuid
+  
+  // Decision details
+  decisionType  String // next_action, risk_score, channel_selection, timing_optimization
+  inputFeatures Json   // Features used for decision (JSONB)
+  output        Json   // Decision output (JSONB)
+  confidence    Float? // Model confidence (0-1)
+  
+  // Versioning
+  modelVersion String @default("heuristic-v1")
+  
+  // Outcome tracking for feedback loop
+  outcome      String? // success, failure, neutral
+  outcomeLoggedAt DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  // Relations
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  client  Client  @relation(fields: [clientId], references: [id])
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+  
+  @@index([tenantId, createdAt])
+  @@index([clientId])
+  @@index([decisionType, createdAt])
+  @@map("decision_logs")
+}
+
+model Event {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  clientId  String?  @db.Uuid
+  
+  eventType EventType
+  payload   Json    // Event payload (JSONB)
+  
+  // Source tracking
+  source    String? // api, webhook, cron, system
+  
+  createdAt DateTime @default(now())
+  
+  // Relations
+  tenant Tenant  @relation(fields: [tenantId], references: [id])
+  client Client? @relation(fields: [clientId], references: [id])
+  
+  @@index([tenantId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([createdAt])
+  @@map("events")
+}

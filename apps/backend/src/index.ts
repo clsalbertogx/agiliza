@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { env } from './config/env';
+import { registerRoutes } from './routes';
 
 async function buildApp() {
   const app = Fastify({
@@ -15,10 +16,8 @@ async function buildApp() {
     credentials: true,
   });
 
-  // Health check
-  app.get('/health', async () => {
-    return { status: 'ok', timestamp: new Date().toISOString() };
-  });
+  // Routes
+  await registerRoutes(app);
 
   return app;
 }
@@ -36,3 +35,5 @@ async function start() {
 }
 
 start();
+
+export { buildApp };
