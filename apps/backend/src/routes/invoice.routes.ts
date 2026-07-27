@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { InvoiceRepository } from '../infrastructure/database/repositories/invoice.repository';
 import { ClientRepository } from '../infrastructure/database/repositories/client.repository';
+import { PaymentProviderFactory } from '../infrastructure/payment/payment-provider.factory';
 
 const createInvoiceSchema = z.object({
   tenantId: z.string().uuid(),
@@ -9,6 +10,7 @@ const createInvoiceSchema = z.object({
   amount: z.number().positive('Amount must be positive'),
   dueDate: z.string().datetime(),
   description: z.string().optional(),
+  paymentMethod: z.enum(['PIX', 'BOLETO', 'CREDIT_CARD']).optional(),
 });
 
 const invoiceRepo = new InvoiceRepository();
@@ -109,7 +111,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
     return { data: invoice };
   });
 
-  // POST /api/invoices/:id/pay — Process payment (stub - PIX integration coming in Issue #9)
+  // POST /api/invoices/:id/pay — Process payment (creates PIX charge)
   app.post('/api/invoices/:id/pay', async (request, reply) => {
     const { id } = request.params as { id: string };
     const invoice = await invoiceRepo.findById(id);
@@ -124,14 +126,44 @@ export async function invoiceRoutes(app: FastifyInstance) {
       return { error: 'Invoice is already paid' };
     }
 
-    // Stub: In real implementation, would create PIX charge via Asaas
-    reply.code(200);
-    return { 
-      data: { 
-        status: 'processing',
-        message: 'Payment initiated. PIX QRCode generation pending...',
-      } 
-    };
+    // Create PIX charge via configured payment provider
+    try {
+      // Get tenant's payment provider config (in real impl, fetch from DB)
+      const provider = PaymentProviderFactory.create({
+        type: (process.env.PAYMENT_PROVIDER as 'asaas' | 'mercadopago' | 'pagbank' | 'polar') || 'asaas',
+        apiKey: process.env.ASAAS_API_KEY || 'sandbox-key',
+        environment: (process.env.ASAAS_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox',
+      });
+
+      const pixCharge = await provider.createPixCharge({
+        amount: Number(invoice.amount),
+        description: invoice.description || `Invoice ${invoice.id}`,
+        externalReference: invoice.id,
+      });
+
+      // Update invoice with PIX data
+      await invoiceRepo.update(id, {
+        paymentMethod: 'PIX',
+        pixQRCode: pixCharge.qrCode,
+        pixCopyPaste: pixCharge.copyPaste,
+        pixExpiresAt: pixCharge.expiresAt,
+      });
+
+      reply.code(200);
+      return {
+        data: {
+          status: 'PENDING',
+          pix: {
+            qrCode: pixCharge.qrCode,
+            copyPaste: pixCharge.copyPaste,
+            expiresAt: pixCharge.expiresAt,
+          },
+        },
+      };
+    } catch (error: any) {
+      reply.code(502);
+      return { error: 'Payment provider error', message: error.message };
+    }
   });
 
   // GET /api/invoices/:id/pix-qrcode — Get PIX QRCode
