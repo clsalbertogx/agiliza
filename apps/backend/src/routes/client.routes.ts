@@ -44,6 +44,18 @@ export async function clientRoutes(app: FastifyInstance) {
     });
 
     reply.code(201);
+
+    // Auto-trigger onboarding for new clients without preferences
+    if (!data.preferredChannel && !data.preferredTime) {
+      try {
+        const { OnboardingService } = await import('../application/services/onboarding.service');
+        const onboardingService = new OnboardingService();
+        await onboardingService.startOnboarding(client.id, data.tenantId);
+      } catch (err) {
+        console.warn('Failed to auto-trigger onboarding:', err);
+      }
+    }
+
     return { data: client };
   });
 
