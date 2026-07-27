@@ -7,6 +7,7 @@ export const QueueNames = {
   RECONCILE_PAYMENT: 'reconcile-payment',
   SEND_NOTIFICATION: 'send-notification',
   PROCESS_WEBHOOK: 'process-webhook',
+  SEND_MESSAGE: 'send-message',
 } as const;
 
 export type QueueName = (typeof QueueNames)[keyof typeof QueueNames];
