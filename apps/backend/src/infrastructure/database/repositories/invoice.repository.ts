@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { BaseRepository } from './base.repository';
 
 export class InvoiceRepository extends BaseRepository<any> {
-  constructor(prisma: PrismaClient) {
-    super(prisma);
+  constructor() {
+    super();
   }
 
   protected get model() {
@@ -52,5 +51,43 @@ export class InvoiceRepository extends BaseRepository<any> {
         paidAt: paymentData.paidAt,
       },
     });
+  }
+
+  async getInvoiceWithClient(id: string) {
+    return this.prisma.invoice.findUnique({
+      where: { id },
+      include: {
+        client: true,
+        tenant: true,
+      },
+    });
+  }
+
+  async getStats(tenantId: string) {
+    const invoices = await this.prisma.invoice.findMany({
+      where: { tenantId },
+    });
+
+    const totalInvoiced = invoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
+    const totalCollected = invoices
+      .filter(inv => inv.status === 'PAID')
+      .reduce((sum, inv) => sum + Number(inv.amount), 0);
+    const totalOutstanding = invoices
+      .filter(inv => inv.status === 'PENDING' || inv.status === 'OVERDUE')
+      .reduce((sum, inv) => sum + Number(inv.amount), 0);
+
+    return {
+      total: invoices.length,
+      paid: invoices.filter(i => i.status === 'PAID').length,
+      pending: invoices.filter(i => i.status === 'PENDING').length,
+      overdue: invoices.filter(i => i.status === 'OVERDUE').length,
+      cancelled: invoices.filter(i => i.status === 'CANCELLED').length,
+      totalInvoiced,
+      totalCollected,
+      totalOutstanding,
+      overdueRate: invoices.length > 0 
+        ? Math.round((invoices.filter(i => i.status === 'OVERDUE').length / invoices.length) * 100) 
+        : 0,
+    };
   }
 }

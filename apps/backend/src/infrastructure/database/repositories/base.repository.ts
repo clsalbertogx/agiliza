@@ -1,7 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import { getPrismaClient } from '../prisma.service';
 
 export abstract class BaseRepository<T> {
-  constructor(protected prisma: PrismaClient) {}
+  protected prisma: PrismaClient;
+
+  constructor() {
+    this.prisma = getPrismaClient();
+  }
 
   protected abstract get model(): any;
 
@@ -14,6 +19,7 @@ export abstract class BaseRepository<T> {
     take?: number;
     where?: any;
     orderBy?: any;
+    include?: any;
   }): Promise<T[]> {
     return this.model.findMany(params);
   }

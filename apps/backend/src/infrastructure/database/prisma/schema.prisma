@@ -1,7 +1,8 @@
 // schema.prisma
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
@@ -86,12 +87,14 @@ model Tenant {
   updatedAt DateTime @updatedAt
   
   // Relations
-  clients         Client[]
-  invoices        Invoice[]
-  messages        Message[]
+  clients          Client[]
+  invoices         Invoice[]
+  payments         Payment[]
+  subscriptions    Subscription[]
+  messages         Message[]
   messageTemplates MessageTemplate[]
-  events          Event[]
-  decisionLogs    DecisionLog[]
+  events           Event[]
+  decisionLogs     DecisionLog[]
   
   @@map("tenants")
 }
@@ -126,12 +129,13 @@ model Client {
   updatedAt DateTime @updatedAt
   
   // Relations
-  tenant       Tenant       @relation(fields: [tenantId], references: [id])
-  invoices     Invoice[]
-  payments     Payment[]
-  messages     Message[]
-  decisionLogs DecisionLog[]
-  events       Event[]
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  invoices      Invoice[]
+  payments      Payment[]
+  subscriptions Subscription[]
+  messages      Message[]
+  decisionLogs  DecisionLog[]
+  events        Event[]
   
   @@unique([tenantId, phone])
   @@map("clients")
@@ -141,6 +145,7 @@ model Invoice {
   id        String   @id @default(uuid()) @db.Uuid
   tenantId  String   @db.Uuid
   clientId  String   @db.Uuid
+  subscriptionId String? @db.Uuid
   
   // Invoice details
   amount        Decimal       @db.Decimal(10, 2)
@@ -163,14 +168,43 @@ model Invoice {
   updatedAt DateTime @updatedAt
   
   // Relations
-  tenant  Tenant  @relation(fields: [tenantId], references: [id])
-  client  Client  @relation(fields: [clientId], references: [id])
-  payment Payment?
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  client      Client      @relation(fields: [clientId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  payment     Payment?
+  messages    Message[]
+  decisionLogs DecisionLog[]
   
   @@index([tenantId, status])
   @@index([clientId])
   @@index([dueDate])
   @@map("invoices")
+}
+
+model Subscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  clientId  String   @db.Uuid
+
+  // Subscription details
+  planName    String
+  amount      Decimal       @db.Decimal(10, 2)
+  frequency   String        // monthly, weekly, yearly
+  status      String        @default("active") // active, paused, cancelled, expired
+  nextBilling DateTime?
+  cancelledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  client   Client    @relation(fields: [clientId], references: [id])
+  invoices Invoice[]
+
+  @@index([tenantId, status])
+  @@index([clientId])
+  @@map("subscriptions")
 }
 
 model Payment {

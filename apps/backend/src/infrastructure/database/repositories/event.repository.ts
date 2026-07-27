@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { BaseRepository } from './base.repository';
 
 export class EventRepository extends BaseRepository<any> {
-  constructor(prisma: PrismaClient) {
-    super(prisma);
+  constructor() {
+    super();
   }
 
   protected get model() {

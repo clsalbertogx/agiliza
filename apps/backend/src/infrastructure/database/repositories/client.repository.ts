@@ -1,9 +1,9 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { getPrismaClient } from '../prisma.service';
 import { BaseRepository } from './base.repository';
 
 export class ClientRepository extends BaseRepository<any> {
-  constructor(prisma: PrismaClient) {
-    super(prisma);
+  constructor() {
+    super();
   }
 
   protected get model() {
@@ -37,6 +37,22 @@ export class ClientRepository extends BaseRepository<any> {
         riskScoreReason: reason,
         riskScoreUpdatedAt: new Date(),
       },
+    });
+  }
+
+  async search(tenantId: string, query: string, skip = 0, take = 10) {
+    return this.prisma.client.findMany({
+      where: {
+        tenantId,
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { phone: { contains: query } },
+          { email: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      skip,
+      take,
+      orderBy: { createdAt: 'desc' },
     });
   }
 }
