@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import Fastify from 'fastify';
+import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
 
 import { decisionRoutes } from '../../routes/decision.routes';
 
@@ -15,7 +15,7 @@ describe('Decision Engine API Routes', () => {
     app.decorateRequest('userId', undefined);
     app.decorateRequest('authPayload', undefined);
     
-    app.addHook('preHandler', async (request, reply) => {
+    app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
       if (!request.headers.authorization) {
         reply.code(401).send({ error: 'Unauthorized' });
         return;

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { DecisionEngineService } from '../../application/services/decision-engine.service';
 import { RiskScore, MessageChannel } from '../../domain/entities/client';
+import { InvoiceStatus } from '../../domain/entities/invoice';
 
 describe('Next Action Decision', () => {
   const service = new DecisionEngineService();
@@ -25,7 +26,7 @@ describe('Next Action Decision', () => {
     clientId: '00000000-0000-0000-0000-000000000001',
     amount: 150.00,
     dueDate: new Date('2026-08-04'),
-    status: 'PENDING' as const,
+    status: InvoiceStatus.PENDING,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

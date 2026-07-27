@@ -195,7 +195,7 @@ describe('PII Masking in Logs — SEC-11', () => {
     // Simulate the error handler from the security spec
     function errorHandler(error: Error & { statusCode?: number; code?: string }) {
       const statusCode = error.statusCode || 500;
-      const response: Record<string, unknown> = {
+      const response: { error: Record<string, unknown> } = {
         error: {
           code: statusCode >= 500 ? 'INTERNAL_ERROR' : error.code || 'UNKNOWN_ERROR',
           message: statusCode >= 500
@@ -208,7 +208,7 @@ describe('PII Masking in Logs — SEC-11', () => {
       const isProduction = process.env.NODE_ENV === 'production';
 
       if (!isProduction) {
-        (response.error as Record<string, unknown>).stack = error.stack;
+        response.error.stack = error.stack;
       }
 
       return response;

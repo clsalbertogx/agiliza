@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { RiskScoreService } from '../../application/services/risk-score.service';
-import { RiskScore } from '../../domain/entities/client';
+import { RiskScore, MessageChannel } from '../../domain/entities/client';
 
 describe('Risk Score Engine', () => {
   const service = new RiskScoreService();
@@ -11,7 +11,7 @@ describe('Risk Score Engine', () => {
     name: 'Test Client',
     phone: '5511999998888',
     riskScore: RiskScore.GREEN,
-    preferredChannel: 'WHATSAPP' as const,
+    preferredChannel: MessageChannel.WHATSAPP,
     preferredLeadDays: 3,
     totalInvoices: 5,
     paidInvoices: 5,

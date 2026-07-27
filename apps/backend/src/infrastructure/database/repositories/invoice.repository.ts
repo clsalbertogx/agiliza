@@ -41,9 +41,11 @@ export class InvoiceRepository extends BaseRepository<any> {
     paymentMethod: string;
     externalPaymentId: string;
     paidAt: Date;
-  }) {
+  }, tenantId?: string) {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
     return this.prisma.invoice.update({
-      where: { id },
+      where,
       data: {
         status: 'PAID',
         paymentMethod: paymentData.paymentMethod as any,

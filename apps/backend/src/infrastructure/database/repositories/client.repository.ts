@@ -29,9 +29,11 @@ export class ClientRepository extends BaseRepository<any> {
     });
   }
 
-  async updateRiskScore(id: string, riskScore: string, reason: any) {
+  async updateRiskScore(id: string, riskScore: string, reason: any, tenantId?: string) {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
     return this.prisma.client.update({
-      where: { id },
+      where,
       data: {
         riskScore: riskScore as any,
         riskScoreReason: reason,

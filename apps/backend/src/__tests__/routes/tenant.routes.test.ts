@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import Fastify from 'fastify';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
 
 const mockState = vi.hoisted(() => ({
   findUnique: vi.fn(),
@@ -14,6 +14,7 @@ vi.mock('../../infrastructure/database/prisma.service', () => ({
   getPrismaClient: vi.fn(() => ({
     tenant: {
       findUnique: mockState.findUnique,
+      findFirst: mockState.findUnique,
       findMany: mockState.findMany,
       create: mockState.create,
       update: mockState.update,
@@ -37,7 +38,7 @@ describe('Tenant API Routes', () => {
     app.decorateRequest('userId', undefined);
     app.decorateRequest('authPayload', undefined);
     
-    app.addHook('preHandler', async (request, reply) => {
+    app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
       const authHeader = request.headers.authorization;
       if (!authHeader) {
         reply.code(401).send({ error: 'Unauthorized' });

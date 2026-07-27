@@ -89,18 +89,12 @@ export async function clientRoutes(app: FastifyInstance) {
     };
   });
 
-  // GET /api/clients/:id — Get client
+  // GET /api/clients/:id — Get client (tenant-isolated)
   app.get('/api/clients/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const client = await clientRepo.findById(id);
+    const client = await clientRepo.findById(id, request.tenantId);
 
     if (!client) {
-      reply.code(404);
-      return { error: 'Client not found' };
-    }
-
-    // Tenant isolation
-    if (request.tenantId && client.tenantId !== request.tenantId) {
       reply.code(404);
       return { error: 'Client not found' };
     }
@@ -108,12 +102,12 @@ export async function clientRoutes(app: FastifyInstance) {
     return { data: client };
   });
 
-  // PATCH /api/clients/:id — Update client
+  // PATCH /api/clients/:id — Update client (tenant-isolated)
   app.patch('/api/clients/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    // Check exists
-    const existing = await clientRepo.findById(id);
+    // Check exists (with tenant isolation)
+    const existing = await clientRepo.findById(id, request.tenantId);
     if (!existing) {
       reply.code(404);
       return { error: 'Client not found' };
@@ -125,14 +119,14 @@ export async function clientRoutes(app: FastifyInstance) {
       return { error: 'Validation error', details: parsed.error.flatten() };
     }
 
-    const updated = await clientRepo.update(id, parsed.data);
+    const updated = await clientRepo.update(id, parsed.data, request.tenantId);
     return { data: updated };
   });
 
   // GET /api/clients/:id/risk-score — Get client risk score
   app.get('/api/clients/:id/risk-score', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const client = await clientRepo.findById(id);
+    const client = await clientRepo.findById(id, request.tenantId);
 
     if (!client) {
       reply.code(404);

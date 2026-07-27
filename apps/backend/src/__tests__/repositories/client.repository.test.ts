@@ -51,14 +51,14 @@ describe('ClientRepository', () => {
     });
 
     it('should find client by ID within tenant scope', async () => {
-      mockPrismaClient.client.findUnique.mockResolvedValue(mockClient);
+      mockPrismaClient.client.findFirst.mockResolvedValue(mockClient);
       const result = await repo.findById(mockClient.id);
       expect(result).toEqual(mockClient);
-      expect(mockPrismaClient.client.findUnique).toHaveBeenCalledWith({ where: { id: mockClient.id } });
+      expect(mockPrismaClient.client.findFirst).toHaveBeenCalledWith({ where: { id: mockClient.id } });
     });
 
     it('should return null when finding client by ID with wrong tenantId', async () => {
-      mockPrismaClient.client.findUnique.mockResolvedValue(null);
+      mockPrismaClient.client.findFirst.mockResolvedValue(null);
       const result = await repo.findById('non-existent-id');
       expect(result).toBeNull();
     });

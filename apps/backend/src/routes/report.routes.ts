@@ -1,16 +1,27 @@
 import { FastifyInstance } from 'fastify';
 import { CashFlowService } from '../application/services/cash-flow.service';
 import { InvoiceRepository } from '../infrastructure/database/repositories/invoice.repository';
+import { ClientRepository } from '../infrastructure/database/repositories/client.repository';
 
-const cashFlowService = new CashFlowService();
+// DI: instantiate repositories once, inject into service
 const invoiceRepo = new InvoiceRepository();
+const clientRepo = new ClientRepository();
+const cashFlowService = new CashFlowService(invoiceRepo, clientRepo);
+
+interface CashFlowQuery {
+  tenantId?: string;
+  months?: string;
+}
+
+interface SimpleQuery {
+  tenantId?: string;
+}
 
 export async function reportRoutes(app: FastifyInstance) {
   // GET /api/reports/cash-flow — Cash flow forecast
-  app.get('/api/reports/cash-flow', async (request) => {
-    const query = request.query as any;
-    const tenantId = request.tenantId || query.tenantId;
-    const months = Math.min(12, Math.max(1, parseInt(query.months) || 6));
+  app.get<{ Querystring: CashFlowQuery }>('/api/reports/cash-flow', async (request) => {
+    const tenantId = request.tenantId || request.query.tenantId;
+    const months = Math.min(12, Math.max(1, parseInt(request.query.months || '6', 10) || 6));
 
     if (!tenantId) {
       return { error: 'tenantId is required' };
@@ -21,9 +32,8 @@ export async function reportRoutes(app: FastifyInstance) {
   });
 
   // GET /api/reports/collection-efficiency — Collection efficiency metrics
-  app.get('/api/reports/collection-efficiency', async (request) => {
-    const query = request.query as any;
-    const tenantId = request.tenantId || query.tenantId;
+  app.get<{ Querystring: SimpleQuery }>('/api/reports/collection-efficiency', async (request) => {
+    const tenantId = request.tenantId || request.query.tenantId;
 
     if (!tenantId) {
       return { error: 'tenantId is required' };
@@ -34,29 +44,14 @@ export async function reportRoutes(app: FastifyInstance) {
   });
 
   // GET /api/reports/risk-distribution — Risk distribution
-  app.get('/api/reports/risk-distribution', async (request) => {
-    const query = request.query as any;
-    const tenantId = request.tenantId || query.tenantId;
+  app.get<{ Querystring: SimpleQuery }>('/api/reports/risk-distribution', async (request) => {
+    const tenantId = request.tenantId || request.query.tenantId;
 
     if (!tenantId) {
       return { error: 'tenantId is required' };
     }
 
-    const allInvoices = await invoiceRepo.findMany({
-      where: { tenantId },
-    });
-
-    const total = allInvoices.length;
-    const overdueCount = allInvoices.filter(i => i.status === 'OVERDUE').length;
-    const paidCount = allInvoices.filter(i => i.status === 'PAID').length;
-    const pendingCount = allInvoices.filter(i => i.status === 'PENDING').length;
-
-    return {
-      data: {
-        green: { count: paidCount, percentage: total > 0 ? Math.round((paidCount / total) * 100) : 0 },
-        yellow: { count: pendingCount, percentage: total > 0 ? Math.round((pendingCount / total) * 100) : 0 },
-        red: { count: overdueCount, percentage: total > 0 ? Math.round((overdueCount / total) * 100) : 0 },
-      },
-    };
+    const distribution = await cashFlowService.getRiskDistribution(tenantId);
+    return { data: distribution };
   });
 }

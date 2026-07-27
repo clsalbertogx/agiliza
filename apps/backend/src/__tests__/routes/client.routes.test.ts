@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import Fastify from 'fastify';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
 
 const mockState = vi.hoisted(() => ({
   findById: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock('../../infrastructure/database/prisma.service', () => ({
   getPrismaClient: vi.fn(() => ({
     client: {
       findUnique: mockState.findById,
-      findFirst: mockState.findByPhone,
+      findFirst: mockState.findById,
       findMany: mockState.findMany,
       create: mockState.create,
       update: mockState.update,
@@ -40,7 +40,7 @@ describe('Client API Routes', () => {
     app.decorateRequest('authPayload', undefined);
     
     // Auth hook that validates tokens properly
-    app.addHook('preHandler', async (request, reply) => {
+    app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
       const authHeader = request.headers.authorization;
       if (!authHeader) {
         reply.code(401).send({ error: 'Missing authorization header' });
@@ -93,7 +93,7 @@ describe('Client API Routes', () => {
 
   describe('POST /api/clients — Create Client', () => {
     it('should create client with valid data and return 201', async () => {
-      mockState.findByPhone.mockResolvedValue(null);
+      mockState.findById.mockResolvedValue(null);
       mockState.create.mockResolvedValue(mockClient);
 
       const res = await app.inject({
@@ -154,7 +154,7 @@ describe('Client API Routes', () => {
     });
 
     it('should return 409 when phone already exists for the same tenant', async () => {
-      mockState.findByPhone.mockResolvedValue(mockClient);
+      mockState.findById.mockResolvedValue(mockClient);
 
       const res = await app.inject({
         method: 'POST',
@@ -170,7 +170,7 @@ describe('Client API Routes', () => {
     });
 
     it('should accept same phone for different tenants', async () => {
-      mockState.findByPhone.mockResolvedValue(null);
+      mockState.findById.mockResolvedValue(null);
       mockState.create.mockResolvedValue({ ...mockClient, tenantId: '00000000-0000-0000-0000-000000000099' });
 
       const res = await app.inject({
@@ -228,7 +228,7 @@ describe('Client API Routes', () => {
     });
 
     it('should create client with default preferredChannel = whatsapp', async () => {
-      mockState.findByPhone.mockResolvedValue(null);
+      mockState.findById.mockResolvedValue(null);
       mockState.create.mockResolvedValue(mockClient);
 
       const res = await app.inject({
@@ -246,7 +246,7 @@ describe('Client API Routes', () => {
     });
 
     it('should create client with optional email', async () => {
-      mockState.findByPhone.mockResolvedValue(null);
+      mockState.findById.mockResolvedValue(null);
       mockState.create.mockResolvedValue({ ...mockClient, email: 'john@example.com' });
 
       const res = await app.inject({
@@ -376,7 +376,9 @@ describe('Client API Routes', () => {
     });
 
     it('should return 404 when accessing other tenant client', async () => {
-      mockState.findById.mockResolvedValue({ ...mockClient, tenantId: 'other-tenant' });
+      // findById now filters by tenantId in the Prisma query,
+      // so a cross-tenant lookup returns null (not found)
+      mockState.findById.mockResolvedValue(null);
 
       const res = await app.inject({
         method: 'GET',

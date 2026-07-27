@@ -62,22 +62,16 @@ describe('Authentication — SEC-01', () => {
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 3600,
       })).toString('base64url');
-      // "none" algorithm token — empty signature
+      // "none" algorithm token — empty signature (3rd part is empty)
       const noneAlgToken = `${noneAlgHeader}.${body}.`;
 
-      // The current verifyToken impl doesn't verify signatures
-      // (it only checks parts.length === 3 and exp)
-      // VerifyToken returns the payload since parts.length === 3 and exp is valid
+      // verifyToken now recomputes the expected signature and compares
+      // using timingSafeEqual. An empty 3rd part won't match the real signature,
+      // so the token is rejected.
       const result = verifyToken(noneAlgToken, TEST_SECRET);
 
-      // CURRENT BEHAVIOR: verifyToken does NOT validate signature algorithm
-      // A "none" alg token with 3 parts and valid exp WILL be accepted
-      // NOTE: This is a known security gap — the JWT implementation must
-      // be upgraded to verify the algorithm and signature (SEC-12 requirement)
-      // For now, we document this behavior; a proper JWT library would reject it
-      expect(result).not.toBeNull();
-      expect(result?.tenantId).toBe('tenant-123');
-      expect(result?.role).toBe('owner');
+      // Then verification should fail (null returned)
+      expect(result).toBeNull();
     });
 
     it('should return 401 for invalid API Key', () => {
@@ -354,7 +348,7 @@ describe('Rate Limiting — SEC-03', () => {
 
     // When sending 101 requests in 1 minute
     const tenantId = 'tenant-rate-test';
-    let lastResult = { allowed: true };
+    let lastResult: { allowed: boolean; retryAfter?: number } = { allowed: true };
 
     for (let i = 0; i < 101; i++) {
       lastResult = checkRateLimit(tenantId);

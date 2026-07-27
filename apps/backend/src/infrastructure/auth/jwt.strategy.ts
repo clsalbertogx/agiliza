@@ -1,4 +1,4 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { timingSafeEqual } from 'node:crypto';
 
 export interface AuthPayload {
   tenantId: string;
@@ -19,6 +19,17 @@ export function verifyToken(token: string, secret: string): AuthPayload | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
+
+    // Recompute expected signature using the same algorithm as createToken
+    const expectedSig = Buffer.from(`${parts[0]}.${parts[1]}:${secret}`).toString('base64url');
+    const actualSig = parts[2];
+
+    // Timing-safe comparison — fail early on length mismatch to avoid crypto error
+    if (expectedSig.length !== actualSig.length) return null;
+    if (!timingSafeEqual(Buffer.from(expectedSig), Buffer.from(actualSig))) {
+      return null;
+    }
+
     const body = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
     if (body.exp < Math.floor(Date.now() / 1000)) return null;
     return { tenantId: body.tenantId, userId: body.userId, role: body.role };

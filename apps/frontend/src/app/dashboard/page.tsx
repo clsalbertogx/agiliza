@@ -54,7 +54,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
+            <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse" aria-hidden="true">
               <div className="h-4 bg-gray-200 rounded w-24 mb-3" />
               <div className="h-8 bg-gray-200 rounded w-16" />
             </div>
@@ -76,10 +76,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Faturamento" value={fmt(data?.totalCollected || 0)} subtitle={`De ${fmt(data?.totalInvoiced || 0)}`} icon={<DollarSign className="w-5 h-5" />} />
-        <StatCard title="A Receber" value={fmt(data?.totalOutstanding || 0)} subtitle={`${data?.overdueRate || 0}% em atraso`} icon={<TrendingUp className="w-5 h-5" />} />
-        <StatCard title="Inadimplencia" value={`${data?.overdueRate || 0}%`} subtitle={`${data?.overdueInvoices || 0} faturas vencidas`} icon={<AlertTriangle className="w-5 h-5" />} />
-        <StatCard title="Recebimento" value={`${data?.paidInvoices || 0}/${data?.totalInvoices || 0}`} subtitle="faturas pagas" icon={<CreditCard className="w-5 h-5" />} />
+        <StatCard title="Faturamento" value={fmt(data?.totalCollected || 0)} subtitle={`De ${fmt(data?.totalInvoiced || 0)}`} icon={<DollarSign className="w-5 h-5" aria-hidden="true" />} />
+        <StatCard title="A Receber" value={fmt(data?.totalOutstanding || 0)} subtitle={`${data?.overdueRate || 0}% em atraso`} icon={<TrendingUp className="w-5 h-5" aria-hidden="true" />} />
+        <StatCard title="Inadimplência" value={`${data?.overdueRate || 0}%`} subtitle={`${data?.overdueInvoices || 0} faturas vencidas`} icon={<AlertTriangle className="w-5 h-5" aria-hidden="true" />} />
+        <StatCard title="Recebimento" value={`${data?.paidInvoices || 0}/${data?.totalInvoices || 0}`} subtitle="faturas pagas" icon={<CreditCard className="w-5 h-5" aria-hidden="true" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -105,14 +105,14 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Distribuicao de Risco</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Distribuição de Risco</h2>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-green-600 font-medium">Verde (Baixo Risco)</span>
               <span className="text-green-700 font-bold">--</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-yellow-600 font-medium">Amarelo (Medio Risco)</span>
+              <span className="text-yellow-600 font-medium">Amarelo (Médio Risco)</span>
               <span className="text-yellow-700 font-bold">--</span>
             </div>
             <div className="flex justify-between items-center">

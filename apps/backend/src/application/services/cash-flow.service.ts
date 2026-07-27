@@ -1,6 +1,3 @@
-import { InvoiceRepository } from '../../infrastructure/database/repositories/invoice.repository';
-import { ClientRepository } from '../../infrastructure/database/repositories/client.repository';
-
 interface MonthlyForecast {
   month: string;
   expectedRevenue: number;
@@ -21,9 +18,44 @@ interface CashFlowReport {
   };
 }
 
+interface RiskDistribution {
+  green: { count: number; percentage: number };
+  yellow: { count: number; percentage: number };
+  red: { count: number; percentage: number };
+}
+
+interface InvoiceLike {
+  id: string;
+  status: string;
+  amount: number;
+  dueDate: Date;
+  tenantId: string;
+  clientId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ClientLike {
+  id: string;
+  tenantId: string;
+  name: string;
+  phone: string;
+}
+
+interface InvoiceRepositoryPort {
+  findMany(params: { where?: Record<string, unknown>; orderBy?: Record<string, string> }): Promise<InvoiceLike[]>;
+  getStats(tenantId: string): Promise<Record<string, unknown>>;
+}
+
+interface ClientRepositoryPort {
+  findMany(params: { where?: Record<string, unknown> }): Promise<ClientLike[]>;
+}
+
 export class CashFlowService {
-  private invoiceRepo = new InvoiceRepository();
-  private clientRepo = new ClientRepository();
+  constructor(
+    private readonly invoiceRepo: InvoiceRepositoryPort,
+    private readonly clientRepo: ClientRepositoryPort,
+  ) {}
 
   async generateForecast(tenantId: string, months: number = 6): Promise<CashFlowReport> {
     const forecast: MonthlyForecast[] = [];
@@ -52,7 +84,7 @@ export class CashFlowService {
     // Average revenue per client
     const paidInvoices = allInvoices.filter(i => i.status === 'PAID');
     const avgRevenue = paidInvoices.length > 0
-      ? paidInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0) / paidInvoices.length
+      ? paidInvoices.reduce((sum, inv) => sum + inv.amount, 0) / paidInvoices.length
       : 99.90; // Default average ticket
 
     for (let i = 0; i < months; i++) {
@@ -86,5 +118,22 @@ export class CashFlowService {
     };
 
     return { forecast, summary };
+  }
+
+  async getRiskDistribution(tenantId: string): Promise<RiskDistribution> {
+    const allInvoices = await this.invoiceRepo.findMany({
+      where: { tenantId },
+    });
+
+    const total = allInvoices.length;
+    const overdueCount = allInvoices.filter(i => i.status === 'OVERDUE').length;
+    const paidCount = allInvoices.filter(i => i.status === 'PAID').length;
+    const pendingCount = allInvoices.filter(i => i.status === 'PENDING').length;
+
+    return {
+      green: { count: paidCount, percentage: total > 0 ? Math.round((paidCount / total) * 100) : 0 },
+      yellow: { count: pendingCount, percentage: total > 0 ? Math.round((pendingCount / total) * 100) : 0 },
+      red: { count: overdueCount, percentage: total > 0 ? Math.round((overdueCount / total) * 100) : 0 },
+    };
   }
 }

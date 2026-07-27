@@ -13,10 +13,14 @@ const envSchema = z.object({
   EVOLUTION_API_URL: z.string().default('http://localhost:8080'),
   EVOLUTION_API_KEY: z.string().default(''),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
+  JWT_SECRET: z.string().default('agiliza-dev-secret-change-in-production'),
+  ENCRYPTION_KEY: z.string().default(''),
+  MASTER_API_KEY: z.string().default('agiliza-dev-api-key-change-in-production'),
   PAYMENT_PROVIDER: z.enum(['asaas', 'mercadopago', 'pagbank', 'polar']).default('asaas'),
   ASAAS_API_KEY: z.string().default('sandbox-key'),
   ASAAS_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
   ASAAS_WEBHOOK_SECRET: z.string().default(''),
+  MERCADOPAGO_WEBHOOK_SECRET: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);

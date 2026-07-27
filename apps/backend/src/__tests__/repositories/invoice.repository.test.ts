@@ -55,16 +55,16 @@ describe('InvoiceRepository', () => {
     });
 
     it('should find invoice by ID within tenant scope', async () => {
-      mockPrismaClient.invoice.findUnique.mockResolvedValue(mockInvoice);
+      mockPrismaClient.invoice.findFirst.mockResolvedValue(mockInvoice);
       const result = await repo.findById(mockInvoice.id);
       expect(result).toEqual(mockInvoice);
-      expect(mockPrismaClient.invoice.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaClient.invoice.findFirst).toHaveBeenCalledWith({
         where: { id: mockInvoice.id },
       });
     });
 
     it('should return null when finding invoice with wrong tenantId', async () => {
-      mockPrismaClient.invoice.findUnique.mockResolvedValue(null);
+      mockPrismaClient.invoice.findFirst.mockResolvedValue(null);
       const result = await repo.findById('non-existent-id');
       expect(result).toBeNull();
     });

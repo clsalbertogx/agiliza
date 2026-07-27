@@ -11,8 +11,8 @@ const navItems = [
   { href: '/dashboard/reminders', label: 'Lembretes', icon: Bell },
   { href: '/dashboard/risk', label: 'Risco', icon: AlertTriangle },
   { href: '/dashboard/templates', label: 'Mensagens', icon: MessageSquare },
-  { href: '/dashboard/reports', label: 'Relatorios', icon: BarChart3 },
-  { href: '/dashboard/settings', label: 'Configuracoes', icon: Settings },
+  { href: '/dashboard/reports', label: 'Relatórios', icon: BarChart3 },
+  { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -22,13 +22,13 @@ export function Sidebar() {
     <aside className="hidden lg:flex lg:flex-col w-64 bg-white border-r border-gray-200 min-h-screen">
       <div className="p-6 border-b border-gray-100">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center" aria-hidden="true">
             <span className="text-white font-bold text-sm">A</span>
           </div>
           <span className="text-xl font-bold text-gray-900">Agiliza</span>
         </Link>
       </div>
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1" role="navigation" aria-label="Navegação principal">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           const Icon = item.icon;
@@ -42,7 +42,7 @@ export function Sidebar() {
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
-              <Icon className="w-5 h-5" />
+              <Icon className="w-5 h-5" aria-hidden="true" />
               {item.label}
             </Link>
           );

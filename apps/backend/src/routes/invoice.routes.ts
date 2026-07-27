@@ -27,8 +27,8 @@ export async function invoiceRoutes(app: FastifyInstance) {
 
     const data = parsed.data;
 
-    // Validate client exists
-    const client = await clientRepo.findById(data.clientId);
+    // Validate client exists (with tenant isolation)
+    const client = await clientRepo.findById(data.clientId, data.tenantId);
     if (!client) {
       reply.code(404);
       return { error: 'Client not found' };
@@ -114,7 +114,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
   // POST /api/invoices/:id/pay — Process payment (creates PIX charge)
   app.post('/api/invoices/:id/pay', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const invoice = await invoiceRepo.findById(id);
+    const invoice = await invoiceRepo.findById(id, request.tenantId);
 
     if (!invoice) {
       reply.code(404);
@@ -141,13 +141,13 @@ export async function invoiceRoutes(app: FastifyInstance) {
         externalReference: invoice.id,
       });
 
-      // Update invoice with PIX data
+      // Update invoice with PIX data (tenant-isolated)
       await invoiceRepo.update(id, {
         paymentMethod: 'PIX',
         pixQRCode: pixCharge.qrCode,
         pixCopyPaste: pixCharge.copyPaste,
         pixExpiresAt: pixCharge.expiresAt,
-      });
+      }, request.tenantId);
 
       reply.code(200);
       return {
@@ -169,7 +169,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
   // GET /api/invoices/:id/pix-qrcode — Get PIX QRCode
   app.get('/api/invoices/:id/pix-qrcode', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const invoice = await invoiceRepo.findById(id);
+    const invoice = await invoiceRepo.findById(id, request.tenantId);
 
     if (!invoice) {
       reply.code(404);

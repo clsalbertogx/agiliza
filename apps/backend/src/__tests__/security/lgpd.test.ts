@@ -14,12 +14,12 @@ describe('LGPD Right to Deletion — SEC-13', () => {
 
     // Simulate anonymize operation (LGPD Art. 18, II)
     // Fields are overwritten, NOT deleted — preserves referential integrity
-    function anonymizeClient(clientData: typeof client): typeof client {
+    function anonymizeClient(clientData: typeof client) {
       return {
         ...clientData,
-        name: 'DELETADO',
-        phone: '00000000000',
-        email: '',
+        name: 'DELETADO' as const,
+        phone: '00000000000' as const,
+        email: '' as const,
         metadata: null,
       };
     }

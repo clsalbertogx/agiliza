@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CreditCard, Copy, Check, ArrowLeft } from 'lucide-react';
+import { CreditCard, Copy, Check } from 'lucide-react';
 
 export default function BillingPage() {
   const [step, setStep] = useState<'view' | 'processing' | 'success'>('view');
@@ -25,7 +25,7 @@ export default function BillingPage() {
       <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-green-50">
         <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="w-8 h-8 text-green-600" />
+            <Check className="w-8 h-8 text-green-600" aria-hidden="true" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Pagamento Confirmado!</h1>
           <p className="mt-2 text-gray-600">Sua fatura foi paga com sucesso.</p>
@@ -48,15 +48,15 @@ export default function BillingPage() {
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
         {step === 'processing' ? (
           <div className="text-center py-8">
-            <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" aria-hidden="true" />
             <h2 className="text-lg font-semibold text-gray-900">Processando pagamento...</h2>
-            <p className="text-sm text-gray-500 mt-2">Aguardando confirmacao do PIX</p>
+            <p className="text-sm text-gray-500 mt-2">Aguardando confirmação do PIX</p>
           </div>
         ) : (
           <>
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-green-600" />
+                <CreditCard className="w-5 h-5 text-green-600" aria-hidden="true" />
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">Fatura Agiliza</h1>
@@ -83,8 +83,8 @@ export default function BillingPage() {
                 onClick={handleCopy}
                 className="inline-flex items-center gap-2 text-sm text-green-600 font-medium hover:text-green-700"
               >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'Codigo copiado!' : 'Copiar codigo PIX'}
+                {copied ? <Check className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
+                {copied ? 'Código copiado!' : 'Copiar código PIX'}
               </button>
             </div>
 
@@ -95,7 +95,7 @@ export default function BillingPage() {
               Pagar com PIX
             </button>
             <p className="mt-3 text-xs text-center text-gray-400">
-              Pagamento 100% seguro via PIX - Aprovacao instantanea
+              Pagamento 100% seguro via PIX - Aprovação instantânea
             </p>
           </>
         )}

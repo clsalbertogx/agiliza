@@ -1,5 +1,8 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
+import helmet from '@fastify/helmet';
+import Redis from 'ioredis';
 import { env } from './config/env';
 import { registerRoutes } from './routes';
 import authPlugin from './infrastructure/plugins/auth.plugin';
@@ -16,6 +19,35 @@ async function buildApp() {
   await app.register(cors, {
     origin: [env.FRONTEND_URL],
     credentials: true,
+  });
+
+  // Security headers
+  await app.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: ["'self'", env.FRONTEND_URL],
+        frameAncestors: ["'none'"],
+        formAction: ["'self'"],
+      },
+    },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    xFrameOptions: { action: 'deny' },
+    xContentTypeOptions: true,
+  });
+
+  // Global rate limiting
+  await app.register(rateLimit, {
+    redis: new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }),
+    global: false,
+    max: 100,
+    timeWindow: '1 minute',
+    keyGenerator: (request) => {
+      return (request as any).tenantId || request.ip;
+    },
   });
 
   // Auth (applies to all routes except public ones)

@@ -10,8 +10,10 @@ export abstract class BaseRepository<T> {
 
   protected abstract get model(): any;
 
-  async findById(id: string): Promise<T | null> {
-    return this.model.findUnique({ where: { id } });
+  async findById(id: string, tenantId?: string): Promise<T | null> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    return this.model.findFirst({ where }) as T | null;
   }
 
   async findMany(params: {
@@ -28,12 +30,16 @@ export abstract class BaseRepository<T> {
     return this.model.create({ data });
   }
 
-  async update(id: string, data: any): Promise<T> {
-    return this.model.update({ where: { id }, data });
+  async update(id: string, data: any, tenantId?: string): Promise<T> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    return this.model.update({ where, data });
   }
 
-  async delete(id: string): Promise<T> {
-    return this.model.delete({ where: { id } });
+  async delete(id: string, tenantId?: string): Promise<T> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    return this.model.delete({ where });
   }
 
   async count(where?: any): Promise<number> {

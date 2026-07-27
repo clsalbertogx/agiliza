@@ -3,7 +3,7 @@
 import { StatusBadge } from '@/components/status-badge';
 
 const mockClients = [
-  { name: 'Joao Silva', phone: '(85) 99999-0001', riskScore: 'green', invoices: 3, total: 299.70, lastPayment: '10/07/2026' },
+  { name: 'João Silva', phone: '(85) 99999-0001', riskScore: 'green', invoices: 3, total: 299.70, lastPayment: '10/07/2026' },
   { name: 'Maria Santos', phone: '(85) 99999-0002', riskScore: 'yellow', invoices: 5, total: 499.50, lastPayment: '25/06/2026' },
   { name: 'Carlos Oliveira', phone: '(85) 99999-0003', riskScore: 'red', invoices: 2, total: 199.80, lastPayment: '01/05/2026' },
   { name: 'Ana Costa', phone: '(85) 99999-0004', riskScore: 'green', invoices: 1, total: 99.90, lastPayment: '15/07/2026' },
@@ -26,7 +26,7 @@ export default function RiskPage() {
         </div>
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
           <p className="text-lg font-bold text-yellow-800">{yellowCount} clientes</p>
-          <p className="text-sm text-yellow-600">Medio risco - Amarelo</p>
+          <p className="text-sm text-yellow-600">Médio risco - Amarelo</p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-xl p-6">
           <p className="text-lg font-bold text-red-800">{redCount} clientes</p>
@@ -39,20 +39,20 @@ export default function RiskPage() {
           <h2 className="text-lg font-semibold text-gray-900">Clientes por Risco</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full" role="table">
             <thead>
               <tr className="text-left text-sm text-gray-500 border-b border-gray-100">
-                <th className="p-4">Nome</th>
-                <th className="p-4">Telefone</th>
-                <th className="p-4">Risco</th>
-                <th className="p-4">Faturas</th>
-                <th className="p-4">Total</th>
-                <th className="p-4">Ultimo Pagamento</th>
+                <th scope="col" className="p-4">Nome</th>
+                <th scope="col" className="p-4">Telefone</th>
+                <th scope="col" className="p-4">Risco</th>
+                <th scope="col" className="p-4">Faturas</th>
+                <th scope="col" className="p-4">Total</th>
+                <th scope="col" className="p-4">Último Pagamento</th>
               </tr>
             </thead>
             <tbody>
-              {mockClients.map((client, i) => (
-                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
+              {mockClients.map((client) => (
+                <tr key={client.name} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="p-4 font-medium text-gray-900">{client.name}</td>
                   <td className="p-4 text-gray-600">{client.phone}</td>
                   <td className="p-4"><StatusBadge status={client.riskScore as any} /></td>

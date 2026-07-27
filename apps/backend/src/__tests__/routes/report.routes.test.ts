@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import Fastify from 'fastify';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
 
 const mockState = vi.hoisted(() => ({
   invoiceFindMany: vi.fn(),
@@ -31,7 +31,7 @@ describe('Report API Routes', () => {
     app.decorateRequest('userId', undefined);
     app.decorateRequest('authPayload', undefined);
     
-    app.addHook('preHandler', async (request, reply) => {
+    app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
       if (!request.headers.authorization) {
         reply.code(401).send({ error: 'Unauthorized' });
         return;
@@ -92,14 +92,15 @@ describe('Report API Routes', () => {
 
     it('should use historical data for projections', async () => {
       // Provide some paid invoices to establish baseline payment rate
+      const now = new Date();
       mockState.invoiceFindMany.mockResolvedValue([
-        { id: '1', tenantId: TEST_TENANT_ID, status: 'PAID', amount: '100.00', dueDate: new Date('2026-06-01') },
-        { id: '2', tenantId: TEST_TENANT_ID, status: 'PAID', amount: '200.00', dueDate: new Date('2026-06-15') },
-        { id: '3', tenantId: TEST_TENANT_ID, status: 'PAID', amount: '150.00', dueDate: new Date('2026-07-01') },
+        { id: '1', tenantId: TEST_TENANT_ID, status: 'PAID', amount: 100, dueDate: new Date('2026-06-01'), clientId: 'c1', createdAt: now, updatedAt: now },
+        { id: '2', tenantId: TEST_TENANT_ID, status: 'PAID', amount: 200, dueDate: new Date('2026-06-15'), clientId: 'c1', createdAt: now, updatedAt: now },
+        { id: '3', tenantId: TEST_TENANT_ID, status: 'PAID', amount: 150, dueDate: new Date('2026-07-01'), clientId: 'c2', createdAt: now, updatedAt: now },
       ]);
       mockState.clientFindMany.mockResolvedValue([
-        { id: 'c1', tenantId: TEST_TENANT_ID, name: 'Client A' },
-        { id: 'c2', tenantId: TEST_TENANT_ID, name: 'Client B' },
+        { id: 'c1', tenantId: TEST_TENANT_ID, name: 'Client A', phone: '5511999998888' },
+        { id: 'c2', tenantId: TEST_TENANT_ID, name: 'Client B', phone: '5511999998889' },
       ]);
 
       const res = await app.inject({
