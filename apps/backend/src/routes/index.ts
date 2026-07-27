@@ -7,6 +7,7 @@ import { webhookRoutes } from './webhook.routes';
 import { tenantRoutes } from './tenant.routes';
 import { reminderRoutes } from './reminder.routes';
 import { onboardingRoutes } from './onboarding.routes';
+import { reportRoutes } from './report.routes';
 
 export async function registerRoutes(app: FastifyInstance) {
   await healthRoutes(app);
@@ -16,5 +17,6 @@ export async function registerRoutes(app: FastifyInstance) {
   await decisionRoutes(app);
   await reminderRoutes(app);
   await onboardingRoutes(app);
+  await reportRoutes(app);
   await webhookRoutes(app);
 }
