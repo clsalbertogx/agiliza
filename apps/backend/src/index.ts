@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import { env } from './config/env';
 import { registerRoutes } from './routes';
 import authPlugin from './infrastructure/plugins/auth.plugin';
+import { disconnectRedis, closeAllQueues } from './infrastructure/queue';
 
 async function buildApp() {
   const app = Fastify({
@@ -28,6 +29,24 @@ async function buildApp() {
 
 async function start() {
   const app = await buildApp();
+
+  // Graceful shutdown
+  const shutdown = async (signal: string) => {
+    console.log(`[Server] Received ${signal}, shutting down gracefully...`);
+    try {
+      await closeAllQueues();
+      await disconnectRedis();
+      await app.close();
+      console.log('[Server] All connections closed');
+      process.exit(0);
+    } catch (err) {
+      console.error('[Server] Error during shutdown:', err);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 
   try {
     await app.listen({ port: env.PORT, host: env.HOST });
