@@ -1,7 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { TenantRepository } from '../infrastructure/database/repositories/tenant.repository';
-import { PaymentProviderFactory } from '../infrastructure/payment/payment-provider.factory';
+import { createTenantRepository, testPaymentProviderConnection } from '../presentation/factories';
 
 const createTenantSchema = z.object({
   name: z.string().min(1).max(255),
@@ -29,7 +28,7 @@ const decisionConfigSchema = z.object({
   maxRemindersPerCycle: z.number().int().min(1).max(10).optional(),
 });
 
-const tenantRepo = new TenantRepository();
+const tenantRepo = createTenantRepository();
 
 export async function tenantRoutes(app: FastifyInstance) {
   // POST /api/tenants — Create tenant
@@ -61,7 +60,9 @@ export async function tenantRoutes(app: FastifyInstance) {
         weekendReminders: false,
         maxRemindersPerCycle: 3,
       },
-    });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
 
     reply.code(201);
     return { data: tenant };
@@ -75,7 +76,7 @@ export async function tenantRoutes(app: FastifyInstance) {
     const skip = (page - 1) * perPage;
 
     const [data, total] = await Promise.all([
-      tenantRepo.findMany({ skip, take: perPage, orderBy: { createdAt: 'desc' } }),
+      tenantRepo.findMany({ page, limit: perPage, search: query.search }),
       tenantRepo.count(),
     ]);
 
@@ -114,7 +115,10 @@ export async function tenantRoutes(app: FastifyInstance) {
       return { error: 'Validation error', details: parsed.error.flatten() };
     }
 
-    const updated = await tenantRepo.update(id, parsed.data);
+    const updated = await tenantRepo.update({
+      ...existing,
+      ...parsed.data,
+    } as any);
     return { data: updated };
   });
 
@@ -188,19 +192,14 @@ export async function tenantRoutes(app: FastifyInstance) {
     }
 
     // Test connection before saving
-    try {
-      const factory = PaymentProviderFactory.create({
-        type: parsed.data.provider,
-        apiKey: parsed.data.apiKey,
-        environment: parsed.data.environment,
-      });
-      // Just verify the provider can be instantiated
-      await factory.getCharge('test');
-    } catch (error: any) {
-      // If it's a "not implemented" error, that's fine for MVP
-      if (!error.message.includes('not yet implemented')) {
-        console.warn('Provider connection test warning:', error.message);
-      }
+    const testResult = testPaymentProviderConnection({
+      type: parsed.data.provider,
+      apiKey: parsed.data.apiKey,
+      environment: parsed.data.environment,
+    });
+
+    if (!testResult.success) {
+      console.warn('Provider connection test warning:', testResult.error);
     }
 
     const updated = await tenantRepo.updatePaymentProvider(id, parsed.data.provider, {

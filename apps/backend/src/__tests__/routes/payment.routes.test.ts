@@ -1,18 +1,20 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import Fastify from 'fastify';
 
-const mockVerify = vi.hoisted(() => vi.fn().mockReturnValue(true));
-const mockGetHeader = vi.hoisted(() => vi.fn().mockReturnValue('x-webhook-signature'));
+const mockVerify = vi.hoisted(() => vi.fn());
 
-vi.mock('../../infrastructure/payment/hmac-verifier', () => ({
-  verifyWebhookSignature: (...args: any[]) => mockVerify(...args),
-  getSignatureHeader: (...args: any[]) => mockGetHeader(...args),
+vi.mock('../../infrastructure/payment/per-tenant-hmac-verifier', () => ({
+  PerTenantHmacVerifier: vi.fn().mockImplementation(() => ({
+    verify: (...args: any[]) => mockVerify(...args),
+  })),
 }));
 
 import { webhookRoutes } from '../../routes/webhook.routes';
 
 describe('Payment API Routes', () => {
   let app: ReturnType<typeof Fastify>;
+
+  const TENANT_ID = '550e8400-e29b-41d4-a716-446655440000';
 
   beforeAll(async () => {
     app = Fastify({ logger: false });
@@ -30,13 +32,14 @@ describe('Payment API Routes', () => {
 
   describe('POST /api/webhooks/payment/:provider — Payment Webhooks', () => {
     it('should process Asaas payment webhook and return 200', async () => {
-      mockVerify.mockReturnValue(true);
+      mockVerify.mockResolvedValue({ success: true, value: true });
 
       const res = await app.inject({
         method: 'POST',
         url: '/api/webhooks/payment/asaas',
-        headers: { 'x-webhook-signature': 'valid-signature' },
+        headers: { 'asaas-signature': 'valid-signature' },
         payload: {
+          tenantId: TENANT_ID,
           event: 'PAYMENT_CONFIRMED',
           payment: { id: 'pay_123', value: 150.00 },
         },
@@ -46,13 +49,14 @@ describe('Payment API Routes', () => {
     });
 
     it('should process Mercado Pago webhook with signature verification', async () => {
-      mockVerify.mockReturnValue(true);
+      mockVerify.mockResolvedValue({ success: true, value: true });
 
       const res = await app.inject({
         method: 'POST',
         url: '/api/webhooks/payment/mercadopago',
-        headers: { 'x-webhook-signature': 'valid-signature' },
+        headers: { 'x-signature': 'valid-signature' },
         payload: {
+          tenantId: TENANT_ID,
           action: 'payment.created',
           data: { id: 'pay_456' },
         },
@@ -62,13 +66,14 @@ describe('Payment API Routes', () => {
     });
 
     it('should process PagBank webhook', async () => {
-      mockVerify.mockReturnValue(true);
+      mockVerify.mockResolvedValue({ success: true, value: true });
 
       const res = await app.inject({
         method: 'POST',
         url: '/api/webhooks/payment/pagbank',
-        headers: { 'x-webhook-signature': 'valid-signature' },
+        headers: { 'x-pagbank-signature': 'valid-signature' },
         payload: {
+          tenantId: TENANT_ID,
           id: 'pay_789',
           status: 'PAID',
         },
@@ -78,13 +83,14 @@ describe('Payment API Routes', () => {
     });
 
     it('should process Polar webhook', async () => {
-      mockVerify.mockReturnValue(true);
+      mockVerify.mockResolvedValue({ success: true, value: true });
 
       const res = await app.inject({
         method: 'POST',
         url: '/api/webhooks/payment/polar',
-        headers: { 'x-webhook-signature': 'valid-signature' },
+        headers: { 'webhook-signature': 'valid-signature' },
         payload: {
+          tenantId: TENANT_ID,
           type: 'payment.succeeded',
           data: { id: 'pay_012' },
         },
@@ -93,44 +99,54 @@ describe('Payment API Routes', () => {
       expect(res.json().received).toBe(true);
     });
 
+    it('should return 400 for missing tenantId in payload', async () => {
+      mockVerify.mockResolvedValue({ success: true, value: true });
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/webhooks/payment/asaas',
+        headers: { 'asaas-signature': 'some-signature' },
+        payload: {
+          event: 'PAYMENT_CONFIRMED',
+          // no tenantId
+        },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toContain('tenantId');
+    });
+
     it('should return 401 for missing signature', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/webhooks/payment/asaas',
-        payload: { event: 'PAYMENT_CONFIRMED' },
+        headers: {},
+        payload: { tenantId: TENANT_ID, event: 'PAYMENT_CONFIRMED' },
       });
       expect(res.statusCode).toBe(401);
     });
 
     it('should return 401 for invalid signature', async () => {
-      mockVerify.mockReturnValueOnce(false);
+      mockVerify.mockResolvedValue({ success: true, value: false });
 
       const res = await app.inject({
         method: 'POST',
         url: '/api/webhooks/payment/asaas',
-        headers: { 'x-webhook-signature': 'invalid-signature' },
-        payload: { event: 'PAYMENT_CONFIRMED' },
+        headers: { 'asaas-signature': 'invalid-signature' },
+        payload: { tenantId: TENANT_ID, event: 'PAYMENT_CONFIRMED' },
       });
       expect(res.statusCode).toBe(401);
     });
 
-    it('should return 404 for unknown payment provider', async () => {
-      // For unknown provider, the route does not return 404
-      // The route tries to process any provider and verifySignature handles it
-      // With our mock returning true, we get 200
-      // In real impl with no hmac config for unknown, it would be 401
-      mockVerify.mockReturnValueOnce(true);
-      mockGetHeader.mockReturnValueOnce('x-webhook-signature');
-
+    it('should return 400 for unknown payment provider', async () => {
+      // The route now validates provider against a known map before calling the verifier
       const res = await app.inject({
         method: 'POST',
         url: '/api/webhooks/payment/unknown',
         headers: { 'x-webhook-signature': 'some-signature' },
-        payload: { event: 'test' },
+        payload: { tenantId: TENANT_ID, event: 'test' },
       });
-      // The route accepts any provider, so it returns 200 with valid signature
-      expect(res.statusCode).toBe(200);
-      expect(res.json().received).toBe(true);
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toContain('Unknown');
     });
   });
 });

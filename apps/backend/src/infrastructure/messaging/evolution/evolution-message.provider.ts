@@ -1,4 +1,4 @@
-import { MessageProviderPort, SendMessageParams, MessageStatusResponse } from '../../../application/ports/message-provider.port';
+import { MessageProviderPort, SendMessageParams, MessageStatusResponse } from '../../../application/ports/gateways/message-provider.port';
 import { EvolutionApiClient } from './evolution-client';
 
 export class EvolutionMessageProvider implements MessageProviderPort {

@@ -87,14 +87,17 @@ model Tenant {
   updatedAt DateTime @updatedAt
   
   // Relations
-  clients          Client[]
-  invoices         Invoice[]
-  payments         Payment[]
-  subscriptions    Subscription[]
-  messages         Message[]
-  messageTemplates MessageTemplate[]
-  events           Event[]
-  decisionLogs     DecisionLog[]
+  clients              Client[]
+  invoices             Invoice[]
+  payments             Payment[]
+  subscriptions        Subscription[]
+  messages             Message[]
+  messageTemplates     MessageTemplate[]
+  events               Event[]
+  decisionLogs         DecisionLog[]
+  paymentProviderConfigs PaymentProviderConfig[]
+  billingSchedules       BillingSchedule[]
+  consentLogs            ConsentLog[]
   
   @@map("tenants")
 }
@@ -129,13 +132,15 @@ model Client {
   updatedAt DateTime @updatedAt
   
   // Relations
-  tenant        Tenant        @relation(fields: [tenantId], references: [id])
-  invoices      Invoice[]
-  payments      Payment[]
-  subscriptions Subscription[]
-  messages      Message[]
-  decisionLogs  DecisionLog[]
-  events        Event[]
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  invoices        Invoice[]
+  payments        Payment[]
+  subscriptions  Subscription[]
+  messages        Message[]
+  decisionLogs    DecisionLog[]
+  events          Event[]
+  billingSchedules BillingSchedule[]
+  consentLogs      ConsentLog[]
   
   @@unique([tenantId, phone])
   @@map("clients")
@@ -363,4 +368,66 @@ model Event {
   @@index([eventType, createdAt])
   @@index([createdAt])
   @@map("events")
+}
+
+// ─── Payment Provider Configs ───────────────────────────
+model PaymentProviderConfig {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  provider        String   // asaas | mercadopago | pagbank | polar
+  apiKeyEncrypted String?
+  webhookSecret   String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, provider])
+  @@index([tenantId])
+  @@map("payment_provider_configs")
+}
+
+// ─── Billing Schedules ──────────────────────────────────
+model BillingSchedule {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  clientId        String   @db.Uuid
+  frequency       String   // monthly | weekly | biweekly | quarterly
+  dayOfMonth      Int?     // For monthly: 1-31
+  dayOfWeek       Int?     // For weekly: 0-6 (Sun-Sat)
+  amount          Decimal  @db.Decimal(10, 2)
+  description     String?
+  nextBillingDate DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([nextBillingDate])
+  @@map("billing_schedules")
+}
+
+// ─── Consent Logs (LGPD Compliance) ─────────────────────
+model ConsentLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  clientId   String   @db.Uuid
+  tenantId   String   @db.Uuid
+  action     String   // granted | revoked | updated | deletion_request
+  version    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@map("consent_logs")
 }

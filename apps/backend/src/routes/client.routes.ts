@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ClientRepository } from '../infrastructure/database/repositories/client.repository';
+import { createCreateClientUseCase } from '../presentation/factories';
 
 const createClientSchema = z.object({
   tenantId: z.string().uuid(),
@@ -18,7 +19,7 @@ const updateClientSchema = createClientSchema.partial();
 const clientRepo = new ClientRepository();
 
 export async function clientRoutes(app: FastifyInstance) {
-  // POST /api/clients — Create client
+  // POST /api/clients — Create client (via use case)
   app.post('/api/clients', async (request, reply) => {
     const parsed = createClientSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -27,21 +28,21 @@ export async function clientRoutes(app: FastifyInstance) {
     }
 
     const data = parsed.data;
+    const useCase = createCreateClientUseCase();
 
-    // Check duplicate phone
-    const existing = await clientRepo.findByPhone(data.tenantId, data.phone);
-    if (existing) {
-      reply.code(409);
-      return { error: 'Client with this phone already exists' };
-    }
-
-    const client = await clientRepo.create({
-      id: crypto.randomUUID(),
-      ...data,
-      riskScore: 'GREEN',
-      totalInvoices: 0,
-      paidInvoices: 0,
+    const result = await useCase.execute({
+      tenantId: data.tenantId,
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      preferredChannel: data.preferredChannel?.toLowerCase() as 'whatsapp' | 'sms' | 'email' | undefined,
+      preferredLeadDays: data.preferredLeadDays,
     });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
+    }
 
     reply.code(201);
 
@@ -50,13 +51,13 @@ export async function clientRoutes(app: FastifyInstance) {
       try {
         const { OnboardingService } = await import('../application/services/onboarding.service');
         const onboardingService = new OnboardingService();
-        await onboardingService.startOnboarding(client.id, data.tenantId);
+        await onboardingService.startOnboarding(result.value.id, data.tenantId);
       } catch (err) {
         console.warn('Failed to auto-trigger onboarding:', err);
       }
     }
 
-    return { data: client };
+    return { data: result.value };
   });
 
   // GET /api/clients — List clients

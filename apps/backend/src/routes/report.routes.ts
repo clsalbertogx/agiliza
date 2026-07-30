@@ -1,12 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { CashFlowService } from '../application/services/cash-flow.service';
-import { InvoiceRepository } from '../infrastructure/database/repositories/invoice.repository';
-import { ClientRepository } from '../infrastructure/database/repositories/client.repository';
-
-// DI: instantiate repositories once, inject into service
-const invoiceRepo = new InvoiceRepository();
-const clientRepo = new ClientRepository();
-const cashFlowService = new CashFlowService(invoiceRepo, clientRepo);
+import { createCashFlowService } from '../presentation/factories';
 
 interface CashFlowQuery {
   tenantId?: string;
@@ -27,6 +20,7 @@ export async function reportRoutes(app: FastifyInstance) {
       return { error: 'tenantId is required' };
     }
 
+    const cashFlowService = createCashFlowService();
     const report = await cashFlowService.generateForecast(tenantId, months);
     return { data: report };
   });
@@ -39,7 +33,8 @@ export async function reportRoutes(app: FastifyInstance) {
       return { error: 'tenantId is required' };
     }
 
-    const stats = await invoiceRepo.getStats(tenantId);
+    const cashFlowService = createCashFlowService();
+    const stats = await cashFlowService.getCollectionEfficiency(tenantId);
     return { data: stats };
   });
 
@@ -51,6 +46,7 @@ export async function reportRoutes(app: FastifyInstance) {
       return { error: 'tenantId is required' };
     }
 
+    const cashFlowService = createCashFlowService();
     const distribution = await cashFlowService.getRiskDistribution(tenantId);
     return { data: distribution };
   });

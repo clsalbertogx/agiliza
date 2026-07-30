@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { StatCard } from '@/components/stat-card';
-import { DollarSign, TrendingUp, AlertTriangle, RefreshCw, BarChart3 } from 'lucide-react';
+import { KpiCard } from '@/components/kpi-card';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { DollarSign, TrendingUp, BarChart3, AlertTriangle } from 'lucide-react';
 
 interface Forecast {
   month: string;
@@ -43,8 +46,14 @@ export default function ReportsPage() {
       const json = await res.json();
       setData(json.data);
     } catch {
-      // Demo data
-      const months = ['Agosto 2026', 'Setembro 2026', 'Outubro 2026', 'Novembro 2026', 'Dezembro 2026', 'Janeiro 2027'];
+      const months = [
+        'Agosto 2026',
+        'Setembro 2026',
+        'Outubro 2026',
+        'Novembro 2026',
+        'Dezembro 2026',
+        'Janeiro 2027',
+      ];
       const forecast = months.map((month, i) => ({
         month,
         expectedRevenue: 5000 + i * 200,
@@ -72,16 +81,16 @@ export default function ReportsPage() {
     load();
   }, [load]);
 
-  const fmt = (v: number) => `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  const fmtCurrency = (v: number) =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Previsão de Fluxo de Caixa</h1>
-        <div className="animate-pulse space-y-4" aria-hidden="true">
-          <div className="h-16 bg-gray-200 rounded-lg" />
-          <div className="h-64 bg-gray-200 rounded-lg" />
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Previsão de Fluxo de Caixa
+        </h1>
+        <LoadingSkeleton variant="page" />
       </div>
     );
   }
@@ -89,19 +98,14 @@ export default function ReportsPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Previsão de Fluxo de Caixa</h1>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" aria-hidden="true" />
-          <h2 className="text-lg font-semibold text-red-800 mb-2">Não foi possível carregar relatórios</h2>
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={load}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
-          >
-            <RefreshCw className="w-4 h-4" aria-hidden="true" />
-            Tentar novamente
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Previsão de Fluxo de Caixa
+        </h1>
+        <ErrorState
+          message={error}
+          details="Verifique sua conexão e tente novamente."
+          onRetry={load}
+        />
       </div>
     );
   }
@@ -112,64 +116,109 @@ export default function ReportsPage() {
   if (forecast.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Previsão de Fluxo de Caixa</h1>
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
-          <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" aria-hidden="true" />
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">Nenhum dado disponível para o período selecionado</h2>
-          <p className="text-gray-500 mb-4">Tente selecionar um período diferente ou ajustar os filtros.</p>
-          <button
-            onClick={load}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500"
-          >
-            <RefreshCw className="w-4 h-4" aria-hidden="true" />
-            Atualizar
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Previsão de Fluxo de Caixa
+        </h1>
+        <EmptyState
+          icon={<BarChart3 className="w-16 h-16" />}
+          title="Nenhum dado disponível"
+          description="Tente selecionar um período diferente ou ajustar os filtros."
+          action={{ label: 'Atualizar', onClick: load }}
+        />
       </div>
     );
   }
 
-  const maxNet = Math.max(...forecast.map(f => f.netForecast));
+  const maxNet = Math.max(...forecast.map((f) => f.netForecast));
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Previsão de Fluxo de Caixa</h1>
+      <h1 className="text-2xl font-bold text-gray-900">
+        Previsão de Fluxo de Caixa
+      </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Receita Prevista" value={fmt(summary?.totalExpectedRevenue || 0)} icon={<DollarSign className="w-5 h-5" aria-hidden="true" />} />
-        <StatCard title="Inadimplência Prevista" value={fmt(summary?.totalExpectedDefaults || 0)} icon={<TrendingUp className="w-5 h-5" aria-hidden="true" />} />
-        <StatCard title="Recuperação Prevista" value={fmt(summary?.totalRecoveryEstimate || 0)} icon={<BarChart3 className="w-5 h-5" aria-hidden="true" />} />
-        <StatCard title="Confiança Média" value={`${((summary?.averageConfidence || 0) * 100).toFixed(0)}%`} icon={<AlertTriangle className="w-5 h-5" aria-hidden="true" />} />
+        <KpiCard
+          title="Receita Prevista"
+          value={fmtCurrency(summary?.totalExpectedRevenue || 0)}
+          icon={<DollarSign className="w-5 h-5" aria-hidden="true" />}
+        />
+        <KpiCard
+          title="Inadimplência Prevista"
+          value={fmtCurrency(summary?.totalExpectedDefaults || 0)}
+          icon={<TrendingUp className="w-5 h-5" aria-hidden="true" />}
+        />
+        <KpiCard
+          title="Recuperação Prevista"
+          value={fmtCurrency(summary?.totalRecoveryEstimate || 0)}
+          icon={<BarChart3 className="w-5 h-5" aria-hidden="true" />}
+        />
+        <KpiCard
+          title="Confiança Média"
+          value={`${((summary?.averageConfidence || 0) * 100).toFixed(0)}%`}
+          icon={<AlertTriangle className="w-5 h-5" aria-hidden="true" />}
+        />
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Projeção Mensal</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Projeção Mensal
+        </h2>
         <div className="overflow-x-auto">
           <table className="w-full" role="table">
             <thead>
               <tr className="text-left text-sm text-gray-500 border-b border-gray-100">
-                <th scope="col" className="pb-3">Mês</th>
-                <th scope="col" className="pb-3">Receita</th>
-                <th scope="col" className="pb-3">Inadimplência</th>
-                <th scope="col" className="pb-3">Recuperação</th>
-                <th scope="col" className="pb-3">Líquido</th>
-                <th scope="col" className="pb-3">Confiança</th>
+                <th scope="col" className="pb-3">
+                  Mês
+                </th>
+                <th scope="col" className="pb-3">
+                  Receita
+                </th>
+                <th scope="col" className="pb-3">
+                  Inadimplência
+                </th>
+                <th scope="col" className="pb-3">
+                  Recuperação
+                </th>
+                <th scope="col" className="pb-3">
+                  Líquido
+                </th>
+                <th scope="col" className="pb-3">
+                  Confiança
+                </th>
               </tr>
             </thead>
             <tbody>
               {forecast.map((f) => (
                 <tr key={f.month} className="border-b border-gray-50">
                   <td className="py-3 font-medium capitalize">{f.month}</td>
-                  <td className="py-3 text-green-700">{fmt(f.expectedRevenue)}</td>
-                  <td className="py-3 text-red-700">{fmt(f.expectedDefaults)}</td>
-                  <td className="py-3 text-yellow-700">{fmt(f.recoveryEstimate)}</td>
+                  <td className="py-3 text-success-700">
+                    {fmtCurrency(f.expectedRevenue)}
+                  </td>
+                  <td className="py-3 text-danger-700">
+                    {fmtCurrency(f.expectedDefaults)}
+                  </td>
+                  <td className="py-3 text-warning-700">
+                    {fmtCurrency(f.recoveryEstimate)}
+                  </td>
                   <td className="py-3 font-bold">
                     <span className="inline-flex items-center gap-1.5">
-                      <span className={`inline-block w-2.5 h-2.5 rounded-full ${(f.netForecast / maxNet) > 0.7 ? 'bg-green-500' : (f.netForecast / maxNet) > 0.4 ? 'bg-yellow-500' : 'bg-red-500'}`} aria-hidden="true" />
-                      {fmt(f.netForecast)}
+                      <span
+                        className={`inline-block w-2.5 h-2.5 rounded-full ${
+                          f.netForecast / maxNet > 0.7
+                            ? 'bg-success-500'
+                            : f.netForecast / maxNet > 0.4
+                              ? 'bg-warning-500'
+                              : 'bg-danger-500'
+                        }`}
+                        aria-hidden="true"
+                      />
+                      {fmtCurrency(f.netForecast)}
                     </span>
                   </td>
-                  <td className="py-3">{(f.confidence * 100).toFixed(0)}%</td>
+                  <td className="py-3">
+                    {(f.confidence * 100).toFixed(0)}%
+                  </td>
                 </tr>
               ))}
             </tbody>

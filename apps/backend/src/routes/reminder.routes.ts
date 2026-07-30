@@ -1,12 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ReminderService } from '../application/services/reminder.service';
-import { InvoiceRepository } from '../infrastructure/database/repositories/invoice.repository';
-import { EventRepository } from '../infrastructure/database/repositories/event.repository';
+import { createEventRepository, createInvoiceRepository } from '../presentation/factories';
 
 const reminderService = new ReminderService();
-const invoiceRepo = new InvoiceRepository();
-const eventRepo = new EventRepository();
 
 const scheduleReminderSchema = z.object({
   invoiceId: z.string().uuid(),
@@ -29,6 +26,9 @@ export async function reminderRoutes(app: FastifyInstance) {
     }
 
     const { invoiceId, tenantId } = parsed.data;
+
+    // Verify invoice exists before scheduling
+    const invoiceRepo = createInvoiceRepository();
     const invoice = await invoiceRepo.getInvoiceWithClient(invoiceId);
     if (!invoice || !invoice.client) {
       reply.code(404);
@@ -69,20 +69,22 @@ export async function reminderRoutes(app: FastifyInstance) {
     const perPage = Math.min(100, Math.max(1, parseInt(query.perPage) || 10));
     const skip = (page - 1) * perPage;
 
+    const eventRepo = createEventRepository();
+
     const where: Record<string, any> = { tenantId };
     if (query.status) where.status = query.status;
     if (query.clientId) where.clientId = query.clientId;
     if (query.invoiceId) where.invoiceId = query.invoiceId;
 
-    // Query messages from the events system
-    const events = await eventRepo.findMany({
-      where: { ...where, eventType: 'MESSAGE_SENT' },
-      skip,
-      take: perPage,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const total = await eventRepo.count({ ...where, eventType: 'MESSAGE_SENT' });
+    const [events, total] = await Promise.all([
+      eventRepo.findMany({
+        where: { ...where, eventType: 'MESSAGE_SENT' },
+        skip,
+        take: perPage,
+        orderBy: { createdAt: 'desc' },
+      }),
+      eventRepo.count({ ...where, eventType: 'MESSAGE_SENT' }),
+    ]);
 
     return {
       data: events,
@@ -93,6 +95,8 @@ export async function reminderRoutes(app: FastifyInstance) {
   // GET /api/messages/:id/tracking — Get message tracking timeline
   app.get('/api/messages/:id/tracking', async (request, reply) => {
     const { id } = request.params as { id: string };
+    const eventRepo = createEventRepository();
+
     const event = await eventRepo.findById(id);
 
     if (!event) {

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { InvoiceRepository } from '../infrastructure/database/repositories/invoice.repository';
 import { ClientRepository } from '../infrastructure/database/repositories/client.repository';
 import { PaymentProviderFactory } from '../infrastructure/payment/payment-provider.factory';
+import { createCreateInvoiceUseCase } from '../presentation/factories';
 
 const createInvoiceSchema = z.object({
   tenantId: z.string().uuid(),
@@ -17,7 +18,7 @@ const invoiceRepo = new InvoiceRepository();
 const clientRepo = new ClientRepository();
 
 export async function invoiceRoutes(app: FastifyInstance) {
-  // POST /api/invoices — Create invoice
+  // POST /api/invoices — Create invoice (via use case)
   app.post('/api/invoices', async (request, reply) => {
     const parsed = createInvoiceSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -26,34 +27,23 @@ export async function invoiceRoutes(app: FastifyInstance) {
     }
 
     const data = parsed.data;
+    const useCase = createCreateInvoiceUseCase();
 
-    // Validate client exists (with tenant isolation)
-    const client = await clientRepo.findById(data.clientId, data.tenantId);
-    if (!client) {
-      reply.code(404);
-      return { error: 'Client not found' };
-    }
-
-    // Validate client belongs to tenant
-    if (data.tenantId !== client.tenantId) {
-      reply.code(400);
-      return { error: 'Client does not belong to this tenant' };
-    }
-
-    const invoice = await invoiceRepo.create({
-      id: crypto.randomUUID(),
+    const result = await useCase.execute({
       tenantId: data.tenantId,
       clientId: data.clientId,
       amount: data.amount,
       dueDate: new Date(data.dueDate),
-      description: data.description || null,
-      status: 'PENDING',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      description: data.description,
     });
 
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
+    }
+
     reply.code(201);
-    return { data: invoice };
+    return { data: result.value };
   });
 
   // GET /api/invoices — List invoices

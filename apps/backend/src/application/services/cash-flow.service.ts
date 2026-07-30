@@ -120,6 +120,10 @@ export class CashFlowService {
     return { forecast, summary };
   }
 
+  async getCollectionEfficiency(tenantId: string): Promise<Record<string, unknown>> {
+    return this.invoiceRepo.getStats(tenantId);
+  }
+
   async getRiskDistribution(tenantId: string): Promise<RiskDistribution> {
     const allInvoices = await this.invoiceRepo.findMany({
       where: { tenantId },
