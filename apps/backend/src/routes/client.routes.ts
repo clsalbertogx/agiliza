@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { createCreateClientUseCase, createClientRepository } from '@/presentation/factories';
+import { createCreateClientUseCase, createListClientsUseCase, createGetClientUseCase, createClientRepository } from '@/presentation/factories';
 
 const createClientSchema = z.object({
   tenantId: z.string().uuid(),
@@ -58,47 +58,37 @@ export async function clientRoutes(app: FastifyInstance) {
     return { data: result.value };
   });
 
-  // GET /api/clients — List clients
+  // GET /api/clients — List clients (via use case)
   app.get('/api/clients', async (request) => {
     const query = request.query as any;
     const tenantId = request.tenantId || query.tenantId;
-    const page = Math.max(1, parseInt(query.page) || 1);
-    const perPage = Math.min(100, Math.max(1, parseInt(query.perPage) || 10));
-    const skip = (page - 1) * perPage;
-    const search = query.search as string | undefined;
-    const riskScore = query.riskScore as string | undefined;
 
-    const where: any = { tenantId };
-    if (riskScore) where.riskScore = riskScore;
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } },
-      ];
-    }
+    const useCase = createListClientsUseCase();
+    const result = await useCase.execute({
+      tenantId,
+      page: parseInt(query.page) || 1,
+      perPage: parseInt(query.perPage) || 10,
+      search: query.search as string | undefined,
+      riskScore: query.riskScore as string | undefined,
+    });
 
-    const [data, total] = await Promise.all([
-      clientRepo.findManyRaw({ where, skip, take: perPage, orderBy: { createdAt: 'desc' } }),
-      clientRepo.countRaw(where),
-    ]);
-
-    return {
-      data,
-      meta: { total, page, perPage, totalPages: Math.ceil(total / perPage) },
-    };
+    return result;
   });
 
-  // GET /api/clients/:id — Get client (tenant-isolated)
+  // GET /api/clients/:id — Get client (via use case, tenant-isolated)
   app.get('/api/clients/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const client = await clientRepo.findByIdRaw(id, request.tenantId);
+    const tenantId = request.tenantId;
 
-    if (!client) {
-      reply.code(404);
-      return { error: 'Client not found' };
+    const useCase = createGetClientUseCase();
+    const result = await useCase.execute({ id, tenantId: tenantId! });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
     }
 
-    return { data: client };
+    return { data: result.value };
   });
 
   // PATCH /api/clients/:id — Update client (tenant-isolated)

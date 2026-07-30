@@ -1,12 +1,16 @@
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { Invoice } from '@/domain/entities/invoice';
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import { getTransaction } from '@/infrastructure/database/unit-of-work';
 import { InvoiceMapper, type PersistenceInvoice } from '@/infrastructure/database/mappers/invoice.mapper';
 
 /**
  * Port-compliant Prisma invoice repository.
  * Implements InvoiceRepositoryPort for use with use cases.
  * Uses a DomainMapper for standardized toDomain/toPersistence mapping.
+ *
+ * All database operations automatically participate in the ambient
+ * Unit of Work transaction when one is active (see PrismaUnitOfWork).
  */
 export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
   private prisma = getPrismaClient();
@@ -16,8 +20,18 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
     this.mapper = mapper ?? new InvoiceMapper();
   }
 
-  async findById(id: string): Promise<Invoice | null> {
-    const result = await this.prisma.invoice.findUnique({ where: { id } });
+  /**
+   * Returns the transactional Prisma client when called inside a
+   * PrismaUnitOfWork.execute() callback, or the regular client otherwise.
+   */
+  private get txClient() {
+    return getTransaction() ?? this.prisma;
+  }
+
+  async findById(id: string, tenantId?: string): Promise<Invoice | null> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    const result = await this.txClient.invoice.findFirst({ where });
     return result ? this.mapper.toDomain(result as unknown as PersistenceInvoice) : null;
   }
 
@@ -41,21 +55,21 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
       if (endDate) where.dueDate.lte = endDate;
     }
     const [data, total] = await Promise.all([
-      this.prisma.invoice.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      this.prisma.invoice.count({ where }),
+      this.txClient.invoice.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.txClient.invoice.count({ where }),
     ]);
     return { data: data.map((r) => this.mapper.toDomain(r as unknown as PersistenceInvoice)), total };
   }
 
   async create(invoice: Invoice): Promise<Invoice> {
     const persistence = this.mapper.toPersistence(invoice);
-    const result = await this.prisma.invoice.create({ data: persistence as any });
+    const result = await this.txClient.invoice.create({ data: persistence as any });
     return this.mapper.toDomain(result as unknown as PersistenceInvoice);
   }
 
   async update(invoice: Invoice): Promise<Invoice> {
     const { id, ...data } = this.mapper.toPersistence(invoice);
-    const result = await this.prisma.invoice.update({
+    const result = await this.txClient.invoice.update({
       where: { id },
       data: data as any,
     });
@@ -63,11 +77,11 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.invoice.delete({ where: { id } });
+    await this.txClient.invoice.delete({ where: { id } });
   }
 
   async count(tenantId: string): Promise<number> {
-    return this.prisma.invoice.count({ where: { tenantId } });
+    return this.txClient.invoice.count({ where: { tenantId } });
   }
 
   async getStats(tenantId: string): Promise<{
@@ -80,7 +94,7 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
     pendingAmount: number;
     overdueAmount: number;
   }> {
-    const invoices = await this.prisma.invoice.findMany({ where: { tenantId } });
+    const invoices = await this.txClient.invoice.findMany({ where: { tenantId } });
     return {
       total: invoices.length,
       paid: invoices.filter(i => i.status === 'PAID').length,
@@ -99,7 +113,7 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
   async findByIdRaw(id: string, tenantId?: string): Promise<Record<string, unknown> | null> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
-    return this.prisma.invoice.findFirst({ where }) as Promise<Record<string, unknown> | null>;
+    return this.txClient.invoice.findFirst({ where }) as Promise<Record<string, unknown> | null>;
   }
 
   async findManyRaw(params: {
@@ -109,21 +123,21 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
     orderBy?: Record<string, unknown>;
     include?: Record<string, unknown>;
   }): Promise<Record<string, unknown>[]> {
-    return this.prisma.invoice.findMany(params) as Promise<Record<string, unknown>[]>;
+    return this.txClient.invoice.findMany(params) as Promise<Record<string, unknown>[]>;
   }
 
   async countRaw(where?: Record<string, unknown>): Promise<number> {
-    return this.prisma.invoice.count({ where });
+    return this.txClient.invoice.count({ where });
   }
 
   async updateRaw(id: string, data: Record<string, unknown>, tenantId?: string): Promise<Record<string, unknown>> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
-    return this.prisma.invoice.update({ where, data }) as Promise<Record<string, unknown>>;
+    return this.txClient.invoice.update({ where, data }) as Promise<Record<string, unknown>>;
   }
 
   async findOverdueRaw(tenantId: string): Promise<Record<string, unknown>[]> {
-    return this.prisma.invoice.findMany({
+    return this.txClient.invoice.findMany({
       where: {
         tenantId,
         status: 'PENDING',
@@ -140,7 +154,7 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    return this.prisma.invoice.findMany({
+    return this.txClient.invoice.findMany({
       where: {
         tenantId,
         status: 'PENDING',
@@ -157,7 +171,7 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
   }, tenantId?: string): Promise<Record<string, unknown>> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
-    return this.prisma.invoice.update({
+    return this.txClient.invoice.update({
       where,
       data: {
         status: 'PAID',
@@ -169,14 +183,14 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
   }
 
   async getInvoiceWithClientRaw(id: string): Promise<Record<string, unknown> | null> {
-    return this.prisma.invoice.findUnique({
+    return this.txClient.invoice.findUnique({
       where: { id },
       include: { client: true, tenant: true },
     }) as Promise<Record<string, unknown> | null>;
   }
 
   async getStatsRaw(tenantId: string): Promise<Record<string, unknown>> {
-    const invoices = await this.prisma.invoice.findMany({ where: { tenantId } });
+    const invoices = await this.txClient.invoice.findMany({ where: { tenantId } });
     return {
       total: invoices.length,
       paid: invoices.filter(i => i.status === 'PAID').length,

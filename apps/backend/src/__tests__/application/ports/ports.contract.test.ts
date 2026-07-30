@@ -130,12 +130,12 @@ describe('Application Ports - Contract Tests', () => {
   });
 
   describe('UnitOfWorkPort', () => {
-    it('should have correct method signature with Either return type', () => {
+    it('should have correct method signature', () => {
       const port: UnitOfWorkPort = {
-        run: async (fn) => ({ success: true, value: await fn() }),
+        execute: async (fn) => fn(),
       };
 
-      expect(typeof port.run).toBe('function');
+      expect(typeof port.execute).toBe('function');
     });
   });
 

@@ -1,6 +1,7 @@
 import type { EventRepositoryPort } from '@/application/ports/repositories/event.repository.port';
 import type { DomainEvent } from '@/domain/events/domain-events';
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import { getTransaction } from '@/infrastructure/database/unit-of-work';
 
 /**
  * Maps a DomainEvent from the domain layer into the Prisma Event shape
@@ -43,17 +44,28 @@ function toPrismaEvent(event: DomainEvent): {
 /**
  * Port-compliant Prisma event repository.
  * Implements EventRepositoryPort for use with use cases / services.
+ *
+ * All database operations automatically participate in the ambient
+ * Unit of Work transaction when one is active (see PrismaUnitOfWork).
  */
 export class PrismaEventRepository implements EventRepositoryPort {
   private prisma = getPrismaClient();
 
+  /**
+   * Returns the transactional Prisma client when called inside a
+   * PrismaUnitOfWork.execute() callback, or the regular client otherwise.
+   */
+  private get txClient() {
+    return getTransaction() ?? this.prisma;
+  }
+
   async save(event: DomainEvent): Promise<void> {
     const prismaData = toPrismaEvent(event);
-    await this.prisma.event.create({ data: prismaData as any });
+    await this.txClient.event.create({ data: prismaData as any });
   }
 
   async findByTenantId(tenantId: string): Promise<DomainEvent[]> {
-    const results = await this.prisma.event.findMany({
+    const results = await this.txClient.event.findMany({
       where: { tenantId },
       orderBy: { createdAt: 'desc' },
     });
@@ -64,7 +76,7 @@ export class PrismaEventRepository implements EventRepositoryPort {
   // These methods provide raw Prisma query patterns used by route handlers.
 
   async findByIdRaw(id: string): Promise<Record<string, unknown> | null> {
-    return this.prisma.event.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>;
+    return this.txClient.event.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>;
   }
 
   async findManyRaw(params: {
@@ -73,11 +85,11 @@ export class PrismaEventRepository implements EventRepositoryPort {
     take?: number;
     orderBy?: Record<string, unknown>;
   }): Promise<Record<string, unknown>[]> {
-    return this.prisma.event.findMany(params) as Promise<Record<string, unknown>[]>;
+    return this.txClient.event.findMany(params) as Promise<Record<string, unknown>[]>;
   }
 
   async countRaw(where?: Record<string, unknown>): Promise<number> {
-    return this.prisma.event.count({ where });
+    return this.txClient.event.count({ where });
   }
 
   async logEventRaw(data: {
@@ -87,7 +99,7 @@ export class PrismaEventRepository implements EventRepositoryPort {
     payload: unknown;
     source?: string;
   }): Promise<Record<string, unknown>> {
-    return this.prisma.event.create({
+    return this.txClient.event.create({
       data: {
         tenantId: data.tenantId,
         clientId: data.clientId,
@@ -99,7 +111,7 @@ export class PrismaEventRepository implements EventRepositoryPort {
   }
 
   async getEventsByTypeRaw(tenantId: string, eventType: string, limit = 100): Promise<Record<string, unknown>[]> {
-    return this.prisma.event.findMany({
+    return this.txClient.event.findMany({
       where: { tenantId, eventType: eventType as any },
       orderBy: { createdAt: 'desc' },
       take: limit,

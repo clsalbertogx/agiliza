@@ -1,7 +1,7 @@
 import type { Client, RiskScore } from '@/domain/entities/client';
 
 export interface ClientRepositoryPort {
-  findById(id: string): Promise<Client | null>;
+  findById(id: string, tenantId?: string): Promise<Client | null>;
   findByPhone(phone: string, tenantId: string): Promise<Client | null>;
   findMany(params: {
     tenantId: string;

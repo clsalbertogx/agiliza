@@ -24,7 +24,8 @@
     "@vitest/coverage-v8": "^4.1.10",
     "prettier": "^3.2.0",
     "turbo": "^2.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "wait-on": "^8.0.5"
   },
   "engines": {
     "node": ">=20.0.0"

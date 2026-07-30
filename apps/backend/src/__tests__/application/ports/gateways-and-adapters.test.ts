@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { PaymentGatewayPort, WebhookVerifierPort, MessageProviderPort } from '@/application/ports/gateways';
 import type { UnitOfWorkPort, EventBusPort } from '@/application/ports/adapters';
-import type { Either } from '@/application/types/either';
-import type { ApplicationError } from '@/application/errors/application.error';
 
 describe('Gateway Ports', () => {
   describe('PaymentGatewayPort', () => {
@@ -48,12 +46,12 @@ describe('Gateway Ports', () => {
 
 describe('Adapter Ports', () => {
   describe('UnitOfWorkPort', () => {
-    it('should have correct method signature with Either return type', () => {
+    it('should have correct method signature', () => {
       const port: UnitOfWorkPort = {
-        run: async (fn) => ({ success: true, value: await fn() }),
+        execute: async (fn) => fn(),
       };
 
-      expect(typeof port.run).toBe('function');
+      expect(typeof port.execute).toBe('function');
     });
   });
 

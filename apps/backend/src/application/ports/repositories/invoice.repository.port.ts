@@ -1,7 +1,7 @@
 import type { Invoice } from '@/domain/entities/invoice';
 
 export interface InvoiceRepositoryPort {
-  findById(id: string): Promise<Invoice | null>;
+  findById(id: string, tenantId?: string): Promise<Invoice | null>;
   findMany(params: {
     tenantId: string;
     page?: number;

@@ -1,4 +1,5 @@
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import { getTransaction } from '@/infrastructure/database/unit-of-work';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { Client, RiskScore } from '@/domain/entities/client';
 import { ClientMapper, type PersistenceClient } from '@/infrastructure/database/mappers/client.mapper';
@@ -7,6 +8,9 @@ import { ClientMapper, type PersistenceClient } from '@/infrastructure/database/
  * Port-compliant Prisma client repository.
  * Implements ClientRepositoryPort for use with use cases.
  * Uses a DomainMapper for standardized toDomain/toPersistence mapping.
+ *
+ * All database operations automatically participate in the ambient
+ * Unit of Work transaction when one is active (see PrismaUnitOfWork).
  */
 export class PrismaClientRepository implements ClientRepositoryPort {
   private prisma = getPrismaClient();
@@ -16,13 +20,23 @@ export class PrismaClientRepository implements ClientRepositoryPort {
     this.mapper = mapper ?? new ClientMapper();
   }
 
-  async findById(id: string): Promise<Client | null> {
-    const result = await this.prisma.client.findUnique({ where: { id } });
+  /**
+   * Returns the transactional Prisma client when called inside a
+   * PrismaUnitOfWork.execute() callback, or the regular client otherwise.
+   */
+  private get txClient() {
+    return getTransaction() ?? this.prisma;
+  }
+
+  async findById(id: string, tenantId?: string): Promise<Client | null> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    const result = await this.txClient.client.findFirst({ where });
     return result ? this.mapper.toDomain(result as unknown as PersistenceClient) : null;
   }
 
   async findByPhone(phone: string, tenantId: string): Promise<Client | null> {
-    const result = await this.prisma.client.findFirst({
+    const result = await this.txClient.client.findFirst({
       where: { tenantId, phone },
     });
     return result ? this.mapper.toDomain(result as unknown as PersistenceClient) : null;
@@ -46,21 +60,21 @@ export class PrismaClientRepository implements ClientRepositoryPort {
       ];
     }
     const [data, total] = await Promise.all([
-      this.prisma.client.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      this.prisma.client.count({ where }),
+      this.txClient.client.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.txClient.client.count({ where }),
     ]);
     return { data: data.map((r) => this.mapper.toDomain(r as unknown as PersistenceClient)), total };
   }
 
   async create(client: Client): Promise<Client> {
     const persistence = this.mapper.toPersistence(client);
-    const result = await this.prisma.client.create({ data: persistence as any });
+    const result = await this.txClient.client.create({ data: persistence as any });
     return this.mapper.toDomain(result as unknown as PersistenceClient);
   }
 
   async update(client: Client): Promise<Client> {
     const { id, ...data } = this.mapper.toPersistence(client);
-    const result = await this.prisma.client.update({
+    const result = await this.txClient.client.update({
       where: { id },
       data: data as any,
     });
@@ -68,15 +82,15 @@ export class PrismaClientRepository implements ClientRepositoryPort {
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.client.delete({ where: { id } });
+    await this.txClient.client.delete({ where: { id } });
   }
 
   async count(tenantId: string): Promise<number> {
-    return this.prisma.client.count({ where: { tenantId } });
+    return this.txClient.client.count({ where: { tenantId } });
   }
 
   async updateRiskScore(id: string, riskScore: RiskScore, riskScoreReason?: string): Promise<void> {
-    await this.prisma.client.update({
+    await this.txClient.client.update({
       where: { id },
       data: {
         riskScore: riskScore as any,
@@ -95,7 +109,7 @@ export class PrismaClientRepository implements ClientRepositoryPort {
   async findByIdRaw(id: string, tenantId?: string): Promise<Record<string, unknown> | null> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
-    return this.prisma.client.findFirst({ where }) as Promise<Record<string, unknown> | null>;
+    return this.txClient.client.findFirst({ where }) as Promise<Record<string, unknown> | null>;
   }
 
   async findManyRaw(params: {
@@ -105,27 +119,27 @@ export class PrismaClientRepository implements ClientRepositoryPort {
     orderBy?: Record<string, string>;
     include?: Record<string, unknown>;
   }): Promise<Record<string, unknown>[]> {
-    return this.prisma.client.findMany(params) as Promise<Record<string, unknown>[]>;
+    return this.txClient.client.findMany(params) as Promise<Record<string, unknown>[]>;
   }
 
   async countRaw(where?: Record<string, unknown>): Promise<number> {
-    return this.prisma.client.count({ where });
+    return this.txClient.client.count({ where });
   }
 
   async updateRaw(id: string, data: Record<string, unknown>, tenantId?: string): Promise<Record<string, unknown>> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
-    return this.prisma.client.update({ where, data }) as Promise<Record<string, unknown>>;
+    return this.txClient.client.update({ where, data }) as Promise<Record<string, unknown>>;
   }
 
   async findByPhoneRaw(tenantId: string, phone: string): Promise<Record<string, unknown> | null> {
-    return this.prisma.client.findFirst({
+    return this.txClient.client.findFirst({
       where: { tenantId, phone },
     }) as Promise<Record<string, unknown> | null>;
   }
 
   async searchRaw(tenantId: string, query: string, skip = 0, take = 10): Promise<Record<string, unknown>[]> {
-    return this.prisma.client.findMany({
+    return this.txClient.client.findMany({
       where: {
         tenantId,
         OR: [
@@ -141,7 +155,7 @@ export class PrismaClientRepository implements ClientRepositoryPort {
   }
 
   async findByRiskScoreRaw(tenantId: string, riskScore: string): Promise<Record<string, unknown>[]> {
-    return this.prisma.client.findMany({
+    return this.txClient.client.findMany({
       where: { tenantId, riskScore: riskScore as any },
       include: {
         invoices: {
@@ -156,7 +170,7 @@ export class PrismaClientRepository implements ClientRepositoryPort {
   async updateRiskScoreRaw(id: string, riskScore: string, reason: unknown, tenantId?: string): Promise<Record<string, unknown>> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
-    return this.prisma.client.update({
+    return this.txClient.client.update({
       where,
       data: {
         riskScore: riskScore as any,

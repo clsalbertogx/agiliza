@@ -1,4 +1,5 @@
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import { getTransaction } from '@/infrastructure/database/unit-of-work';
 import type { TenantRepositoryPort } from '@/application/ports/repositories/tenant.repository.port';
 import type { Tenant } from '@/domain/entities/tenant';
 import { TenantMapper, type PersistenceTenant } from '@/infrastructure/database/mappers/tenant.mapper';
@@ -7,6 +8,9 @@ import { TenantMapper, type PersistenceTenant } from '@/infrastructure/database/
  * Port-compliant Prisma tenant repository.
  * Implements TenantRepositoryPort for use with use cases / factories.
  * Uses a DomainMapper for standardized toDomain/toPersistence mapping.
+ *
+ * All database operations automatically participate in the ambient
+ * Unit of Work transaction when one is active (see PrismaUnitOfWork).
  */
 export class PrismaTenantRepository implements TenantRepositoryPort {
   private prisma = getPrismaClient();
@@ -16,18 +20,26 @@ export class PrismaTenantRepository implements TenantRepositoryPort {
     this.mapper = mapper ?? new TenantMapper();
   }
 
+  /**
+   * Returns the transactional Prisma client when called inside a
+   * PrismaUnitOfWork.execute() callback, or the regular client otherwise.
+   */
+  private get txClient() {
+    return getTransaction() ?? this.prisma;
+  }
+
   async findById(id: string): Promise<Tenant | null> {
-    const result = await this.prisma.tenant.findUnique({ where: { id } });
+    const result = await this.txClient.tenant.findUnique({ where: { id } });
     return result ? this.mapper.toDomain(result as unknown as PersistenceTenant) : null;
   }
 
   async findBySlug(slug: string): Promise<Tenant | null> {
-    const result = await this.prisma.tenant.findUnique({ where: { slug } });
+    const result = await this.txClient.tenant.findUnique({ where: { slug } });
     return result ? this.mapper.toDomain(result as unknown as PersistenceTenant) : null;
   }
 
   async findByEmail(email: string): Promise<Tenant | null> {
-    const result = await this.prisma.tenant.findFirst({ where: { email } });
+    const result = await this.txClient.tenant.findFirst({ where: { email } });
     return result ? this.mapper.toDomain(result as unknown as PersistenceTenant) : null;
   }
 
@@ -46,21 +58,21 @@ export class PrismaTenantRepository implements TenantRepositoryPort {
       ];
     }
     const [data, total] = await Promise.all([
-      this.prisma.tenant.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      this.prisma.tenant.count({ where }),
+      this.txClient.tenant.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.txClient.tenant.count({ where }),
     ]);
     return { data: data.map((r) => this.mapper.toDomain(r as unknown as PersistenceTenant)), total };
   }
 
   async create(tenant: Tenant): Promise<Tenant> {
     const persistence = this.mapper.toPersistence(tenant);
-    const result = await this.prisma.tenant.create({ data: persistence as any });
+    const result = await this.txClient.tenant.create({ data: persistence as any });
     return this.mapper.toDomain(result as unknown as PersistenceTenant);
   }
 
   async update(tenant: Tenant): Promise<Tenant> {
     const { id, ...data } = this.mapper.toPersistence(tenant);
-    const result = await this.prisma.tenant.update({
+    const result = await this.txClient.tenant.update({
       where: { id },
       data: data as any,
     });
@@ -68,24 +80,24 @@ export class PrismaTenantRepository implements TenantRepositoryPort {
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.tenant.delete({ where: { id } });
+    await this.txClient.tenant.delete({ where: { id } });
   }
 
   async count(): Promise<number> {
-    return this.prisma.tenant.count();
+    return this.txClient.tenant.count();
   }
 
   // Extra methods beyond TenantRepositoryPort, used by routes
 
   async updateConfig(id: string, config: Record<string, unknown>): Promise<Tenant> {
-    return this.prisma.tenant.update({
+    return this.txClient.tenant.update({
       where: { id },
       data: { config: config as any },
     }) as unknown as Tenant;
   }
 
   async updatePaymentProvider(id: string, provider: string, providerConfig: Record<string, unknown>): Promise<Tenant> {
-    return this.prisma.tenant.update({
+    return this.txClient.tenant.update({
       where: { id },
       data: {
         paymentProvider: provider,
@@ -95,7 +107,7 @@ export class PrismaTenantRepository implements TenantRepositoryPort {
   }
 
   async updateDecisionConfig(id: string, decisionConfig: Record<string, unknown>): Promise<Tenant> {
-    return this.prisma.tenant.update({
+    return this.txClient.tenant.update({
       where: { id },
       data: { decisionConfig: decisionConfig as any },
     }) as unknown as Tenant;

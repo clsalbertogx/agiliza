@@ -1,6 +1,14 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { createCreateInvoiceUseCase, createInvoiceRepository, createClientRepository, createPaymentProvider } from '@/presentation/factories';
+import {
+  createCreateInvoiceUseCase,
+  createListInvoicesUseCase,
+  createGetInvoiceUseCase,
+  createGetInvoiceStatsUseCase,
+  createInvoiceRepository,
+  createClientRepository,
+  createPaymentProvider,
+} from '@/presentation/factories';
 
 const createInvoiceSchema = z.object({
   tenantId: z.string().uuid(),
@@ -42,59 +50,53 @@ export async function invoiceRoutes(app: FastifyInstance) {
     return { data: result.value };
   });
 
-  // GET /api/invoices — List invoices
+  // GET /api/invoices — List invoices (via use case)
   app.get('/api/invoices', async (request) => {
     const query = request.query as any;
     const tenantId = request.tenantId || query.tenantId;
-    const page = Math.max(1, parseInt(query.page) || 1);
-    const perPage = Math.min(100, Math.max(1, parseInt(query.perPage) || 10));
-    const skip = (page - 1) * perPage;
 
-    const where: any = { tenantId };
-    if (query.status) where.status = query.status;
-    if (query.clientId) where.clientId = query.clientId;
+    const useCase = createListInvoicesUseCase();
+    const result = await useCase.execute({
+      tenantId,
+      page: parseInt(query.page) || 1,
+      perPage: parseInt(query.perPage) || 10,
+      status: query.status as string | undefined,
+      clientId: query.clientId as string | undefined,
+    });
 
-    const [data, total] = await Promise.all([
-      invoiceRepo.findManyRaw({ 
-        where, 
-        skip, 
-        take: perPage, 
-        orderBy: { createdAt: 'desc' },
-        include: { client: { select: { name: true, phone: true } } },
-      }),
-      invoiceRepo.countRaw(where),
-    ]);
-
-    return {
-      data,
-      meta: { total, page, perPage, totalPages: Math.ceil(total / perPage) },
-    };
+    return result;
   });
 
-  // GET /api/invoices/stats — Get invoice stats (MUST be registered BEFORE :id)
-  app.get('/api/invoices/stats', async (request) => {
+  // GET /api/invoices/stats — Get invoice stats (via use case, MUST be registered BEFORE :id)
+  app.get('/api/invoices/stats', async (request, reply) => {
     const query = request.query as any;
     const tenantId = request.tenantId || query.tenantId;
 
-    if (!tenantId) {
-      return { error: 'tenantId is required' };
+    const useCase = createGetInvoiceStatsUseCase();
+    const result = await useCase.execute({ tenantId });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
     }
 
-    const stats = await invoiceRepo.getStatsRaw(tenantId);
-    return { data: stats };
+    return { data: result.value };
   });
 
-  // GET /api/invoices/:id — Get invoice
+  // GET /api/invoices/:id — Get invoice (via use case, tenant-isolated)
   app.get('/api/invoices/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const invoice = await invoiceRepo.getInvoiceWithClientRaw(id);
+    const tenantId = request.tenantId;
 
-    if (!invoice) {
-      reply.code(404);
-      return { error: 'Invoice not found' };
+    const useCase = createGetInvoiceUseCase();
+    const result = await useCase.execute({ id, tenantId: tenantId! });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
     }
 
-    return { data: invoice };
+    return { data: result.value };
   });
 
   // POST /api/invoices/:id/pay — Process payment (creates PIX charge)
