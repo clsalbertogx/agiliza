@@ -24,37 +24,12 @@ interface RiskDistribution {
   red: { count: number; percentage: number };
 }
 
-interface InvoiceLike {
-  id: string;
-  status: string;
-  amount: number;
-  dueDate: Date;
-  tenantId: string;
-  clientId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface ClientLike {
-  id: string;
-  tenantId: string;
-  name: string;
-  phone: string;
-}
-
-interface InvoiceRepositoryPort {
-  findMany(params: { where?: Record<string, unknown>; orderBy?: Record<string, string> }): Promise<InvoiceLike[]>;
-  getStats(tenantId: string): Promise<Record<string, unknown>>;
-}
-
-interface ClientRepositoryPort {
-  findMany(params: { where?: Record<string, unknown> }): Promise<ClientLike[]>;
-}
+import type { AnalyticsInvoiceRepositoryPort, AnalyticsClientRepositoryPort } from '@/application/ports/repositories/analytics.repository.port';
 
 export class CashFlowService {
   constructor(
-    private readonly invoiceRepo: InvoiceRepositoryPort,
-    private readonly clientRepo: ClientRepositoryPort,
+    private readonly invoiceRepo: AnalyticsInvoiceRepositoryPort,
+    private readonly clientRepo: AnalyticsClientRepositoryPort,
   ) {}
 
   async generateForecast(tenantId: string, months: number = 6): Promise<CashFlowReport> {

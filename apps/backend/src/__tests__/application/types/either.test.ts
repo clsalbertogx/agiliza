@@ -10,7 +10,7 @@ import {
   unwrap,
   unwrapOr,
   unwrapErr,
-} from '../../../application/types/either';
+} from '@/application/types/either';
 
 describe('Either', () => {
   describe('success', () => {

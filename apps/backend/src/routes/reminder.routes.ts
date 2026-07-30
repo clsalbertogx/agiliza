@@ -1,9 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ReminderService } from '../application/services/reminder.service';
-import { createEventRepository, createInvoiceRepository } from '../presentation/factories';
-
-const reminderService = new ReminderService();
+import { createReminderService, createEventRepository, createInvoiceRepository } from '@/presentation/factories';
 
 const scheduleReminderSchema = z.object({
   invoiceId: z.string().uuid(),
@@ -17,6 +14,8 @@ const sendNowSchema = z.object({
 });
 
 export async function reminderRoutes(app: FastifyInstance) {
+  const reminderService = createReminderService();
+
   // POST /api/reminders/schedule — Schedule a reminder
   app.post('/api/reminders/schedule', async (request, reply) => {
     const parsed = scheduleReminderSchema.safeParse(request.body);
@@ -29,7 +28,7 @@ export async function reminderRoutes(app: FastifyInstance) {
 
     // Verify invoice exists before scheduling
     const invoiceRepo = createInvoiceRepository();
-    const invoice = await invoiceRepo.getInvoiceWithClient(invoiceId);
+    const invoice = await invoiceRepo.getInvoiceWithClientRaw(invoiceId);
     if (!invoice || !invoice.client) {
       reply.code(404);
       return { error: 'Invoice or client not found' };
@@ -77,13 +76,13 @@ export async function reminderRoutes(app: FastifyInstance) {
     if (query.invoiceId) where.invoiceId = query.invoiceId;
 
     const [events, total] = await Promise.all([
-      eventRepo.findMany({
+      eventRepo.findManyRaw({
         where: { ...where, eventType: 'MESSAGE_SENT' },
         skip,
         take: perPage,
         orderBy: { createdAt: 'desc' },
       }),
-      eventRepo.count({ ...where, eventType: 'MESSAGE_SENT' }),
+      eventRepo.countRaw({ ...where, eventType: 'MESSAGE_SENT' }),
     ]);
 
     return {
@@ -97,7 +96,7 @@ export async function reminderRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const eventRepo = createEventRepository();
 
-    const event = await eventRepo.findById(id);
+    const event = await eventRepo.findByIdRaw(id);
 
     if (!event) {
       reply.code(404);
@@ -105,7 +104,7 @@ export async function reminderRoutes(app: FastifyInstance) {
     }
 
     // Get all events related to this message
-    const trackingEvents = await eventRepo.findMany({
+    const trackingEvents = await eventRepo.findManyRaw({
       where: {
         tenantId: event.tenantId,
         clientId: event.clientId,

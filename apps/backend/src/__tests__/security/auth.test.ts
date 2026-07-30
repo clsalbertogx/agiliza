@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createToken, verifyToken, validateApiKey } from '../../infrastructure/auth';
+import { createHmac } from 'node:crypto';
+import { createToken, verifyToken, validateApiKey } from '@/infrastructure/auth';
+
+/** Helper: sign header.body with HMAC-SHA256 (mirrors jwt.strategy.ts) */
+function sign(header: string, body: string, secret: string): string {
+  return createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url');
+}
 
 describe('Authentication — SEC-01', () => {
   const TEST_SECRET = 'agiliza-dev-secret';
@@ -31,7 +37,7 @@ describe('Authentication — SEC-01', () => {
         iat: pastTimestamp - 86400,
         exp: pastTimestamp,
       })).toString('base64url');
-      const signature = Buffer.from(`${header}.${body}:${TEST_SECRET}`).toString('base64url');
+      const signature = sign(header, body, TEST_SECRET);
       const expiredToken = `${header}.${body}.${signature}`;
 
       // When verifying
@@ -320,179 +326,6 @@ describe('Authentication — SEC-01', () => {
     });
   });
 });
-
-describe('Rate Limiting — SEC-03', () => {
-  it('should return 429 after exceeding 100 requests per minute on API endpoints', () => {
-    // Given a tenant with rate limit of 100 req/min
-    const RATE_LIMIT = 100;
-    const TIME_WINDOW_MS = 60 * 1000;
-
-    // Simulate a sliding window rate limiter
-    const requestTimestamps = new Map<string, number[]>();
-
-    function checkRateLimit(tenantId: string): { allowed: boolean; retryAfter?: number } {
-      const now = Date.now();
-      const timestamps = requestTimestamps.get(tenantId) || [];
-      const recentTimestamps = timestamps.filter(t => now - t < TIME_WINDOW_MS);
-
-      if (recentTimestamps.length >= RATE_LIMIT) {
-        const oldestInWindow = recentTimestamps[0];
-        const retryAfter = Math.ceil((TIME_WINDOW_MS - (now - oldestInWindow)) / 1000);
-        return { allowed: false, retryAfter };
-      }
-
-      recentTimestamps.push(now);
-      requestTimestamps.set(tenantId, recentTimestamps);
-      return { allowed: true };
-    }
-
-    // When sending 101 requests in 1 minute
-    const tenantId = 'tenant-rate-test';
-    let lastResult: { allowed: boolean; retryAfter?: number } = { allowed: true };
-
-    for (let i = 0; i < 101; i++) {
-      lastResult = checkRateLimit(tenantId);
-    }
-
-    // Then the 101st request returns 429
-    expect(lastResult.allowed).toBe(false);
-    expect(lastResult.retryAfter).toBeDefined();
-    expect(lastResult.retryAfter).toBeGreaterThan(0);
-  });
-
-  it('should reset rate limit after window expires', () => {
-    const RATE_LIMIT = 100;
-    const TIME_WINDOW_MS = 60 * 1000;
-
-    const requestTimestamps = new Map<string, number[]>();
-
-    function checkRateLimit(tenantId: string): { allowed: boolean } {
-      const now = Date.now();
-      const timestamps = requestTimestamps.get(tenantId) || [];
-      const recentTimestamps = timestamps.filter(t => now - t < TIME_WINDOW_MS);
-
-      if (recentTimestamps.length >= RATE_LIMIT) {
-        return { allowed: false };
-      }
-
-      recentTimestamps.push(now);
-      requestTimestamps.set(tenantId, recentTimestamps);
-      return { allowed: true };
-    }
-
-    const tenantId = 'tenant-reset-test';
-
-    // Exhaust the rate limit
-    for (let i = 0; i < 101; i++) {
-      checkRateLimit(tenantId);
-    }
-    expect(checkRateLimit(tenantId).allowed).toBe(false);
-
-    // When the window expires (simulate by clearing)
-    requestTimestamps.delete(tenantId);
-
-    // Then the next request should be allowed
-    expect(checkRateLimit(tenantId).allowed).toBe(true);
-  });
-
-  it('should have independent rate limits per tenant', () => {
-    const RATE_LIMIT = 100;
-    const TIME_WINDOW_MS = 60 * 1000;
-
-    const requestTimestamps = new Map<string, number[]>();
-
-    function checkRateLimit(tenantId: string): { allowed: boolean } {
-      const now = Date.now();
-      const timestamps = requestTimestamps.get(tenantId) || [];
-      const recentTimestamps = timestamps.filter(t => now - t < TIME_WINDOW_MS);
-
-      if (recentTimestamps.length >= RATE_LIMIT) {
-        return { allowed: false };
-      }
-
-      recentTimestamps.push(now);
-      requestTimestamps.set(tenantId, recentTimestamps);
-      return { allowed: true };
-    }
-
-    const tenantA = 'tenant-a';
-    const tenantB = 'tenant-b';
-
-    // When tenant A exceeds limit (101 requests)
-    for (let i = 0; i < 101; i++) {
-      checkRateLimit(tenantA);
-    }
-    expect(checkRateLimit(tenantA).allowed).toBe(false);
-
-    // Then tenant B's first request should be allowed (independent counter)
-    expect(checkRateLimit(tenantB).allowed).toBe(true);
-  });
-
-  it('should have stricter rate limit for auth endpoints (20 req/min)', () => {
-    const AUTH_RATE_LIMIT = 20;
-    const TIME_WINDOW_MS = 60 * 1000;
-
-    const authAttempts = new Map<string, number[]>();
-
-    function checkAuthRateLimit(ip: string): { allowed: boolean } {
-      const now = Date.now();
-      const timestamps = authAttempts.get(ip) || [];
-      const recentTimestamps = timestamps.filter(t => now - t < TIME_WINDOW_MS);
-
-      if (recentTimestamps.length >= AUTH_RATE_LIMIT) {
-        return { allowed: false };
-      }
-
-      recentTimestamps.push(now);
-      authAttempts.set(ip, recentTimestamps);
-      return { allowed: true };
-    }
-
-    const ip = '192.168.1.1';
-
-    // When sending 21 login attempts in 1 minute
-    for (let i = 0; i < 21; i++) {
-      checkAuthRateLimit(ip);
-    }
-
-    // Then the 21st attempt returns 429
-    const result = checkAuthRateLimit(ip);
-    expect(result.allowed).toBe(false);
-  });
-
-  it('should have rate limit for webhook endpoints (10 req/s)', () => {
-    const WEBHOOK_RATE_LIMIT = 10;
-    const TIME_WINDOW_MS = 1000;
-
-    const webhookRequests = new Map<string, number[]>();
-
-    function checkWebhookRateLimit(provider: string): { allowed: boolean } {
-      const now = Date.now();
-      const timestamps = webhookRequests.get(provider) || [];
-      const recentTimestamps = timestamps.filter(t => now - t < TIME_WINDOW_MS);
-
-      if (recentTimestamps.length >= WEBHOOK_RATE_LIMIT) {
-        return { allowed: false };
-      }
-
-      recentTimestamps.push(now);
-      webhookRequests.set(provider, recentTimestamps);
-      return { allowed: true };
-    }
-
-    const provider = 'asaas';
-
-    // When sending 11 requests in 1 second
-    for (let i = 0; i < 11; i++) {
-      checkWebhookRateLimit(provider);
-    }
-
-    // Then the 11th request is rate limited
-    const result = checkWebhookRateLimit(provider);
-    expect(result.allowed).toBe(false);
-  });
-});
-
 describe('Tenant Isolation — SEC-08', () => {
   it('should return 404 when accessing other tenant client by ID', () => {
     // Given tenant A calling GET /api/clients/:id of tenant B's client

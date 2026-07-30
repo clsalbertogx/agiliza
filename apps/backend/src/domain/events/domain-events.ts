@@ -24,10 +24,11 @@ export interface DomainEvent {
 
 export function createDomainEvent(
   eventType: DomainEventType,
-  data: { clientId: string; tenantId: string; invoiceId?: string; metadata?: Record<string, unknown> }
+  data: { clientId: string; tenantId: string; invoiceId?: string; metadata?: Record<string, unknown> },
+  eventId?: string
 ): DomainEvent {
   return {
-    eventId: crypto.randomUUID(),
+    eventId: eventId || 'pending-' + Date.now(),
     eventType,
     clientId: data.clientId,
     tenantId: data.tenantId,

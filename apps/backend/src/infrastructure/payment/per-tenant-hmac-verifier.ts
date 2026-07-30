@@ -1,9 +1,9 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { getPrismaClient } from '../database/prisma.service';
-import type { WebhookVerifierPort } from '../../application/ports/gateways/webhook-verifier.port';
-import { ApplicationError } from '../../application/errors/application.error';
-import type { Either } from '../../application/types/either';
-import { success, failure } from '../../application/types/either';
+import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
+import { ApplicationError } from '@/application/errors/application.error';
+import type { Either } from '@/application/types/either';
+import { success, failure } from '@/application/types/either';
 
 /**
  * Per-tenant HMAC verifier that reads webhook secrets from the database

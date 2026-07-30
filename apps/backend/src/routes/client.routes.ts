@@ -1,7 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ClientRepository } from '../infrastructure/database/repositories/client.repository';
-import { createCreateClientUseCase } from '../presentation/factories';
+import { createCreateClientUseCase, createClientRepository } from '@/presentation/factories';
 
 const createClientSchema = z.object({
   tenantId: z.string().uuid(),
@@ -16,9 +15,8 @@ const createClientSchema = z.object({
 
 const updateClientSchema = createClientSchema.partial();
 
-const clientRepo = new ClientRepository();
-
 export async function clientRoutes(app: FastifyInstance) {
+  const clientRepo = createClientRepository();
   // POST /api/clients — Create client (via use case)
   app.post('/api/clients', async (request, reply) => {
     const parsed = createClientSchema.safeParse(request.body);
@@ -49,8 +47,8 @@ export async function clientRoutes(app: FastifyInstance) {
     // Auto-trigger onboarding for new clients without preferences
     if (!data.preferredChannel && !data.preferredTime) {
       try {
-        const { OnboardingService } = await import('../application/services/onboarding.service');
-        const onboardingService = new OnboardingService();
+        const { createOnboardingService } = await import('@/presentation/factories/create-onboarding.factory');
+        const onboardingService = createOnboardingService();
         await onboardingService.startOnboarding(result.value.id, data.tenantId);
       } catch (err) {
         console.warn('Failed to auto-trigger onboarding:', err);
@@ -80,8 +78,8 @@ export async function clientRoutes(app: FastifyInstance) {
     }
 
     const [data, total] = await Promise.all([
-      clientRepo.findMany({ where, skip, take: perPage, orderBy: { createdAt: 'desc' } }),
-      clientRepo.count(where),
+      clientRepo.findManyRaw({ where, skip, take: perPage, orderBy: { createdAt: 'desc' } }),
+      clientRepo.countRaw(where),
     ]);
 
     return {
@@ -93,7 +91,7 @@ export async function clientRoutes(app: FastifyInstance) {
   // GET /api/clients/:id — Get client (tenant-isolated)
   app.get('/api/clients/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const client = await clientRepo.findById(id, request.tenantId);
+    const client = await clientRepo.findByIdRaw(id, request.tenantId);
 
     if (!client) {
       reply.code(404);
@@ -108,7 +106,7 @@ export async function clientRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     // Check exists (with tenant isolation)
-    const existing = await clientRepo.findById(id, request.tenantId);
+    const existing = await clientRepo.findByIdRaw(id, request.tenantId);
     if (!existing) {
       reply.code(404);
       return { error: 'Client not found' };
@@ -120,14 +118,14 @@ export async function clientRoutes(app: FastifyInstance) {
       return { error: 'Validation error', details: parsed.error.flatten() };
     }
 
-    const updated = await clientRepo.update(id, parsed.data, request.tenantId);
+    const updated = await clientRepo.updateRaw(id, parsed.data, request.tenantId);
     return { data: updated };
   });
 
   // GET /api/clients/:id/risk-score — Get client risk score
   app.get('/api/clients/:id/risk-score', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const client = await clientRepo.findById(id, request.tenantId);
+    const client = await clientRepo.findByIdRaw(id, request.tenantId);
 
     if (!client) {
       reply.code(404);

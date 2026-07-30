@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createDomainEvent, type DomainEventType } from '../../domain/events/domain-events';
+import { createDomainEvent, type DomainEventType } from '@/domain/events/domain-events';
 
 describe('Event Collector', () => {
   describe('Event Schema Validation', () => {

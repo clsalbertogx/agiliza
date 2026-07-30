@@ -1,18 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Either, success, failure, isSuccess, isFailure } from '../../../application/types/either';
-import { ApplicationError } from '../../../application/errors/application.error';
-import { ClientRepositoryPort } from '../../../application/ports/repositories/client.repository.port';
-import { EventBusPort } from '../../../application/ports/adapters/event-bus.port';
-import { Client, createClient, MessageChannel, RiskScore } from '../../../domain/entities/client';
-import { Phone } from '../../../domain/value-objects/phone';
-import { Email } from '../../../domain/value-objects/email';
-import { createDomainEvent } from '../../../domain/events/domain-events';
-import { CreateClientUseCase, CreateClientInput } from '../../../application/usecases/create-client.usecase';
+import { Either, isSuccess, isFailure } from '@/application/types/either';
+import { ApplicationError } from '@/application/errors/application.error';
+import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import { Client, createClient, MessageChannel, RiskScore } from '@/domain/entities/client';
+import { Phone } from '@/domain/value-objects/phone';
+import { Email } from '@/domain/value-objects/email';
+import { createDomainEvent } from '@/domain/events/domain-events';
+import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { CreateClientUseCase, CreateClientInput } from '@/application/usecases/create-client.usecase';
 
 describe('CreateClientUseCase', () => {
   let useCase: CreateClientUseCase;
   let mockClientRepo: ClientRepositoryPort;
   let mockEventBus: EventBusPort;
+  let mockIdGenerator: IdGeneratorPort;
 
   const validInput: CreateClientInput = {
     tenantId: '00000000-0000-0000-0000-000000000001',
@@ -32,6 +34,7 @@ describe('CreateClientUseCase', () => {
       update: vi.fn(),
       delete: vi.fn(),
       count: vi.fn(),
+      updateRiskScore: vi.fn(),
     };
 
     mockEventBus = {
@@ -39,7 +42,12 @@ describe('CreateClientUseCase', () => {
       subscribe: vi.fn(),
     };
 
-    useCase = new CreateClientUseCase(mockClientRepo, mockEventBus);
+    mockIdGenerator = {
+      generate: vi.fn().mockReturnValue('00000000-0000-0000-0000-000000000001'),
+      validate: vi.fn().mockReturnValue(true),
+    };
+
+    useCase = new CreateClientUseCase(mockClientRepo, mockEventBus, mockIdGenerator);
   });
 
   describe('Happy Path', () => {
@@ -57,7 +65,7 @@ describe('CreateClientUseCase', () => {
         expect(result.value.preferredChannel).toBe(MessageChannel.WHATSAPP);
         expect(result.value.preferredLeadDays).toBe(3);
         expect(result.value.tenantId).toBe('00000000-0000-0000-0000-000000000001');
-        expect(result.value.riskScore).toBe(RiskScore.GREEN);
+        expect(result.value.riskScore).toStrictEqual(RiskScore.GREEN);
       }
 
       expect(mockClientRepo.findByPhone).toHaveBeenCalledWith('5511999998888', '00000000-0000-0000-0000-000000000001');
@@ -141,7 +149,7 @@ describe('CreateClientUseCase', () => {
 
   describe('Conflict Errors', () => {
     it('should return CONFLICT error when phone already exists in tenant', async () => {
-      const existingClient: Client = createClient({
+      const existingClient: Client = {
         id: '00000000-0000-0000-0000-000000000002',
         tenantId: '00000000-0000-0000-0000-000000000001',
         name: 'Existing Client',
@@ -151,7 +159,8 @@ describe('CreateClientUseCase', () => {
         riskScore: RiskScore.GREEN,
         totalInvoices: 0,
         paidInvoices: 0,
-      });
+        avgPaymentDelay: null,
+      };
 
       vi.mocked(mockClientRepo.findByPhone).mockResolvedValue(existingClient);
 

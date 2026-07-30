@@ -1,5 +1,5 @@
-import { RiskScore, MessageChannel, Client } from '../../domain/entities/client';
-import { Invoice } from '../../domain/entities/invoice';
+import { RiskScore, MessageChannel, Client } from '@/domain/entities/client';
+import { Invoice } from '@/domain/entities/invoice';
 
 export interface Decision {
   action: 'send_reminder' | 'suggest_call' | 'send_offer' | 'wait';
@@ -49,41 +49,40 @@ export class DecisionEngineService {
     reminderDate.setHours(hours, minutes, 0, 0);
 
     // Determine action based on risk score
-    switch (client.riskScore) {
-      case RiskScore.RED: {
-        reasoning.push('Cliente de alto risco — sugerir contato humano');
-        return {
-          action: 'suggest_call',
-          channel: MessageChannel.WHATSAPP,
-          templateName: 'urgent_human_call',
-          scheduledAt: new Date(), // ASAP
-          confidence: 0.7,
-          reasoning: ['Alto risco de inadimplência', ...reasoning],
-        };
-      }
-      case RiskScore.YELLOW: {
-        reasoning.push(`Cliente de risco médio — enviar lembrete D-${leadDays}`);
-        return {
-          action: 'send_reminder',
-          channel: client.preferredChannel ?? benchmark.preferredChannel,
-          templateName: leadDays >= 5 ? 'early_reminder_d5' : 'friendly_reminder_d3',
-          scheduledAt: reminderDate,
-          confidence: 0.85,
-          reasoning: ['Risco médio — lembrete antecipado', ...reasoning],
-        };
-      }
-      case RiskScore.GREEN:
-      default: {
-        reasoning.push(`Cliente de baixo risco — lembrete padrão D-${leadDays}`);
-        return {
-          action: 'send_reminder',
-          channel: client.preferredChannel ?? benchmark.preferredChannel,
-          templateName: 'friendly_reminder_d3',
-          scheduledAt: reminderDate,
-          confidence: 0.95,
-          reasoning: ['Baixo risco — lembrete padrão', ...reasoning],
-        };
-      }
+    // Note: RiskScore is a class instance, so we must use level comparison, not reference equality
+    if (client.riskScore.isHighOrCritical()) {
+      reasoning.push('Cliente de alto risco — sugerir contato humano');
+      return {
+        action: 'suggest_call',
+        channel: MessageChannel.WHATSAPP,
+        templateName: 'urgent_human_call',
+        scheduledAt: new Date(), // ASAP
+        confidence: 0.7,
+        reasoning: ['Alto risco de inadimplência', ...reasoning],
+      };
     }
+
+    if (client.riskScore.isMedium()) {
+      reasoning.push(`Cliente de risco médio — enviar lembrete D-${leadDays}`);
+      return {
+        action: 'send_reminder',
+        channel: client.preferredChannel ?? benchmark.preferredChannel,
+        templateName: leadDays >= 5 ? 'early_reminder_d5' : 'friendly_reminder_d3',
+        scheduledAt: reminderDate,
+        confidence: 0.85,
+        reasoning: ['Risco médio — lembrete antecipado', ...reasoning],
+      };
+    }
+
+    // Low risk (GREEN) — default
+    reasoning.push(`Cliente de baixo risco — lembrete padrão D-${leadDays}`);
+    return {
+      action: 'send_reminder',
+      channel: client.preferredChannel ?? benchmark.preferredChannel,
+      templateName: 'friendly_reminder_d3',
+      scheduledAt: reminderDate,
+      confidence: 0.95,
+      reasoning: ['Baixo risco — lembrete padrão', ...reasoning],
+    };
   }
 }

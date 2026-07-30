@@ -1,18 +1,35 @@
-import { CashFlowService } from '../../application/services/cash-flow.service';
-import { InvoiceRepository } from '../../infrastructure/database/repositories/invoice.repository';
-import { ClientRepository } from '../../infrastructure/database/repositories/client.repository';
-
-let cashFlowServiceInstance: CashFlowService | null = null;
+import { CashFlowService } from '@/application/services/cash-flow.service';
+import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
+import { PrismaClientRepository } from '@/infrastructure/database/repositories/client.repository';
 
 export function createCashFlowService(): CashFlowService {
-  if (!cashFlowServiceInstance) {
-    const invoiceRepo = new InvoiceRepository();
-    const clientRepo = new ClientRepository();
-    cashFlowServiceInstance = new CashFlowService(invoiceRepo, clientRepo);
-  }
-  return cashFlowServiceInstance;
+  const invoiceRepo = new PrismaInvoiceRepository();
+  const clientRepo = new PrismaClientRepository();
+
+  return new CashFlowService(
+    {
+      findMany: async (params) => {
+        const result = await invoiceRepo.findManyRaw({
+          where: params.where as Record<string, unknown> | undefined,
+          orderBy: params.orderBy as Record<string, string> | undefined,
+        });
+        return result as any;
+      },
+      getStats: async (tenantId) => {
+        return invoiceRepo.getStatsRaw(tenantId);
+      },
+    },
+    {
+      findMany: async (params) => {
+        const result = await clientRepo.findManyRaw({
+          where: params.where as Record<string, unknown> | undefined,
+        });
+        return result as any;
+      },
+    },
+  );
 }
 
-export function createInvoiceRepository(): InvoiceRepository {
-  return new InvoiceRepository();
+export function createInvoiceRepository(): PrismaInvoiceRepository {
+  return new PrismaInvoiceRepository();
 }

@@ -1,4 +1,4 @@
-import { RiskScore, Client } from '../../domain/entities/client';
+import { RiskScore, Client } from '@/domain/entities/client';
 
 interface RiskFactors {
   overdueInvoiceCount: number;

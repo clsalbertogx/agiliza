@@ -15,9 +15,12 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "db:migrate": "cd apps/backend && npx prisma migrate dev",
     "db:generate": "cd apps/backend && npx prisma generate",
-    "db:studio": "cd apps/backend && npx prisma studio"
+    "db:studio": "cd apps/backend && npx prisma studio",
+    "test:e2e": "playwright test --config=e2e/playwright.config.ts",
+    "test:e2e:ui": "playwright test --ui --config=e2e/playwright.config.ts"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@vitest/coverage-v8": "^4.1.10",
     "prettier": "^3.2.0",
     "turbo": "^2.0.0",

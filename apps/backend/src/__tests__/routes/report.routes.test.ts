@@ -9,14 +9,14 @@ const mockState = vi.hoisted(() => ({
   invoiceFindUnique: vi.fn(),
 }));
 
-vi.mock('../../infrastructure/database/prisma.service', () => ({
+vi.mock('@/infrastructure/database/prisma.service', () => ({
   getPrismaClient: vi.fn(() => ({
     invoice: { findMany: mockState.invoiceFindMany, count: mockState.invoiceCount, findUnique: mockState.invoiceFindUnique },
     client: { findMany: mockState.clientFindMany, count: mockState.clientCount },
   })),
 }));
 
-import { reportRoutes } from '../../routes/report.routes';
+import { reportRoutes } from '@/routes/report.routes';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const VALID_TOKEN = 'test-valid-token';

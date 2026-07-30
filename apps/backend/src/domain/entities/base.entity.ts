@@ -1,12 +1,10 @@
-import { randomUUID } from 'node:crypto';
-
 export abstract class Entity<T> {
   protected readonly _id: string;
   protected readonly _createdAt: Date;
   protected _updatedAt: Date;
 
-  constructor(id?: string, createdAt?: Date, updatedAt?: Date) {
-    this._id = id || randomUUID();
+  constructor(id: string, createdAt?: Date, updatedAt?: Date) {
+    this._id = id;
     this._createdAt = createdAt || new Date();
     this._updatedAt = updatedAt || new Date();
   }

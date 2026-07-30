@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
 
-import { decisionRoutes } from '../../routes/decision.routes';
+import { decisionRoutes } from '@/routes/decision.routes';
 
 const VALID_TOKEN = 'test-valid-token';
 

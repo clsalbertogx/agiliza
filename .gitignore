@@ -9,3 +9,8 @@ coverage/
 .DS_Store
 *.log
 docker/data/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+*.tsbuildinfo

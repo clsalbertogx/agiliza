@@ -4,12 +4,12 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-  green: { bg: 'bg-green-100', text: 'text-green-800', dot: 'bg-green-500', label: 'Verde' },
-  yellow: { bg: 'bg-yellow-100', text: 'text-yellow-800', dot: 'bg-yellow-500', label: 'Amarelo' },
-  red: { bg: 'bg-red-100', text: 'text-red-800', dot: 'bg-red-500', label: 'Vermelho' },
-  paid: { bg: 'bg-green-100', text: 'text-green-800', dot: 'bg-green-500', label: 'Pago' },
-  pending: { bg: 'bg-blue-100', text: 'text-blue-800', dot: 'bg-blue-500', label: 'Pendente' },
-  overdue: { bg: 'bg-red-100', text: 'text-red-800', dot: 'bg-red-500', label: 'Vencido' },
+  green: { bg: 'bg-success-100', text: 'text-success-800', dot: 'bg-success-500', label: 'Verde' },
+  yellow: { bg: 'bg-warning-100', text: 'text-warning-800', dot: 'bg-warning-500', label: 'Amarelo' },
+  red: { bg: 'bg-danger-100', text: 'text-danger-800', dot: 'bg-danger-500', label: 'Vermelho' },
+  paid: { bg: 'bg-success-100', text: 'text-success-800', dot: 'bg-success-500', label: 'Pago' },
+  pending: { bg: 'bg-info-100', text: 'text-info-800', dot: 'bg-info-500', label: 'Pendente' },
+  overdue: { bg: 'bg-danger-100', text: 'text-danger-800', dot: 'bg-danger-500', label: 'Vencido' },
 };
 
 export function StatusBadge({ status, label }: StatusBadgeProps) {

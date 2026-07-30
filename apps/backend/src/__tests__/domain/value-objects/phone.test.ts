@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Phone } from '../../../domain/value-objects/phone';
-import { DomainError } from '../../../domain/errors/domain-error';
+import { Phone } from '@/domain/value-objects/phone';
+import { DomainError } from '@/domain/errors/domain-error';
 
 describe('Phone Value Object', () => {
   describe('creation', () => {

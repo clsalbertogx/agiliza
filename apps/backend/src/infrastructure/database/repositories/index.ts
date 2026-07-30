@@ -1,6 +1,4 @@
-export { BaseRepository } from './base.repository';
-export { ClientRepository } from './client.repository';
-export { InvoiceRepository } from './invoice.repository';
-export { EventRepository } from './event.repository';
-export { PaymentRepository } from './payment.repository';
-export { TenantRepository } from './tenant.repository';
+export { PrismaClientRepository } from './client.repository';
+export { PrismaInvoiceRepository } from './invoice.repository';
+export { PrismaTenantRepository } from './tenant.repository';
+export { PrismaEventRepository } from './event.repository';

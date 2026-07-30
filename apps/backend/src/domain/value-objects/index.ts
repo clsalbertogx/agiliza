@@ -4,3 +4,6 @@ export * from './money';
 export * from './tax-id';
 export * from './invoice-status';
 export * from './risk-score';
+export * from './payment-provider';
+export * from './payment-method';
+export * from './message-channel';

@@ -1,9 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { InvoiceRepository } from '../infrastructure/database/repositories/invoice.repository';
-import { ClientRepository } from '../infrastructure/database/repositories/client.repository';
-import { PaymentProviderFactory } from '../infrastructure/payment/payment-provider.factory';
-import { createCreateInvoiceUseCase } from '../presentation/factories';
+import { createCreateInvoiceUseCase, createInvoiceRepository, createClientRepository, createPaymentProvider } from '@/presentation/factories';
 
 const createInvoiceSchema = z.object({
   tenantId: z.string().uuid(),
@@ -14,10 +11,9 @@ const createInvoiceSchema = z.object({
   paymentMethod: z.enum(['PIX', 'BOLETO', 'CREDIT_CARD']).optional(),
 });
 
-const invoiceRepo = new InvoiceRepository();
-const clientRepo = new ClientRepository();
-
 export async function invoiceRoutes(app: FastifyInstance) {
+  const invoiceRepo = createInvoiceRepository();
+  const clientRepo = createClientRepository();
   // POST /api/invoices — Create invoice (via use case)
   app.post('/api/invoices', async (request, reply) => {
     const parsed = createInvoiceSchema.safeParse(request.body);
@@ -59,14 +55,14 @@ export async function invoiceRoutes(app: FastifyInstance) {
     if (query.clientId) where.clientId = query.clientId;
 
     const [data, total] = await Promise.all([
-      invoiceRepo.findMany({ 
+      invoiceRepo.findManyRaw({ 
         where, 
         skip, 
         take: perPage, 
         orderBy: { createdAt: 'desc' },
         include: { client: { select: { name: true, phone: true } } },
       }),
-      invoiceRepo.count(where),
+      invoiceRepo.countRaw(where),
     ]);
 
     return {
@@ -84,14 +80,14 @@ export async function invoiceRoutes(app: FastifyInstance) {
       return { error: 'tenantId is required' };
     }
 
-    const stats = await invoiceRepo.getStats(tenantId);
+    const stats = await invoiceRepo.getStatsRaw(tenantId);
     return { data: stats };
   });
 
   // GET /api/invoices/:id — Get invoice
   app.get('/api/invoices/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const invoice = await invoiceRepo.getInvoiceWithClient(id);
+    const invoice = await invoiceRepo.getInvoiceWithClientRaw(id);
 
     if (!invoice) {
       reply.code(404);
@@ -104,7 +100,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
   // POST /api/invoices/:id/pay — Process payment (creates PIX charge)
   app.post('/api/invoices/:id/pay', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const invoice = await invoiceRepo.findById(id, request.tenantId);
+    const invoice = await invoiceRepo.findByIdRaw(id, request.tenantId);
 
     if (!invoice) {
       reply.code(404);
@@ -119,7 +115,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
     // Create PIX charge via configured payment provider
     try {
       // Get tenant's payment provider config (in real impl, fetch from DB)
-      const provider = PaymentProviderFactory.create({
+      const provider = createPaymentProvider({
         type: (process.env.PAYMENT_PROVIDER as 'asaas' | 'mercadopago' | 'pagbank' | 'polar') || 'asaas',
         apiKey: process.env.ASAAS_API_KEY || 'sandbox-key',
         environment: (process.env.ASAAS_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox',
@@ -127,12 +123,12 @@ export async function invoiceRoutes(app: FastifyInstance) {
 
       const pixCharge = await provider.createPixCharge({
         amount: Number(invoice.amount),
-        description: invoice.description || `Invoice ${invoice.id}`,
-        externalReference: invoice.id,
+        description: (invoice.description as string) || `Invoice ${invoice.id as string}`,
+        externalReference: invoice.id as string,
       });
 
       // Update invoice with PIX data (tenant-isolated)
-      await invoiceRepo.update(id, {
+      await invoiceRepo.updateRaw(id, {
         paymentMethod: 'PIX',
         pixQRCode: pixCharge.qrCode,
         pixCopyPaste: pixCharge.copyPaste,
@@ -159,7 +155,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
   // GET /api/invoices/:id/pix-qrcode — Get PIX QRCode
   app.get('/api/invoices/:id/pix-qrcode', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const invoice = await invoiceRepo.findById(id, request.tenantId);
+    const invoice = await invoiceRepo.findByIdRaw(id, request.tenantId);
 
     if (!invoice) {
       reply.code(404);

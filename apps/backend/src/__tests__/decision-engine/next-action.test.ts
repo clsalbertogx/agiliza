@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { DecisionEngineService } from '../../application/services/decision-engine.service';
-import { RiskScore, MessageChannel } from '../../domain/entities/client';
-import { InvoiceStatus } from '../../domain/entities/invoice';
+import { DecisionEngineService } from '@/application/services/decision-engine.service';
+import { RiskScore, MessageChannel } from '@/domain/entities/client';
+import { InvoiceStatus } from '@/domain/entities/invoice';
 
 describe('Next Action Decision', () => {
   const service = new DecisionEngineService();

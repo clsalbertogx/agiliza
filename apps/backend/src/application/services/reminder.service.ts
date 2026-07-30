@@ -1,25 +1,48 @@
 import { DecisionEngineService, type Decision } from './decision-engine.service';
-import { InvoiceRepository } from '../../infrastructure/database/repositories/invoice.repository';
-import { ClientRepository } from '../../infrastructure/database/repositories/client.repository';
-import { EventRepository } from '../../infrastructure/database/repositories/event.repository';
-import { addJob, QueueNames } from '../../infrastructure/queue';
-import { EvolutionMessageProvider } from '../../infrastructure/messaging/evolution/evolution-message.provider';
-import type { Invoice } from '../../domain/entities/invoice';
-import type { Client } from '../../domain/entities/client';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { EventRepositoryPort } from '@/application/ports/repositories/event.repository.port';
+import type { QueuePort } from '@/application/ports/queue/queue.port';
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import type { Invoice } from '@/domain/entities/invoice';
+import type { Client } from '@/domain/entities/client';
 
 export class ReminderService {
-  private decisionEngine = new DecisionEngineService();
-  private invoiceRepo = new InvoiceRepository();
-  private clientRepo = new ClientRepository();
-  private eventRepo = new EventRepository();
+  private readonly decisionEngine: DecisionEngineService;
+  private readonly invoiceRepo: InvoiceRepositoryPort;
+  private readonly clientRepo: ClientRepositoryPort;
+  private readonly eventRepo: EventRepositoryPort;
+  private readonly queue: QueuePort;
+  private readonly messageProvider: MessageProviderPort;
+
+  constructor(
+    invoiceRepo: InvoiceRepositoryPort,
+    clientRepo: ClientRepositoryPort,
+    eventRepo: EventRepositoryPort,
+    queue: QueuePort,
+    messageProvider: MessageProviderPort,
+    decisionEngine?: DecisionEngineService,
+  ) {
+    this.invoiceRepo = invoiceRepo;
+    this.clientRepo = clientRepo;
+    this.eventRepo = eventRepo;
+    this.queue = queue;
+    this.messageProvider = messageProvider;
+    this.decisionEngine = decisionEngine ?? new DecisionEngineService();
+  }
 
   async processPendingReminders(tenantId: string): Promise<{ processed: number; decisions: Decision[] }> {
     const today = new Date();
-    const pendingInvoices = await this.invoiceRepo.findPendingForDate(tenantId, today);
+    const pendingInvoices = await this.invoiceRepo.findMany({
+      tenantId,
+      startDate: today,
+      endDate: today,
+      status: 'PENDING',
+    });
     const decisions: Decision[] = [];
 
-    for (const invoice of pendingInvoices) {
-      const client = invoice.client as Client | undefined;
+    for (const invoice of pendingInvoices.data) {
+      const client = await this.clientRepo.findById(invoice.clientId);
       if (!client) continue;
 
       // Get decision from engine
@@ -30,18 +53,17 @@ export class ReminderService {
       );
       decisions.push(decision);
 
-      // Schedule the reminder via BullMQ
+      // Schedule the reminder via Queue
       await this.scheduleReminder(invoice, client, decision);
     }
 
-    return { processed: pendingInvoices.length, decisions };
+    return { processed: pendingInvoices.data.length, decisions };
   }
 
-  private async scheduleReminder(invoice: any, client: Client, decision: Decision): Promise<void> {
+  private async scheduleReminder(invoice: Invoice, client: Client, decision: Decision): Promise<void> {
     const invoiceAmount = Number(invoice.amount).toFixed(2);
 
-    await addJob(
-      QueueNames.SEND_MESSAGE,
+    await this.queue.addJob(
       'send-message',
       {
         invoiceId: invoice.id,
@@ -60,44 +82,40 @@ export class ReminderService {
         confidence: decision.confidence,
         reasoning: decision.reasoning,
       } as Record<string, unknown>,
-      {
-        delay: Math.max(0, decision.scheduledAt.getTime() - Date.now()),
-      },
     );
 
     // Log decision
-    await this.eventRepo.logEvent({
-      tenantId: client.tenantId,
+    await this.eventRepo.save({
+      eventId: crypto.randomUUID(),
+      eventType: 'decision.made',
       clientId: client.id,
-      eventType: 'DECISION_MADE',
-      payload: {
+      tenantId: client.tenantId,
+      invoiceId: invoice.id,
+      timestamp: new Date().toISOString(),
+      metadata: {
         invoiceId: invoice.id,
         decision,
         scheduledAt: decision.scheduledAt.toISOString(),
       },
-      source: 'reminder-service',
     });
   }
 
   async sendReminderNow(invoiceId: string, tenantId: string): Promise<any> {
-    const invoice = await this.invoiceRepo.getInvoiceWithClient(invoiceId);
-    if (!invoice || !invoice.client) throw new Error('Invoice or client not found');
+    const invoice = await this.invoiceRepo.findById(invoiceId);
+    if (!invoice) throw new Error('Invoice not found');
 
-    const provider = new EvolutionMessageProvider({
-      baseUrl: process.env.EVOLUTION_API_URL || 'http://localhost:8080',
-      apiKey: process.env.EVOLUTION_API_KEY || 'dev-key',
-      instanceName: `agiliza-${tenantId.slice(0, 8)}`,
-    });
+    const client = await this.clientRepo.findById(invoice.clientId);
+    if (!client) throw new Error('Client not found');
 
-    const result = await provider.sendTemplate({
-      to: invoice.client.phone,
+    const result = await this.messageProvider.sendTemplate({
+      to: client.phone,
       text: '',
       tenantId,
-      clientId: invoice.client.id,
+      clientId: client.id,
       invoiceId,
       templateName: 'friendly_reminder_d3',
       variables: {
-        name: invoice.client.name.split(' ')[0],
+        name: client.name.split(' ')[0],
         value: `R$ ${Number(invoice.amount).toFixed(2)}`,
         dueDate: new Date(invoice.dueDate).toLocaleDateString('pt-BR'),
         pixLink: invoice.pixCopyPaste || 'PIX não disponível',

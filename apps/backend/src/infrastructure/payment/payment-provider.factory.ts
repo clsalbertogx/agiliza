@@ -1,4 +1,4 @@
-import { PaymentGatewayPort } from '../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
 import { AsaasPaymentProvider } from './asaas.provider';
 
 type ProviderType = 'asaas' | 'mercadopago' | 'pagbank' | 'polar';

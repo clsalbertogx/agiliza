@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Either, isSuccess, isFailure } from '../../../application/types/either';
-import { ApplicationError } from '../../../application/errors/application.error';
-import { InvoiceRepositoryPort } from '../../../application/ports/repositories/invoice.repository.port';
-import { ClientRepositoryPort } from '../../../application/ports/repositories/client.repository.port';
-import { EventBusPort } from '../../../application/ports/adapters/event-bus.port';
-import { Invoice, createInvoice, InvoiceStatus } from '../../../domain/entities/invoice';
-import { Client, createClient, MessageChannel, RiskScore } from '../../../domain/entities/client';
-import { Money } from '../../../domain/value-objects/money';
-import { CreateInvoiceUseCase, CreateInvoiceInput } from '../../../application/usecases/create-invoice.usecase';
+import { Either, isSuccess, isFailure } from '@/application/types/either';
+import { ApplicationError } from '@/application/errors/application.error';
+import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import { Invoice, createInvoice, InvoiceStatus } from '@/domain/entities/invoice';
+import { Client, createClient, MessageChannel, RiskScore } from '@/domain/entities/client';
+import { Money } from '@/domain/value-objects/money';
+import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { CreateInvoiceUseCase, CreateInvoiceInput } from '@/application/usecases/create-invoice.usecase';
 
 const mockInvoiceRepo: InvoiceRepositoryPort = {
   findById: vi.fn(),
@@ -27,11 +28,17 @@ const mockClientRepo: ClientRepositoryPort = {
   update: vi.fn(),
   delete: vi.fn(),
   count: vi.fn(),
+  updateRiskScore: vi.fn(),
 };
 
 const mockEventBus: EventBusPort = {
   publish: vi.fn(),
   subscribe: vi.fn(),
+};
+
+const mockIdGenerator: IdGeneratorPort = {
+  generate: vi.fn().mockReturnValue('00000000-0000-0000-0000-000000000010'),
+  validate: vi.fn().mockReturnValue(true),
 };
 
 describe('CreateInvoiceUseCase', () => {
@@ -48,7 +55,7 @@ describe('CreateInvoiceUseCase', () => {
     description: 'Test invoice',
   };
 
-  const mockClient: Client = createClient({
+  const mockClient: Client = {
     id: CLIENT_ID,
     tenantId: TENANT_ID,
     name: 'John Doe',
@@ -58,11 +65,12 @@ describe('CreateInvoiceUseCase', () => {
     riskScore: RiskScore.GREEN,
     totalInvoices: 0,
     paidInvoices: 0,
-  });
+    avgPaymentDelay: null,
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new CreateInvoiceUseCase(mockInvoiceRepo, mockClientRepo, mockEventBus);
+    useCase = new CreateInvoiceUseCase(mockInvoiceRepo, mockClientRepo, mockEventBus, mockIdGenerator);
   });
 
   describe('Happy Path', () => {
@@ -136,10 +144,10 @@ describe('CreateInvoiceUseCase', () => {
     });
 
     it('should return FORBIDDEN error when client belongs to different tenant', async () => {
-      const otherTenantClient = createClient({
+      const otherTenantClient: Client = {
         ...mockClient,
         tenantId: '00000000-0000-0000-0000-000000000003',
-      });
+      };
       vi.mocked(mockClientRepo.findById).mockResolvedValue(otherTenantClient);
 
       const result = await useCase.execute(validInput);

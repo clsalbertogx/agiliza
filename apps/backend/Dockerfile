@@ -2,19 +2,37 @@ FROM node:20-alpine AS base
 WORKDIR /app
 
 FROM base AS deps
-COPY package.json ./
-RUN npm install --only=production --legacy-peer-deps
+# Copy workspace manifest files so npm can resolve workspaces
+COPY package.json package-lock.json ./
+COPY turbo.json tsconfig.base.json ./
+COPY apps/backend/package.json ./apps/backend/
+COPY packages/shared/package.json ./packages/shared/
+RUN npm ci --legacy-peer-deps
 
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN npm install --legacy-peer-deps && npm run build
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/tsconfig.base.json ./tsconfig.base.json
+COPY apps/backend/ ./apps/backend/
+COPY packages/ ./packages/
+# Generate Prisma client
+RUN cd apps/backend && npx prisma generate
+# Compile TypeScript
+RUN cd apps/backend && npm run build
 
 FROM base AS runner
 ENV NODE_ENV production
-COPY --from=build /app/dist ./dist
+WORKDIR /app
+# Copy tsconfig files for path resolution
+COPY --from=build /app/tsconfig.base.json ./tsconfig.base.json
+COPY --from=build /app/apps/backend/tsconfig.json ./tsconfig.json
+# Copy source code (tsx runs from source, handles path resolution)
+COPY --from=build /app/apps/backend/src ./src
+# Copy node_modules (includes tsx)
 COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package.json ./
-USER node
+COPY --from=build /app/apps/backend/package.json ./
+# Copy Prisma client
+COPY --from=build /app/apps/backend/node_modules/.prisma ./node_modules/.prisma
 EXPOSE 3333
-CMD ["node", "dist/index.js"]
+USER node
+CMD ["npx", "tsx", "src/index.ts"]

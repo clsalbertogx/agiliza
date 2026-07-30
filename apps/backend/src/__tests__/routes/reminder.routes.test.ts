@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
 
 // Mock ReminderService to avoid EvolutionMessageProvider dependency
-vi.mock('../../application/services/reminder.service', () => {
+vi.mock('@/application/services/reminder.service', () => {
   const mockReminderService = {
     sendReminderNow: vi.fn().mockResolvedValue({ externalId: 'msg-123' }),
     processPendingReminders: vi.fn().mockResolvedValue({ processed: 5, decisions: [] }),
@@ -17,14 +17,14 @@ const mockState = vi.hoisted(() => ({
   create: vi.fn(),
 }));
 
-vi.mock('../../infrastructure/database/prisma.service', () => ({
+vi.mock('@/infrastructure/database/prisma.service', () => ({
   getPrismaClient: vi.fn(() => ({
     invoice: { findUnique: mockState.findById, findFirst: mockState.findById, findMany: mockState.findMany },
     event: { findUnique: mockState.findById, findFirst: mockState.findById, findMany: mockState.findMany, create: mockState.create, count: mockState.count },
   })),
 }));
 
-import { reminderRoutes } from '../../routes/reminder.routes';
+import { reminderRoutes } from '@/routes/reminder.routes';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const VALID_TOKEN = 'test-valid-token';

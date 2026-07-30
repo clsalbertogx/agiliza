@@ -1,7 +1,5 @@
 import { DomainError } from '../errors/domain-error';
 
-export type TaxIdType = 'CPF' | 'CNPJ';
-
 export class TaxId {
   private readonly _value: string;
 
@@ -9,119 +7,101 @@ export class TaxId {
     this._value = this.validate(value);
   }
 
-  private validate(taxId: string): string {
-    const digits = taxId.replace(/\D/g, '');
+  private validate(value: string): string {
+    const digits = value.replace(/\D/g, '');
 
-    if (digits.length !== 11 && digits.length !== 14) {
-      throw new DomainError(
-        `Invalid tax ID: must have 11 (CPF) or 14 (CNPJ) digits, got ${digits.length}`
-      );
+    if (digits.length === 11) {
+      if (!this.validateCPF(digits)) {
+        throw new DomainError('Invalid CPF');
+      }
+      return digits;
     }
 
-    // Validate check digits based on length
-    if (digits.length === 11 && !TaxId.isValidCPF(digits)) {
-      throw new DomainError('Invalid CPF: check digits do not match');
+    if (digits.length === 14) {
+      if (!this.validateCNPJ(digits)) {
+        throw new DomainError('Invalid CNPJ');
+      }
+      return digits;
     }
 
-    if (digits.length === 14 && !TaxId.isValidCNPJ(digits)) {
-      throw new DomainError('Invalid CNPJ: check digits do not match');
-    }
-
-    return digits;
+    throw new DomainError('Tax ID must be 11 digits (CPF) or 14 digits (CNPJ)');
   }
 
-  static create(taxId: string): TaxId {
-    return new TaxId(taxId);
+  private validateCPF(cpf: string): boolean {
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(cpf[i]) * (10 - i);
+    }
+    let digit = 11 - (sum % 11);
+    if (digit >= 10) digit = 0;
+    if (digit !== parseInt(cpf[9])) return false;
+
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(cpf[i]) * (11 - i);
+    }
+    digit = 11 - (sum % 11);
+    if (digit >= 10) digit = 0;
+    if (digit !== parseInt(cpf[10])) return false;
+
+    return true;
+  }
+
+  private validateCNPJ(cnpj: string): boolean {
+    if (/^(\d)\1{13}$/.test(cnpj)) return false;
+
+    const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      sum += parseInt(cnpj[i]) * weights1[i];
+    }
+    let digit = sum % 11;
+    digit = digit < 2 ? 0 : 11 - digit;
+    if (digit !== parseInt(cnpj[12])) return false;
+
+    sum = 0;
+    for (let i = 0; i < 13; i++) {
+      sum += parseInt(cnpj[i]) * weights2[i];
+    }
+    digit = sum % 11;
+    digit = digit < 2 ? 0 : 11 - digit;
+    if (digit !== parseInt(cnpj[13])) return false;
+
+    return true;
+  }
+
+  static create(value: string): TaxId {
+    return new TaxId(value);
   }
 
   value(): string {
     return this._value;
   }
 
-  get type(): TaxIdType {
+  get type(): 'CPF' | 'CNPJ' {
     return this._value.length === 11 ? 'CPF' : 'CNPJ';
   }
 
   formatted(): string {
     if (this._value.length === 11) {
-      // 123.456.789-09
-      return this._value.replace(
-        /(\d{3})(\d{3})(\d{3})(\d{2})/,
-        '$1.$2.$3-$4'
-      );
+      return this._value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     }
-    // 12.345.678/0001-90
-    return this._value.replace(
-      /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
-      '$1.$2.$3/$4-$5'
-    );
-  }
-
-  /**
-   * Validates CPF check digits.
-   */
-  private static isValidCPF(cpf: string): boolean {
-    if (/^(\d)\1{10}$/.test(cpf)) return false; // All same digits
-
-    const digits = cpf.split('').map(Number);
-
-    // First check digit
-    let sum = 0;
-    for (let i = 0; i < 9; i++) {
-      sum += digits[i] * (10 - i);
-    }
-    let remainder = (sum * 10) % 11;
-    const digit1 = remainder === 10 ? 0 : remainder;
-    if (digits[9] !== digit1) return false;
-
-    // Second check digit
-    sum = 0;
-    for (let i = 0; i < 10; i++) {
-      sum += digits[i] * (11 - i);
-    }
-    remainder = (sum * 10) % 11;
-    const digit2 = remainder === 10 ? 0 : remainder;
-    if (digits[10] !== digit2) return false;
-
-    return true;
-  }
-
-  /**
-   * Validates CNPJ check digits.
-   */
-  private static isValidCNPJ(cnpj: string): boolean {
-    if (/^(\d)\1{13}$/.test(cnpj)) return false; // All same digits
-
-    const digits = cnpj.split('').map(Number);
-
-    // First check digit
-    const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-    let sum = 0;
-    for (let i = 0; i < 12; i++) {
-      sum += digits[i] * weights1[i];
-    }
-    let remainder = sum % 11;
-    const digit1 = remainder < 2 ? 0 : 11 - remainder;
-    if (digits[12] !== digit1) return false;
-
-    // Second check digit
-    const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-    sum = 0;
-    for (let i = 0; i < 13; i++) {
-      sum += digits[i] * weights2[i];
-    }
-    remainder = sum % 11;
-    const digit2 = remainder < 2 ? 0 : 11 - remainder;
-    if (digits[13] !== digit2) return false;
-
-    return true;
+    return this._value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   }
 
   isCPF(): boolean {
-    return this.type === 'CPF';
+    return this._value.length === 11;
   }
 
   isCNPJ(): boolean {
-    return this.type === 'CNPJ';
+    return this._value.length === 14;
+  }
+
+  equals(other: TaxId): boolean {
+    return this._value === other._value;
   }
 }

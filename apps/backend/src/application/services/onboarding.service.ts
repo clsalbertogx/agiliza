@@ -1,7 +1,7 @@
-import { ClientRepository } from '../../infrastructure/database/repositories/client.repository';
-import { EventRepository } from '../../infrastructure/database/repositories/event.repository';
-import { EvolutionMessageProvider } from '../../infrastructure/messaging/evolution/evolution-message.provider';
-import { MessageChannel } from '../../domain/entities/client';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { EventRepositoryPort } from '@/application/ports/repositories/event.repository.port';
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import { MessageChannel } from '@/domain/entities/client';
 
 interface OnboardingState {
   clientId: string;
@@ -16,16 +16,19 @@ interface OnboardingState {
 }
 
 export class OnboardingService {
-  private clientRepo = new ClientRepository();
-  private eventRepo = new EventRepository();
+  private readonly clientRepo: ClientRepositoryPort;
+  private readonly eventRepo: EventRepositoryPort;
+  private readonly messageProvider: MessageProviderPort;
   private onboardingStates = new Map<string, OnboardingState>();
 
-  private getMessageProvider(tenantId: string): EvolutionMessageProvider {
-    return new EvolutionMessageProvider({
-      baseUrl: process.env.EVOLUTION_API_URL || 'http://localhost:8080',
-      apiKey: process.env.EVOLUTION_API_KEY || 'dev-key',
-      instanceName: `agiliza-${tenantId.slice(0, 8)}`,
-    });
+  constructor(
+    clientRepo: ClientRepositoryPort,
+    eventRepo: EventRepositoryPort,
+    messageProvider: MessageProviderPort,
+  ) {
+    this.clientRepo = clientRepo;
+    this.eventRepo = eventRepo;
+    this.messageProvider = messageProvider;
   }
 
   async startOnboarding(clientId: string, tenantId: string): Promise<void> {
@@ -57,7 +60,6 @@ export class OnboardingService {
     const client = await this.clientRepo.findById(clientId);
     if (!client) throw new Error('Client not found');
 
-    const provider = this.getMessageProvider(state.tenantId);
     const questions = [
       `🎯 *Olá ${client.name.split(' ')[0]}!* \n\nVamos configurar suas preferências de cobrança? São só 3 perguntinhas rápidas! 🙌\n\n*Pergunta 1 de 3:*\nQual canal você prefere receber os lembretes de cobrança?\n\n1️⃣ WhatsApp\n2️⃣ E-mail\n3️⃣ SMS\n\nResponda com o número da opção!`,
 
@@ -71,7 +73,7 @@ export class OnboardingService {
 
     const formattedNumber = client.phone.startsWith('55') ? client.phone : `55${client.phone}`;
 
-    await provider.sendText({
+    await this.messageProvider.sendText({
       to: formattedNumber,
       text: questionText,
       tenantId: state.tenantId,
@@ -160,22 +162,27 @@ export class OnboardingService {
   }
 
   private async completeOnboarding(clientId: string, state: OnboardingState): Promise<void> {
-    await this.clientRepo.update(clientId, {
-      preferredChannel: state.answers.channel,
+    const client = await this.clientRepo.findById(clientId);
+    if (!client) throw new Error('Client not found');
+
+    await this.clientRepo.update({
+      ...client,
+      preferredChannel: state.answers.channel as MessageChannel,
       preferredTime: state.answers.time,
-      preferredLeadDays: state.answers.leadDays,
+      preferredLeadDays: state.answers.leadDays ?? client.preferredLeadDays,
     });
 
-    await this.eventRepo.logEvent({
-      tenantId: state.tenantId,
+    await this.eventRepo.save({
+      eventId: crypto.randomUUID(),
+      eventType: 'client.risk.updated',
       clientId,
-      eventType: 'CLIENT_RISK_UPDATED',
-      payload: {
+      tenantId: state.tenantId,
+      timestamp: new Date().toISOString(),
+      metadata: {
         type: 'onboarding_completed',
         preferences: state.answers,
         completedAt: new Date().toISOString(),
       },
-      source: 'onboarding-service',
     });
   }
 

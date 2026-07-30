@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { TaxId } from '../../../domain/value-objects/tax-id';
-import { DomainError } from '../../../domain/errors/domain-error';
+import { TaxId } from '@/domain/value-objects/tax-id';
+import { DomainError } from '@/domain/errors/domain-error';
 
 describe('TaxId Value Object', () => {
   describe('CPF creation and validation', () => {

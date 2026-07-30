@@ -1,4 +1,5 @@
-import { MessageProviderPort, SendMessageParams, MessageStatusResponse } from '../../../application/ports/gateways/message-provider.port';
+import { MessageProviderPort, SendMessageParams, MessageStatusResponse } from '@/application/ports/gateways/message-provider.port';
+import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 import { EvolutionApiClient } from './evolution-client';
 
 export class EvolutionMessageProvider implements MessageProviderPort {
@@ -23,7 +24,7 @@ export class EvolutionMessageProvider implements MessageProviderPort {
     );
 
     return {
-      externalId: result.key?.id || result.id || crypto.randomUUID(),
+      externalId: result.key?.id || result.id || generateUUID(),
       status: 'queued',
       timestamp: new Date().toISOString(),
     };
@@ -42,7 +43,7 @@ export class EvolutionMessageProvider implements MessageProviderPort {
     );
 
     return {
-      externalId: result.key?.id || result.id || crypto.randomUUID(),
+      externalId: result.key?.id || result.id || generateUUID(),
       status: 'queued',
       timestamp: new Date().toISOString(),
     };

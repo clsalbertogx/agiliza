@@ -1,85 +1,34 @@
-import { getPrismaClient } from '../prisma.service';
-import { BaseRepository } from './base.repository';
-import type { TenantRepositoryPort } from '../../../application/ports/repositories/tenant.repository.port';
-import type { Tenant } from '../../../domain/entities/tenant';
-
-export class TenantRepository extends BaseRepository<any> {
-  constructor() {
-    super();
-  }
-
-  protected get model() {
-    return this.prisma.tenant;
-  }
-
-  async findBySlug(slug: string) {
-    return this.prisma.tenant.findUnique({
-      where: { slug },
-    });
-  }
-
-  async updateConfig(id: string, config: any) {
-    return this.prisma.tenant.update({
-      where: { id },
-      data: { config },
-    });
-  }
-
-  async updatePaymentProvider(id: string, provider: string, providerConfig: any) {
-    return this.prisma.tenant.update({
-      where: { id },
-      data: {
-        paymentProvider: provider,
-        paymentProviderConfig: providerConfig,
-      },
-    });
-  }
-
-  async updateDecisionConfig(id: string, decisionConfig: any) {
-    return this.prisma.tenant.update({
-      where: { id },
-      data: { decisionConfig },
-    });
-  }
-}
-
-/**
- * Normalizes a raw Prisma row into a domain Tenant,
- * converting date strings to Date objects where needed.
- */
-function toTenant(raw: unknown): Tenant {
-  const row = raw as Record<string, unknown>;
-  if (row && typeof row === 'object') {
-    if (typeof row.createdAt === 'string') {
-      row.createdAt = new Date(row.createdAt);
-    }
-    if (typeof row.updatedAt === 'string') {
-      row.updatedAt = new Date(row.updatedAt);
-    }
-  }
-  return row as unknown as Tenant;
-}
+import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import type { TenantRepositoryPort } from '@/application/ports/repositories/tenant.repository.port';
+import type { Tenant } from '@/domain/entities/tenant';
+import { TenantMapper, type PersistenceTenant } from '@/infrastructure/database/mappers/tenant.mapper';
 
 /**
  * Port-compliant Prisma tenant repository.
  * Implements TenantRepositoryPort for use with use cases / factories.
+ * Uses a DomainMapper for standardized toDomain/toPersistence mapping.
  */
 export class PrismaTenantRepository implements TenantRepositoryPort {
   private prisma = getPrismaClient();
+  private readonly mapper: TenantMapper;
+
+  constructor(mapper?: TenantMapper) {
+    this.mapper = mapper ?? new TenantMapper();
+  }
 
   async findById(id: string): Promise<Tenant | null> {
     const result = await this.prisma.tenant.findUnique({ where: { id } });
-    return result ? toTenant(result) : null;
+    return result ? this.mapper.toDomain(result as unknown as PersistenceTenant) : null;
   }
 
   async findBySlug(slug: string): Promise<Tenant | null> {
     const result = await this.prisma.tenant.findUnique({ where: { slug } });
-    return result ? toTenant(result) : null;
+    return result ? this.mapper.toDomain(result as unknown as PersistenceTenant) : null;
   }
 
   async findByEmail(email: string): Promise<Tenant | null> {
     const result = await this.prisma.tenant.findFirst({ where: { email } });
-    return result ? toTenant(result) : null;
+    return result ? this.mapper.toDomain(result as unknown as PersistenceTenant) : null;
   }
 
   async findMany(params: {
@@ -100,21 +49,22 @@ export class PrismaTenantRepository implements TenantRepositoryPort {
       this.prisma.tenant.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       this.prisma.tenant.count({ where }),
     ]);
-    return { data: data.map(toTenant), total };
+    return { data: data.map((r) => this.mapper.toDomain(r as unknown as PersistenceTenant)), total };
   }
 
   async create(tenant: Tenant): Promise<Tenant> {
-    const result = await this.prisma.tenant.create({ data: tenant as any });
-    return toTenant(result);
+    const persistence = this.mapper.toPersistence(tenant);
+    const result = await this.prisma.tenant.create({ data: persistence as any });
+    return this.mapper.toDomain(result as unknown as PersistenceTenant);
   }
 
   async update(tenant: Tenant): Promise<Tenant> {
-    const { id, ...data } = tenant;
+    const { id, ...data } = this.mapper.toPersistence(tenant);
     const result = await this.prisma.tenant.update({
       where: { id },
       data: data as any,
     });
-    return toTenant(result);
+    return this.mapper.toDomain(result as unknown as PersistenceTenant);
   }
 
   async delete(id: string): Promise<void> {
@@ -127,27 +77,27 @@ export class PrismaTenantRepository implements TenantRepositoryPort {
 
   // Extra methods beyond TenantRepositoryPort, used by routes
 
-  async updateConfig(id: string, config: any): Promise<Tenant> {
+  async updateConfig(id: string, config: Record<string, unknown>): Promise<Tenant> {
     return this.prisma.tenant.update({
       where: { id },
-      data: { config },
+      data: { config: config as any },
     }) as unknown as Tenant;
   }
 
-  async updatePaymentProvider(id: string, provider: string, providerConfig: any): Promise<Tenant> {
+  async updatePaymentProvider(id: string, provider: string, providerConfig: Record<string, unknown>): Promise<Tenant> {
     return this.prisma.tenant.update({
       where: { id },
       data: {
         paymentProvider: provider,
-        paymentProviderConfig: providerConfig,
+        paymentProviderConfig: providerConfig as any,
       },
     }) as unknown as Tenant;
   }
 
-  async updateDecisionConfig(id: string, decisionConfig: any): Promise<Tenant> {
+  async updateDecisionConfig(id: string, decisionConfig: Record<string, unknown>): Promise<Tenant> {
     return this.prisma.tenant.update({
       where: { id },
-      data: { decisionConfig },
+      data: { decisionConfig: decisionConfig as any },
     }) as unknown as Tenant;
   }
 }

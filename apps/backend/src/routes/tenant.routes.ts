@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { createTenantRepository, testPaymentProviderConnection } from '../presentation/factories';
+import { createTenantRepository, createIdGenerator, testPaymentProviderConnection } from '@/presentation/factories';
 
 const createTenantSchema = z.object({
   name: z.string().min(1).max(255),
@@ -47,7 +47,7 @@ export async function tenantRoutes(app: FastifyInstance) {
     }
 
     const tenant = await tenantRepo.create({
-      id: crypto.randomUUID(),
+      id: createIdGenerator().generate(),
       ...parsed.data,
       paymentProvider: 'asaas',
       paymentProviderConfig: {},
@@ -151,7 +151,7 @@ export async function tenantRoutes(app: FastifyInstance) {
       return { error: 'Tenant not found' };
     }
 
-    const updated = await tenantRepo.updateConfig(id, request.body);
+    const updated = await tenantRepo.updateConfig(id, request.body as Record<string, unknown>);
     return { data: updated };
   });
 

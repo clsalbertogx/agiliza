@@ -5,14 +5,14 @@ process.env.EVOLUTION_API_KEY = 'evolution-secret-key-123';
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import type { verifyWebhookSignature as VerifyFn, getSignatureHeader as HeaderFn } from '../../infrastructure/payment/hmac-verifier';
+import type { verifyWebhookSignature as VerifyFn, getSignatureHeader as HeaderFn } from '@/infrastructure/payment/hmac-verifier';
 
 let verifyWebhookSignature: typeof VerifyFn;
 let getSignatureHeader: typeof HeaderFn;
 
 beforeAll(async () => {
   // Dynamic import ensures env vars are set before module initializes
-  const mod = await import('../../infrastructure/payment/hmac-verifier');
+  const mod = await import('@/infrastructure/payment/hmac-verifier');
   verifyWebhookSignature = mod.verifyWebhookSignature;
   getSignatureHeader = mod.getSignatureHeader;
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ApplicationError } from '../../../application/errors/application.error';
+import { ApplicationError } from '@/application/errors/application.error';
 
 describe('ApplicationError', () => {
   describe('factory methods', () => {

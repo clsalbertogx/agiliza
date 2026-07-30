@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import type { ClientRepositoryPort } from '../../../application/ports/repositories/client.repository.port';
-import type { InvoiceRepositoryPort } from '../../../application/ports/repositories/invoice.repository.port';
-import type { TenantRepositoryPort } from '../../../application/ports/repositories/tenant.repository.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { TenantRepositoryPort } from '@/application/ports/repositories/tenant.repository.port';
 
 describe('Repository Ports', () => {
   describe('ClientRepositoryPort', () => {
@@ -15,6 +15,7 @@ describe('Repository Ports', () => {
         update: async (client) => client,
         delete: async () => {},
         count: async () => 0,
+        updateRiskScore: async () => {},
       };
 
       expect(typeof port.findById).toBe('function');
@@ -24,6 +25,7 @@ describe('Repository Ports', () => {
       expect(typeof port.update).toBe('function');
       expect(typeof port.delete).toBe('function');
       expect(typeof port.count).toBe('function');
+      expect(typeof port.updateRiskScore).toBe('function');
     });
   });
 

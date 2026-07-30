@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
-import { verifyToken, AuthPayload } from '../auth';
+import { verifyToken, AuthPayload } from '@/infrastructure/auth';
 
 declare module 'fastify' {
   interface FastifyRequest {

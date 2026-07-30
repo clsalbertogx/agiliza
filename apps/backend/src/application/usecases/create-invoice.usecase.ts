@@ -1,11 +1,12 @@
-import { Either, success, failure } from '../types/either';
-import { ApplicationError } from '../errors/application.error';
-import { InvoiceRepositoryPort } from '../ports/repositories/invoice.repository.port';
-import { ClientRepositoryPort } from '../ports/repositories/client.repository.port';
-import { EventBusPort } from '../ports/adapters/event-bus.port';
-import { Invoice, createInvoice } from '../../domain/entities/invoice';
-import { Money } from '../../domain/value-objects/money';
-import { createDomainEvent } from '../../domain/events/domain-events';
+import { Either, success, failure } from '@/application/types/either';
+import { ApplicationError } from '@/application/errors/application.error';
+import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import { Invoice, createInvoice } from '@/domain/entities/invoice';
+import { Money } from '@/domain/value-objects/money';
+import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { createDomainEvent } from '@/domain/events/domain-events';
 
 export interface CreateInvoiceInput {
   tenantId: string;
@@ -20,6 +21,7 @@ export class CreateInvoiceUseCase {
     private readonly invoiceRepo: InvoiceRepositoryPort,
     private readonly clientRepo: ClientRepositoryPort,
     private readonly eventBus: EventBusPort,
+    private readonly idGenerator: IdGeneratorPort,
   ) {}
 
   async execute(input: CreateInvoiceInput): Promise<Either<ApplicationError, Invoice>> {
@@ -44,7 +46,8 @@ export class CreateInvoiceUseCase {
     }
 
     // 3. Create Invoice entity
-    const invoice = createInvoice({
+    const invoiceResult = createInvoice({
+      id: this.idGenerator.generate(),
       tenantId: input.tenantId,
       clientId: input.clientId,
       amount: moneyVO.value(),
@@ -52,10 +55,14 @@ export class CreateInvoiceUseCase {
       description: input.description,
     });
 
+    if (!invoiceResult.success) {
+      return failure(new ApplicationError(invoiceResult.value.message, 'INVALID_INVOICE', 400));
+    }
+
     // 4. Save
     let saved: Invoice;
     try {
-      saved = await this.invoiceRepo.create(invoice);
+      saved = await this.invoiceRepo.create(invoiceResult.value);
     } catch (error) {
       return failure(new ApplicationError((error as Error).message, 'INTERNAL_ERROR', 500));
     }
@@ -66,7 +73,7 @@ export class CreateInvoiceUseCase {
       tenantId: input.tenantId,
       invoiceId: saved.id,
       metadata: { amount: saved.amount, dueDate: saved.dueDate.toISOString() },
-    });
+    }, this.idGenerator.generate());
     this.eventBus.publish(event);
 
     return success(saved);

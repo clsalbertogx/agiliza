@@ -1,5 +1,5 @@
-import { EventBusPort } from '../../application/ports/adapters/event-bus.port';
-import type { DomainEvent, DomainEventType } from '../../domain/events/domain-events';
+import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { DomainEvent, DomainEventType } from '@/domain/events/domain-events';
 
 export class InMemoryEventBus implements EventBusPort {
   private handlers: Map<DomainEventType, Array<(event: DomainEvent) => Promise<void>>> = new Map();

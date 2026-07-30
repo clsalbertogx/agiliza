@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { RiskScoreService } from '../../application/services/risk-score.service';
-import { RiskScore, MessageChannel } from '../../domain/entities/client';
+import { RiskScoreService } from '@/application/services/risk-score.service';
+import { RiskScore, MessageChannel } from '@/domain/entities/client';
 
 describe('Risk Score Engine', () => {
   const service = new RiskScoreService();
@@ -29,7 +29,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 5,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
     });
 
     it('should calculate YELLOW score for clients with 1-2 overdue invoices in 90 days', () => {
@@ -41,7 +41,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 15,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.YELLOW);
+      expect(result.score).toStrictEqual(RiskScore.YELLOW);
     });
 
     it('should calculate RED score for clients with 3+ overdue invoices', () => {
@@ -53,7 +53,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 30,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.RED);
+      expect(result.score).toStrictEqual(RiskScore.RED);
     });
 
     it('should calculate RED score for clients with avg delay > 15 days', () => {
@@ -65,7 +65,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 20,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.RED);
+      expect(result.score).toStrictEqual(RiskScore.RED);
     });
 
     it('should consider payment delay trend (worsening vs improving)', () => {
@@ -79,7 +79,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 2,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
     });
   });
 
@@ -93,7 +93,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 5,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
       // The service notes low engagement but doesn't change score for it
     });
 
@@ -107,7 +107,7 @@ describe('Risk Score Engine', () => {
         isNewClient: false,
       });
       // Still GREEN, but with a note about low engagement
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
       expect(result.reasons.some(r => r.includes('Baixa'))).toBe(true);
     });
   });
@@ -122,7 +122,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 5,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
     });
 
     it('should increase risk for clients with incomplete onboarding', () => {
@@ -134,7 +134,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 5,
         isNewClient: true,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
       expect(result.reasons.some(r => r.includes('Cold Start'))).toBe(true);
     });
   });
@@ -149,7 +149,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: null,
         isNewClient: true,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
       expect(result.reasons.some(r => r.includes('Cold Start'))).toBe(true);
     });
 
@@ -164,7 +164,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: null,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
     });
   });
 
@@ -178,7 +178,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 5,
         isNewClient: false,
       });
-      expect(beforeResult.score).toBe(RiskScore.YELLOW);
+      expect(beforeResult.score).toStrictEqual(RiskScore.YELLOW);
 
       // After payment: improved behavior
       const afterResult = service.calculateRiskScore(makeClient(), {
@@ -188,7 +188,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 1,
         isNewClient: false,
       });
-      expect(afterResult.score).toBe(RiskScore.GREEN);
+      expect(afterResult.score).toStrictEqual(RiskScore.GREEN);
     });
 
     it('should update risk score after invoice overdue event', () => {
@@ -200,7 +200,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 2,
         isNewClient: false,
       });
-      expect(beforeResult.score).toBe(RiskScore.GREEN);
+      expect(beforeResult.score).toStrictEqual(RiskScore.GREEN);
 
       // After overdue: worsening behavior
       const afterResult = service.calculateRiskScore(makeClient(), {
@@ -210,7 +210,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 20,
         isNewClient: false,
       });
-      expect(afterResult.score).toBe(RiskScore.YELLOW);
+      expect(afterResult.score).toStrictEqual(RiskScore.YELLOW);
     });
 
     it('should emit client.risk.updated event when risk score changes', () => {
@@ -239,7 +239,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 5,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
       expect(Array.isArray(result.reasons)).toBe(true);
     });
 
@@ -252,7 +252,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 5,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
     });
 
     it('should include msg_open_rate_7d as a feature', () => {
@@ -264,7 +264,7 @@ describe('Risk Score Engine', () => {
         daysSinceLastPayment: 5,
         isNewClient: false,
       });
-      expect(result.score).toBe(RiskScore.GREEN);
+      expect(result.score).toStrictEqual(RiskScore.GREEN);
     });
   });
 });

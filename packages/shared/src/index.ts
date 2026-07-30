@@ -1,45 +1,33 @@
-// Shared types for Agiliza platform
+// @agiliza/shared — Single source of truth for the Agiliza public API contract.
+//
+// Types are defined in apps/backend/src/domain/contracts/ — this file re-exports them.
+// This eliminates duplication between the frontend API contract and backend domain model.
+//
+// Wire format convention: UPPERCASE values (e.g. "PENDING", "PIX", "GREEN").
+// This matches the backend domain enums, the Prisma persistence layer, and the
+// JSON API responses.
 
-export type PaymentProvider = 'asaas' | 'mercadopago' | 'pagbank' | 'polar';
-export type PaymentMethod = 'pix' | 'boleto' | 'credit_card';
-export type InvoiceStatus = 'pending' | 'paid' | 'overdue' | 'cancelled' | 'refunded';
-export type ClientRiskScore = 'green' | 'yellow' | 'red';
-export type MessageChannel = 'whatsapp' | 'email' | 'sms';
+// ──────────────────────────────────────────────
+//  Enums (API Contract)
+// ──────────────────────────────────────────────
 
-export interface ClientProfile {
-  id: string;
-  tenantId: string;
-  name: string;
-  phone: string;
-  email?: string;
-  preferredChannel: MessageChannel;
-  preferredTime?: string;
-  preferredLeadDays: number;
-  riskScore: ClientRiskScore;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { PaymentProvider } from '../../backend/src/domain/contracts/enums';
+export type { PaymentMethod } from '../../backend/src/domain/contracts/enums';
+export type { InvoiceStatus } from '../../backend/src/domain/contracts/enums';
+export type { ClientRiskScore } from '../../backend/src/domain/contracts/enums';
+export type { MessageChannel } from '../../backend/src/domain/contracts/enums';
 
-export interface Invoice {
-  id: string;
-  clientId: string;
-  tenantId: string;
-  amount: number;
-  dueDate: Date;
-  status: InvoiceStatus;
-  paymentMethod?: PaymentMethod;
-  paidAt?: Date;
-  externalPaymentId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// ──────────────────────────────────────────────
+//  API Contract Interfaces (simplified views)
+//  These are what the REST API returns. Backend
+//  Zod-inferred types may be richer internally.
+// ──────────────────────────────────────────────
 
-export interface PaymentEvent {
-  id: string;
-  type: 'message_sent' | 'message_read' | 'link_clicked' | 'payment_confirmed' | 'payment_failed';
-  clientId: string;
-  invoiceId?: string;
-  timestamp: Date;
-  channel: MessageChannel;
-  metadata: Record<string, unknown>;
-}
+export type { ClientProfile } from '../../backend/src/domain/contracts/interfaces';
+export type { Invoice } from '../../backend/src/domain/contracts/interfaces';
+
+// ──────────────────────────────────────────────
+//  Domain Events (for frontend activity feed)
+// ──────────────────────────────────────────────
+
+export type { DomainEvent as PaymentEvent } from '../../backend/src/domain/events/domain-events';

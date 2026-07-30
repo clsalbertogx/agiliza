@@ -10,7 +10,7 @@ const mockState = vi.hoisted(() => ({
   count: vi.fn(),
 }));
 
-vi.mock('../../infrastructure/database/prisma.service', () => ({
+vi.mock('@/infrastructure/database/prisma.service', () => ({
   getPrismaClient: vi.fn(() => ({
     client: {
       findUnique: mockState.findById,
@@ -23,7 +23,7 @@ vi.mock('../../infrastructure/database/prisma.service', () => ({
   })),
 }));
 
-import { clientRoutes } from '../../routes/client.routes';
+import { clientRoutes } from '@/routes/client.routes';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const TEST_CLIENT_ID = '00000000-0000-0000-0000-000000000010';
@@ -75,7 +75,7 @@ describe('Client API Routes', () => {
     name: 'John Doe',
     phone: '5511999998888',
     email: 'john@example.com',
-    riskScore: 'GREEN',
+        riskScore: 'LOW',
     riskScoreReason: null,
     riskScoreUpdatedAt: null,
     preferredChannel: 'WHATSAPP',
@@ -446,7 +446,7 @@ describe('Client API Routes', () => {
     it('should return risk score with top features and reason', async () => {
       mockState.findById.mockResolvedValue({
         ...mockClient,
-        riskScore: 'GREEN',
+    riskScore: 'LOW',
         riskScoreReason: { reasons: ['Pagamentos em dia'] },
         riskScoreUpdatedAt: new Date(),
       });
@@ -457,7 +457,7 @@ describe('Client API Routes', () => {
         headers: { authorization: validToken },
       });
       expect(res.statusCode).toBe(200);
-      expect(res.json().data.riskScore).toBe('GREEN');
+      expect(res.json().data.riskScore).toBe('LOW');
     });
 
     it('should return 404 for non-existent client', async () => {

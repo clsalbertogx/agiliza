@@ -1,4 +1,4 @@
-import type { Invoice } from '../../../domain/entities/invoice';
+import type { Invoice } from '@/domain/entities/invoice';
 
 export interface InvoiceRepositoryPort {
   findById(id: string): Promise<Invoice | null>;

@@ -1,5 +1,5 @@
-import type { Either } from '../../types/either';
-import type { ApplicationError } from '../../errors/application.error';
+import type { Either } from '@/application/types/either';
+import type { ApplicationError } from '@/application/errors/application.error';
 
 export interface WebhookVerifierPort {
   verify(

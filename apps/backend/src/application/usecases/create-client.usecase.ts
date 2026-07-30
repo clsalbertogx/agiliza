@@ -1,11 +1,13 @@
-import { Either, success, failure } from '../types/either';
-import { ApplicationError } from '../errors/application.error';
-import { ClientRepositoryPort } from '../ports/repositories/client.repository.port';
-import { EventBusPort } from '../ports/adapters/event-bus.port';
-import { Client, createClient, MessageChannel, RiskScore } from '../../domain/entities/client';
-import { Phone } from '../../domain/value-objects/phone';
-import { Email } from '../../domain/value-objects/email';
-import { createDomainEvent } from '../../domain/events/domain-events';
+import { Either, success, failure } from '@/application/types/either';
+import { ApplicationError } from '@/application/errors/application.error';
+import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import { Client, createClient, MessageChannel } from '@/domain/entities/client';
+import { RiskScore, RiskLevel } from '@/domain/value-objects/risk-score';
+import { Phone } from '@/domain/value-objects/phone';
+import { Email } from '@/domain/value-objects/email';
+import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { createDomainEvent } from '@/domain/events/domain-events';
 
 export interface CreateClientInput {
   tenantId: string;
@@ -20,6 +22,7 @@ export class CreateClientUseCase {
   constructor(
     private readonly clientRepo: ClientRepositoryPort,
     private readonly eventBus: EventBusPort,
+    private readonly idGenerator: IdGeneratorPort,
   ) {}
 
   async execute(input: CreateClientInput): Promise<Either<ApplicationError, Client>> {
@@ -54,23 +57,24 @@ export class CreateClientUseCase {
       email: MessageChannel.EMAIL,
     };
 
-    const client = createClient({
-      id: crypto.randomUUID(),
+    const clientResult = createClient({
+      id: this.idGenerator.generate(),
       tenantId: input.tenantId,
       name: input.name,
       phone: phoneVO.value(),
       email: emailVO?.value(),
       preferredChannel: channelMap[input.preferredChannel || 'whatsapp'] || MessageChannel.WHATSAPP,
       preferredLeadDays: input.preferredLeadDays || 3,
-      riskScore: RiskScore.GREEN,
-      totalInvoices: 0,
-      paidInvoices: 0,
     });
+
+    if (!clientResult.success) {
+      return failure(new ApplicationError(clientResult.value.message, 'INVALID_CLIENT', 400));
+    }
 
     // 5. Save
     let saved: Client;
     try {
-      saved = await this.clientRepo.create(client);
+      saved = await this.clientRepo.create(clientResult.value);
     } catch (error) {
       return failure(new ApplicationError((error as Error).message, 'INTERNAL_ERROR', 500));
     }
@@ -80,7 +84,7 @@ export class CreateClientUseCase {
       clientId: saved.id,
       tenantId: input.tenantId,
       metadata: { name: saved.name, phone: saved.phone },
-    });
+    }, this.idGenerator.generate());
     this.eventBus.publish(event);
 
     return success(saved);

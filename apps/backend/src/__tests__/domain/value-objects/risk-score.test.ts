@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { RiskScore, RiskLevel } from '../../../domain/value-objects/risk-score';
-import { DomainError } from '../../../domain/errors/domain-error';
+import { RiskScore, RiskLevel } from '@/domain/value-objects/risk-score';
+import { DomainError } from '@/domain/errors/domain-error';
 
 describe('RiskScore Value Object', () => {
   describe('creation', () => {

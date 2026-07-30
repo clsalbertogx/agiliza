@@ -12,6 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    mem_limit: 512m
     networks:
       - agiliza-net
     healthcheck:
@@ -25,6 +26,10 @@ services:
     container_name: agiliza-redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    mem_limit: 256m
     networks:
       - agiliza-net
     healthcheck:
@@ -79,6 +84,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    mem_limit: 512m
+    mem_reservation: 256m
     networks:
       - agiliza-net
 
@@ -102,11 +109,14 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:3333
     depends_on:
       - backend
+    mem_limit: 512m
+    mem_reservation: 256m
     networks:
       - agiliza-net
 
 volumes:
   postgres_data:
+  redis_data:
     driver: local
 
 networks:

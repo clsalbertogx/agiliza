@@ -1,128 +1,24 @@
-import { BaseRepository } from './base.repository';
-import type { InvoiceRepositoryPort } from '../../../application/ports/repositories/invoice.repository.port';
-import type { Invoice } from '../../../domain/entities/invoice';
-import { getPrismaClient } from '../prisma.service';
-
-export class InvoiceRepository extends BaseRepository<any> {
-  constructor() {
-    super();
-  }
-
-  protected get model() {
-    return this.prisma.invoice;
-  }
-
-  async findOverdue(tenantId: string) {
-    return this.prisma.invoice.findMany({
-      where: {
-        tenantId,
-        status: 'PENDING',
-        dueDate: { lt: new Date() },
-      },
-      include: { client: true },
-      orderBy: { dueDate: 'asc' },
-    });
-  }
-
-  async findPendingForDate(tenantId: string, date: Date) {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    return this.prisma.invoice.findMany({
-      where: {
-        tenantId,
-        status: 'PENDING',
-        dueDate: { gte: startOfDay, lte: endOfDay },
-      },
-      include: { client: true },
-    });
-  }
-
-  async markAsPaid(id: string, paymentData: {
-    paymentMethod: string;
-    externalPaymentId: string;
-    paidAt: Date;
-  }, tenantId?: string) {
-    const where: any = { id };
-    if (tenantId) where.tenantId = tenantId;
-    return this.prisma.invoice.update({
-      where,
-      data: {
-        status: 'PAID',
-        paymentMethod: paymentData.paymentMethod as any,
-        externalPaymentId: paymentData.externalPaymentId,
-        paidAt: paymentData.paidAt,
-      },
-    });
-  }
-
-  async getInvoiceWithClient(id: string) {
-    return this.prisma.invoice.findUnique({
-      where: { id },
-      include: {
-        client: true,
-        tenant: true,
-      },
-    });
-  }
-
-  async getStats(tenantId: string) {
-    const invoices = await this.prisma.invoice.findMany({
-      where: { tenantId },
-    });
-
-    const totalInvoiced = invoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
-    const totalCollected = invoices
-      .filter(inv => inv.status === 'PAID')
-      .reduce((sum, inv) => sum + Number(inv.amount), 0);
-    const totalOutstanding = invoices
-      .filter(inv => inv.status === 'PENDING' || inv.status === 'OVERDUE')
-      .reduce((sum, inv) => sum + Number(inv.amount), 0);
-
-    return {
-      total: invoices.length,
-      paid: invoices.filter(i => i.status === 'PAID').length,
-      pending: invoices.filter(i => i.status === 'PENDING').length,
-      overdue: invoices.filter(i => i.status === 'OVERDUE').length,
-      cancelled: invoices.filter(i => i.status === 'CANCELLED').length,
-      totalInvoiced,
-      totalCollected,
-      totalOutstanding,
-      overdueRate: invoices.length > 0 
-        ? Math.round((invoices.filter(i => i.status === 'OVERDUE').length / invoices.length) * 100) 
-        : 0,
-    };
-  }
-}
-
-/**
- * Normalizes a raw Prisma row into a domain Invoice,
- * converting date strings to Date objects where needed.
- */
-function toInvoice(raw: unknown): Invoice {
-  const row = raw as Record<string, unknown>;
-  if (row && typeof row === 'object') {
-    if (typeof row.dueDate === 'string') row.dueDate = new Date(row.dueDate);
-    if (typeof row.pixExpiresAt === 'string') row.pixExpiresAt = new Date(row.pixExpiresAt);
-    if (typeof row.paidAt === 'string') row.paidAt = new Date(row.paidAt);
-    if (typeof row.createdAt === 'string') row.createdAt = new Date(row.createdAt);
-    if (typeof row.updatedAt === 'string') row.updatedAt = new Date(row.updatedAt);
-  }
-  return row as unknown as Invoice;
-}
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { Invoice } from '@/domain/entities/invoice';
+import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import { InvoiceMapper, type PersistenceInvoice } from '@/infrastructure/database/mappers/invoice.mapper';
 
 /**
  * Port-compliant Prisma invoice repository.
  * Implements InvoiceRepositoryPort for use with use cases.
+ * Uses a DomainMapper for standardized toDomain/toPersistence mapping.
  */
 export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
   private prisma = getPrismaClient();
+  private readonly mapper: InvoiceMapper;
+
+  constructor(mapper?: InvoiceMapper) {
+    this.mapper = mapper ?? new InvoiceMapper();
+  }
 
   async findById(id: string): Promise<Invoice | null> {
     const result = await this.prisma.invoice.findUnique({ where: { id } });
-    return result ? toInvoice(result) : null;
+    return result ? this.mapper.toDomain(result as unknown as PersistenceInvoice) : null;
   }
 
   async findMany(params: {
@@ -148,21 +44,22 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
       this.prisma.invoice.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       this.prisma.invoice.count({ where }),
     ]);
-    return { data: data.map(toInvoice), total };
+    return { data: data.map((r) => this.mapper.toDomain(r as unknown as PersistenceInvoice)), total };
   }
 
   async create(invoice: Invoice): Promise<Invoice> {
-    const result = await this.prisma.invoice.create({ data: invoice as any });
-    return toInvoice(result);
+    const persistence = this.mapper.toPersistence(invoice);
+    const result = await this.prisma.invoice.create({ data: persistence as any });
+    return this.mapper.toDomain(result as unknown as PersistenceInvoice);
   }
 
   async update(invoice: Invoice): Promise<Invoice> {
-    const { id, ...data } = invoice;
+    const { id, ...data } = this.mapper.toPersistence(invoice);
     const result = await this.prisma.invoice.update({
       where: { id },
       data: data as any,
     });
-    return toInvoice(result);
+    return this.mapper.toDomain(result as unknown as PersistenceInvoice);
   }
 
   async delete(id: string): Promise<void> {
@@ -193,6 +90,105 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
       paidAmount: invoices.filter(i => i.status === 'PAID').reduce((sum, inv) => sum + Number(inv.amount), 0),
       pendingAmount: invoices.filter(i => i.status === 'PENDING').reduce((sum, inv) => sum + Number(inv.amount), 0),
       overdueAmount: invoices.filter(i => i.status === 'OVERDUE').reduce((sum, inv) => sum + Number(inv.amount), 0),
+    };
+  }
+
+  // ── Route query helpers ──────────────────────────────────────────
+  // These methods provide raw Prisma query patterns used by route handlers.
+
+  async findByIdRaw(id: string, tenantId?: string): Promise<Record<string, unknown> | null> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    return this.prisma.invoice.findFirst({ where }) as Promise<Record<string, unknown> | null>;
+  }
+
+  async findManyRaw(params: {
+    where?: Record<string, unknown>;
+    skip?: number;
+    take?: number;
+    orderBy?: Record<string, unknown>;
+    include?: Record<string, unknown>;
+  }): Promise<Record<string, unknown>[]> {
+    return this.prisma.invoice.findMany(params) as Promise<Record<string, unknown>[]>;
+  }
+
+  async countRaw(where?: Record<string, unknown>): Promise<number> {
+    return this.prisma.invoice.count({ where });
+  }
+
+  async updateRaw(id: string, data: Record<string, unknown>, tenantId?: string): Promise<Record<string, unknown>> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    return this.prisma.invoice.update({ where, data }) as Promise<Record<string, unknown>>;
+  }
+
+  async findOverdueRaw(tenantId: string): Promise<Record<string, unknown>[]> {
+    return this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        status: 'PENDING',
+        dueDate: { lt: new Date() },
+      },
+      include: { client: true },
+      orderBy: { dueDate: 'asc' },
+    }) as Promise<Record<string, unknown>[]>;
+  }
+
+  async findPendingForDateRaw(tenantId: string, date: Date): Promise<Record<string, unknown>[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        status: 'PENDING',
+        dueDate: { gte: startOfDay, lte: endOfDay },
+      },
+      include: { client: true },
+    }) as Promise<Record<string, unknown>[]>;
+  }
+
+  async markAsPaidRaw(id: string, paymentData: {
+    paymentMethod: string;
+    externalPaymentId: string;
+    paidAt: Date;
+  }, tenantId?: string): Promise<Record<string, unknown>> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    return this.prisma.invoice.update({
+      where,
+      data: {
+        status: 'PAID',
+        paymentMethod: paymentData.paymentMethod as any,
+        externalPaymentId: paymentData.externalPaymentId,
+        paidAt: paymentData.paidAt,
+      },
+    }) as Promise<Record<string, unknown>>;
+  }
+
+  async getInvoiceWithClientRaw(id: string): Promise<Record<string, unknown> | null> {
+    return this.prisma.invoice.findUnique({
+      where: { id },
+      include: { client: true, tenant: true },
+    }) as Promise<Record<string, unknown> | null>;
+  }
+
+  async getStatsRaw(tenantId: string): Promise<Record<string, unknown>> {
+    const invoices = await this.prisma.invoice.findMany({ where: { tenantId } });
+    return {
+      total: invoices.length,
+      paid: invoices.filter(i => i.status === 'PAID').length,
+      pending: invoices.filter(i => i.status === 'PENDING').length,
+      overdue: invoices.filter(i => i.status === 'OVERDUE').length,
+      cancelled: invoices.filter(i => i.status === 'CANCELLED').length,
+      totalInvoiced: invoices.reduce((sum, inv) => sum + Number(inv.amount), 0),
+      totalCollected: invoices.filter(i => i.status === 'PAID').reduce((sum, inv) => sum + Number(inv.amount), 0),
+      totalOutstanding: invoices.filter(i => i.status === 'PENDING' || i.status === 'OVERDUE').reduce((sum, inv) => sum + Number(inv.amount), 0),
+      overdueRate: invoices.length > 0
+        ? Math.round((invoices.filter(i => i.status === 'OVERDUE').length / invoices.length) * 100)
+        : 0,
     };
   }
 }

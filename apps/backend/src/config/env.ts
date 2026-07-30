@@ -21,6 +21,9 @@ const envSchema = z.object({
   ASAAS_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
   ASAAS_WEBHOOK_SECRET: z.string().default(''),
   MERCADOPAGO_WEBHOOK_SECRET: z.string().default(''),
+  RATE_LIMIT_MAX: z.coerce.number().default(100),
+  OUTBOUND_WEBHOOK_URL: z.string().url().optional(),
+  OUTBOUND_WEBHOOK_API_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

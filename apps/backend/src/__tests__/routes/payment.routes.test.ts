@@ -3,13 +3,13 @@ import Fastify from 'fastify';
 
 const mockVerify = vi.hoisted(() => vi.fn());
 
-vi.mock('../../infrastructure/payment/per-tenant-hmac-verifier', () => ({
+vi.mock('@/infrastructure/payment/per-tenant-hmac-verifier', () => ({
   PerTenantHmacVerifier: vi.fn().mockImplementation(() => ({
     verify: (...args: any[]) => mockVerify(...args),
   })),
 }));
 
-import { webhookRoutes } from '../../routes/webhook.routes';
+import { webhookRoutes } from '@/routes/webhook.routes';
 
 describe('Payment API Routes', () => {
   let app: ReturnType<typeof Fastify>;

@@ -1,8 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { OnboardingService } from '../application/services/onboarding.service';
-
-const onboardingService = new OnboardingService();
+import { createOnboardingService } from '@/presentation/factories';
 
 const startOnboardingSchema = z.object({
   clientId: z.string().uuid(),
@@ -15,8 +13,19 @@ const processAnswerSchema = z.object({
 });
 
 export async function onboardingRoutes(app: FastifyInstance) {
+  const onboardingService = createOnboardingService();
+
+  // Auth-like endpoints (login/register) — stricter rate limit of 20 req/min per IP
+  const authRateLimit = {
+    max: 20,
+    timeWindow: '1 minute',
+    keyGenerator: (req: { ip: string }) => req.ip,
+  };
+
   // POST /api/onboarding/start — Start onboarding for a client
-  app.post('/api/onboarding/start', async (request, reply) => {
+  app.post('/api/onboarding/start', {
+    config: { rateLimit: authRateLimit },
+  }, async (request, reply) => {
     const parsed = startOnboardingSchema.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400);
@@ -34,7 +43,9 @@ export async function onboardingRoutes(app: FastifyInstance) {
   });
 
   // POST /api/onboarding/answer — Process client's answer
-  app.post('/api/onboarding/answer', async (request, reply) => {
+  app.post('/api/onboarding/answer', {
+    config: { rateLimit: authRateLimit },
+  }, async (request, reply) => {
     const parsed = processAnswerSchema.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400);
@@ -51,7 +62,9 @@ export async function onboardingRoutes(app: FastifyInstance) {
   });
 
   // GET /api/onboarding/status/:clientId — Check onboarding status
-  app.get('/api/onboarding/status/:clientId', async (request, reply) => {
+  app.get('/api/onboarding/status/:clientId', {
+    config: { rateLimit: authRateLimit },
+  }, async (request, reply) => {
     const { clientId } = request.params as { clientId: string };
     const status = await onboardingService.getOnboardingStatus(clientId);
     return { data: status };

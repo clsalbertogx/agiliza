@@ -40,10 +40,8 @@ export default function RiskPage() {
         { name: 'Ana Costa', phone: '85999990004', email: 'ana@email.com', riskScore: 'green' },
         { name: 'Pedro Alves', phone: '85999990005', email: 'pedro@email.com', riskScore: 'yellow' },
       ]);
-    } finally {
-      setLoading(false);
     }
-    load();
+    load().finally(() => setLoading(false));
   }, []);
 
   if (loading) {

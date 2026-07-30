@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { PaymentGatewayPort, WebhookVerifierPort, MessageProviderPort } from '../../../application/ports/gateways';
-import type { UnitOfWorkPort, EventBusPort } from '../../../application/ports/adapters';
-import type { Either } from '../../../application/types/either';
-import type { ApplicationError } from '../../../application/errors/application.error';
+import type { PaymentGatewayPort, WebhookVerifierPort, MessageProviderPort } from '@/application/ports/gateways';
+import type { UnitOfWorkPort, EventBusPort } from '@/application/ports/adapters';
+import type { Either } from '@/application/types/either';
+import type { ApplicationError } from '@/application/errors/application.error';
 
 describe('Gateway Ports', () => {
   describe('PaymentGatewayPort', () => {

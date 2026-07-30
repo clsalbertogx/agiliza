@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
-import { PerTenantHmacVerifier } from '../infrastructure/payment/per-tenant-hmac-verifier';
-import { isFailure } from '../application/types/either';
+import { createHmacVerifier } from '@/presentation/factories';
+import { isFailure } from '@/application/types/either';
 
 /**
  * Map of provider → expected signature header name (lowercase).
@@ -13,11 +13,20 @@ const PROVIDER_SIGNATURE_HEADERS: Record<string, string> = {
   polar: 'webhook-signature',
 };
 
-const verifier = new PerTenantHmacVerifier();
-
 export async function webhookRoutes(app: FastifyInstance) {
+  const verifier = createHmacVerifier();
+
+  // Webhook endpoints — burst rate limit of 10 req/s per provider IP
+  const webhookRateLimit = {
+    max: 10,
+    timeWindow: '1 second',
+    keyGenerator: (req: { ip: string }) => req.ip,
+  };
+
   // POST /api/webhooks/payment/:provider
-  app.post('/api/webhooks/payment/:provider', async (request, reply) => {
+  app.post('/api/webhooks/payment/:provider', {
+    config: { rateLimit: webhookRateLimit },
+  }, async (request, reply) => {
     const { provider } = request.params as { provider: string };
 
     // Validate provider before using it (A03 — Injection prevention)
@@ -76,7 +85,9 @@ export async function webhookRoutes(app: FastifyInstance) {
   });
 
   // POST /api/webhooks/evolution
-  app.post('/api/webhooks/evolution', async (request, reply) => {
+  app.post('/api/webhooks/evolution', {
+    config: { rateLimit: webhookRateLimit },
+  }, async (request, reply) => {
     // Validate API key
     const apiKey = request.headers['x-api-key'] as string;
     const expectedKey = process.env.EVOLUTION_API_KEY;

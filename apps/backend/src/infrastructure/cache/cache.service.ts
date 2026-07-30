@@ -1,4 +1,4 @@
-import { getRedis } from '../queue/redis.service';
+import { getRedis } from '@/infrastructure/queue/redis.service';
 
 const DEFAULT_TTL_SECONDS = 300; // 5 minutes
 

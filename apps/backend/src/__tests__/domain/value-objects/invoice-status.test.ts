@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   InvoiceStatus,
   InvoiceStatusEnum,
-} from '../../../domain/value-objects/invoice-status';
-import { DomainError } from '../../../domain/errors/domain-error';
+} from '@/domain/value-objects/invoice-status';
+import { DomainError } from '@/domain/errors/domain-error';
 
 describe('InvoiceStatus Value Object', () => {
   describe('creation', () => {

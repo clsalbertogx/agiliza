@@ -1,103 +1,31 @@
-import { getPrismaClient } from '../prisma.service';
-import { BaseRepository } from './base.repository';
-import type { ClientRepositoryPort } from '../../../application/ports/repositories/client.repository.port';
-import type { Client } from '../../../domain/entities/client';
-
-export class ClientRepository extends BaseRepository<any> {
-  constructor() {
-    super();
-  }
-
-  protected get model() {
-    return this.prisma.client;
-  }
-
-  async findByPhone(tenantId: string, phone: string) {
-    return this.prisma.client.findFirst({
-      where: { tenantId, phone },
-    });
-  }
-
-  async findByRiskScore(tenantId: string, riskScore: string) {
-    return this.prisma.client.findMany({
-      where: { tenantId, riskScore: riskScore as any },
-      include: {
-        invoices: {
-          where: { status: 'PENDING' },
-          take: 5,
-          orderBy: { dueDate: 'asc' },
-        },
-      },
-    });
-  }
-
-  async updateRiskScore(id: string, riskScore: string, reason: any, tenantId?: string) {
-    const where: any = { id };
-    if (tenantId) where.tenantId = tenantId;
-    return this.prisma.client.update({
-      where,
-      data: {
-        riskScore: riskScore as any,
-        riskScoreReason: reason,
-        riskScoreUpdatedAt: new Date(),
-      },
-    });
-  }
-
-  async search(tenantId: string, query: string, skip = 0, take = 10) {
-    return this.prisma.client.findMany({
-      where: {
-        tenantId,
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { phone: { contains: query } },
-          { email: { contains: query, mode: 'insensitive' } },
-        ],
-      },
-      skip,
-      take,
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-}
-
-/**
- * Normalizes a raw Prisma row into a domain Client,
- * converting date strings to Date objects where needed.
- */
-function toClient(raw: unknown): Client {
-  const row = raw as Record<string, unknown>;
-  if (row && typeof row === 'object') {
-    if (typeof row.riskScoreUpdatedAt === 'string') {
-      row.riskScoreUpdatedAt = new Date(row.riskScoreUpdatedAt);
-    }
-    if (typeof row.createdAt === 'string') {
-      row.createdAt = new Date(row.createdAt);
-    }
-    if (typeof row.updatedAt === 'string') {
-      row.updatedAt = new Date(row.updatedAt);
-    }
-  }
-  return row as unknown as Client;
-}
+import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { Client, RiskScore } from '@/domain/entities/client';
+import { ClientMapper, type PersistenceClient } from '@/infrastructure/database/mappers/client.mapper';
 
 /**
  * Port-compliant Prisma client repository.
  * Implements ClientRepositoryPort for use with use cases.
+ * Uses a DomainMapper for standardized toDomain/toPersistence mapping.
  */
 export class PrismaClientRepository implements ClientRepositoryPort {
   private prisma = getPrismaClient();
+  private readonly mapper: ClientMapper;
+
+  constructor(mapper?: ClientMapper) {
+    this.mapper = mapper ?? new ClientMapper();
+  }
 
   async findById(id: string): Promise<Client | null> {
     const result = await this.prisma.client.findUnique({ where: { id } });
-    return result ? toClient(result) : null;
+    return result ? this.mapper.toDomain(result as unknown as PersistenceClient) : null;
   }
 
   async findByPhone(phone: string, tenantId: string): Promise<Client | null> {
     const result = await this.prisma.client.findFirst({
       where: { tenantId, phone },
     });
-    return result ? toClient(result) : null;
+    return result ? this.mapper.toDomain(result as unknown as PersistenceClient) : null;
   }
 
   async findMany(params: {
@@ -121,21 +49,22 @@ export class PrismaClientRepository implements ClientRepositoryPort {
       this.prisma.client.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       this.prisma.client.count({ where }),
     ]);
-    return { data: data.map(toClient), total };
+    return { data: data.map((r) => this.mapper.toDomain(r as unknown as PersistenceClient)), total };
   }
 
   async create(client: Client): Promise<Client> {
-    const result = await this.prisma.client.create({ data: client as any });
-    return toClient(result);
+    const persistence = this.mapper.toPersistence(client);
+    const result = await this.prisma.client.create({ data: persistence as any });
+    return this.mapper.toDomain(result as unknown as PersistenceClient);
   }
 
   async update(client: Client): Promise<Client> {
-    const { id, ...data } = client;
+    const { id, ...data } = this.mapper.toPersistence(client);
     const result = await this.prisma.client.update({
       where: { id },
       data: data as any,
     });
-    return toClient(result);
+    return this.mapper.toDomain(result as unknown as PersistenceClient);
   }
 
   async delete(id: string): Promise<void> {
@@ -144,5 +73,96 @@ export class PrismaClientRepository implements ClientRepositoryPort {
 
   async count(tenantId: string): Promise<number> {
     return this.prisma.client.count({ where: { tenantId } });
+  }
+
+  async updateRiskScore(id: string, riskScore: RiskScore, riskScoreReason?: string): Promise<void> {
+    await this.prisma.client.update({
+      where: { id },
+      data: {
+        riskScore: riskScore as any,
+        riskScoreUpdatedAt: new Date(),
+        ...(riskScoreReason !== undefined ? { riskScoreReason } : {}),
+      },
+    });
+  }
+
+  // ── Route query helpers ──────────────────────────────────────────
+  // These methods provide raw Prisma query patterns used by route handlers.
+  // They operate on the same prisma client but accept query parameters
+  // directly rather than domain entities. This avoids breaking route-level
+  // queries while the legacy query class is removed.
+
+  async findByIdRaw(id: string, tenantId?: string): Promise<Record<string, unknown> | null> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    return this.prisma.client.findFirst({ where }) as Promise<Record<string, unknown> | null>;
+  }
+
+  async findManyRaw(params: {
+    where?: Record<string, unknown>;
+    skip?: number;
+    take?: number;
+    orderBy?: Record<string, string>;
+    include?: Record<string, unknown>;
+  }): Promise<Record<string, unknown>[]> {
+    return this.prisma.client.findMany(params) as Promise<Record<string, unknown>[]>;
+  }
+
+  async countRaw(where?: Record<string, unknown>): Promise<number> {
+    return this.prisma.client.count({ where });
+  }
+
+  async updateRaw(id: string, data: Record<string, unknown>, tenantId?: string): Promise<Record<string, unknown>> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    return this.prisma.client.update({ where, data }) as Promise<Record<string, unknown>>;
+  }
+
+  async findByPhoneRaw(tenantId: string, phone: string): Promise<Record<string, unknown> | null> {
+    return this.prisma.client.findFirst({
+      where: { tenantId, phone },
+    }) as Promise<Record<string, unknown> | null>;
+  }
+
+  async searchRaw(tenantId: string, query: string, skip = 0, take = 10): Promise<Record<string, unknown>[]> {
+    return this.prisma.client.findMany({
+      where: {
+        tenantId,
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { phone: { contains: query } },
+          { email: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      skip,
+      take,
+      orderBy: { createdAt: 'desc' },
+    }) as Promise<Record<string, unknown>[]>;
+  }
+
+  async findByRiskScoreRaw(tenantId: string, riskScore: string): Promise<Record<string, unknown>[]> {
+    return this.prisma.client.findMany({
+      where: { tenantId, riskScore: riskScore as any },
+      include: {
+        invoices: {
+          where: { status: 'PENDING' },
+          take: 5,
+          orderBy: { dueDate: 'asc' },
+        },
+      },
+    }) as Promise<Record<string, unknown>[]>;
+  }
+
+  async updateRiskScoreRaw(id: string, riskScore: string, reason: unknown, tenantId?: string): Promise<Record<string, unknown>> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    return this.prisma.client.update({
+      where,
+      data: {
+        riskScore: riskScore as any,
+        riskScoreReason: reason as any,
+        riskScoreUpdatedAt: new Date(),
+      },
+    }) as Promise<Record<string, unknown>>;
   }
 }

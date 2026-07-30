@@ -7,6 +7,9 @@ import { env } from './config/env';
 import { registerRoutes } from './routes';
 import authPlugin from './infrastructure/plugins/auth.plugin';
 import { disconnectRedis, closeAllQueues } from './infrastructure/queue';
+import { InMemoryEventBus } from './infrastructure/event-bus/in-memory-event-bus';
+import { registerEventHandlers } from './presentation/factories/register-event-handlers';
+import { errorHandler } from './presentation/handler';
 
 async function buildApp() {
   const app = Fastify({
@@ -37,13 +40,14 @@ async function buildApp() {
     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
     xFrameOptions: { action: 'deny' },
     xContentTypeOptions: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   });
 
   // Global rate limiting
   await app.register(rateLimit, {
     redis: new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }),
-    global: false,
-    max: 100,
+    global: true,
+    max: env.RATE_LIMIT_MAX,
     timeWindow: '1 minute',
     keyGenerator: (request) => {
       return (request as any).tenantId || request.ip;
@@ -55,6 +59,13 @@ async function buildApp() {
 
   // Routes
   await registerRoutes(app);
+
+  // Event bus with domain event handlers
+  const eventBus = new InMemoryEventBus();
+  registerEventHandlers(eventBus);
+
+  // Global error handler (must be registered after routes)
+  app.setErrorHandler(errorHandler);
 
   return app;
 }

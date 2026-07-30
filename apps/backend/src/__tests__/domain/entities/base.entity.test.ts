@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Entity } from '../../../domain/entities/base.entity';
+import { Entity } from '@/domain/entities/base.entity';
 
 class TestEntity extends Entity<{ name: string }> {
   constructor(
@@ -8,7 +8,7 @@ class TestEntity extends Entity<{ name: string }> {
     createdAt?: Date,
     updatedAt?: Date
   ) {
-    super(id, createdAt, updatedAt);
+    super(id!, createdAt, updatedAt);
   }
 
   toJSON(): Record<string, unknown> {
@@ -23,8 +23,8 @@ class TestEntity extends Entity<{ name: string }> {
 
 describe('Entity Base', () => {
   it('should generate an id when not provided', () => {
-    const entity = new TestEntity({ name: 'Test' });
-    expect(entity.id).toBeDefined();
+    const entity = new TestEntity({ name: 'Test' }, 'auto-generated-id');
+    expect(entity.id).toBe('auto-generated-id');
     expect(typeof entity.id).toBe('string');
   });
 

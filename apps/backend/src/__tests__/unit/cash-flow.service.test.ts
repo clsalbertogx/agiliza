@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { CashFlowService } from '../../application/services/cash-flow.service';
+import { CashFlowService } from '@/application/services/cash-flow.service';
 
 function createMocks() {
   const invoiceRepo = {

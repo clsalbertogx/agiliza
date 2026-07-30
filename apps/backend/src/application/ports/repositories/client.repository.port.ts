@@ -1,4 +1,4 @@
-import type { Client } from '../../../domain/entities/client';
+import type { Client, RiskScore } from '@/domain/entities/client';
 
 export interface ClientRepositoryPort {
   findById(id: string): Promise<Client | null>;
@@ -14,4 +14,5 @@ export interface ClientRepositoryPort {
   update(client: Client): Promise<Client>;
   delete(id: string): Promise<void>;
   count(tenantId: string): Promise<number>;
+  updateRiskScore(id: string, riskScore: RiskScore, riskScoreReason?: string): Promise<void>;
 }

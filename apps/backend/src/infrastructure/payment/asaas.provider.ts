@@ -1,4 +1,5 @@
-import { PaymentGatewayPort, PixChargeResponse } from '../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
+import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 
 interface AsaasConfig {
   apiKey: string;
@@ -31,7 +32,7 @@ export class AsaasPaymentProvider implements PaymentGatewayPort {
   }): Promise<PixChargeResponse> {
     // In a real implementation, this would call Asaas API
     // For MVP, return a simulated response
-    const id = crypto.randomUUID();
+    const id = generateUUID();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24h expiry
 

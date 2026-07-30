@@ -14,9 +14,7 @@ export class Money {
     if (amount < 0) {
       throw new DomainError('Amount must not be negative');
     }
-    // Round to 2 decimal places to avoid floating-point issues
-    const rounded = Math.round(amount * 100) / 100;
-    return rounded;
+    return Math.round(amount * 100) / 100;
   }
 
   static create(amount: number): Money {
@@ -24,6 +22,10 @@ export class Money {
   }
 
   static ZERO(): Money {
+    return new Money(0);
+  }
+
+  static zero(): Money {
     return new Money(0);
   }
 
@@ -71,7 +73,6 @@ export class Money {
 
   toBRL(): string {
     const [integerPart, decimalPart] = this.amount.toFixed(2).split('.');
-    // Add thousands separator (period) every 3 digits from the right
     const withThousands = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return `R$ ${withThousands},${decimalPart}`;
   }

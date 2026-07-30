@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { createCashFlowService } from '../presentation/factories';
+import { createCashFlowService } from '@/presentation/factories';
 
 interface CashFlowQuery {
   tenantId?: string;

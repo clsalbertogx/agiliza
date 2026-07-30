@@ -11,7 +11,7 @@ const mockState = vi.hoisted(() => ({
   getStats: vi.fn(),
 }));
 
-vi.mock('../../infrastructure/database/prisma.service', () => {
+vi.mock('@/infrastructure/database/prisma.service', () => {
   // We need to create a mock that returns our controlled mocks
   // But also make sure findById, findUnique, findMany etc are all handled
   return {
@@ -33,7 +33,7 @@ vi.mock('../../infrastructure/database/prisma.service', () => {
   };
 });
 
-import { invoiceRoutes } from '../../routes/invoice.routes';
+import { invoiceRoutes } from '@/routes/invoice.routes';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const TEST_CLIENT_ID = '00000000-0000-0000-0000-000000000010';
@@ -80,6 +80,19 @@ describe('Invoice API Routes', () => {
     tenantId: TEST_TENANT_ID,
     name: 'John Doe',
     phone: '5511999998888',
+    email: null,
+    document: null,
+    preferredChannel: 'WHATSAPP',
+    preferredTime: null,
+    preferredLeadDays: 3,
+    riskScore: 'LOW',
+    riskScoreReason: null,
+    riskScoreUpdatedAt: null,
+    totalInvoices: 0,
+    paidInvoices: 0,
+    avgPaymentDelay: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   const mockInvoice = {
@@ -87,7 +100,7 @@ describe('Invoice API Routes', () => {
     tenantId: TEST_TENANT_ID,
     clientId: TEST_CLIENT_ID,
     amount: 150.00,
-    dueDate: new Date('2026-08-01').toISOString(),
+    dueDate: new Date('2026-08-01'),
     description: 'Test invoice',
     status: 'PENDING',
     paymentMethod: null,
@@ -97,8 +110,8 @@ describe('Invoice API Routes', () => {
     externalPaymentId: null,
     paidAt: null,
     metadata: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
     client: mockClient,
   };
 

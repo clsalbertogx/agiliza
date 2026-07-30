@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import type { ClientRepositoryPort } from '../../../application/ports/repositories/client.repository.port';
-import type { InvoiceRepositoryPort } from '../../../application/ports/repositories/invoice.repository.port';
-import type { TenantRepositoryPort } from '../../../application/ports/repositories/tenant.repository.port';
-import type { PaymentGatewayPort } from '../../../application/ports/gateways/payment-gateway.port';
-import type { WebhookVerifierPort } from '../../../application/ports/gateways/webhook-verifier.port';
-import type { MessageProviderPort } from '../../../application/ports/gateways/message-provider.port';
-import type { UnitOfWorkPort } from '../../../application/ports/adapters/unit-of-work.port';
-import type { EventBusPort } from '../../../application/ports/adapters/event-bus.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { TenantRepositoryPort } from '@/application/ports/repositories/tenant.repository.port';
+import type { PaymentGatewayPort } from '@/application/ports/gateways/payment-gateway.port';
+import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import type { UnitOfWorkPort } from '@/application/ports/adapters/unit-of-work.port';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 
 describe('Application Ports - Contract Tests', () => {
   describe('ClientRepositoryPort', () => {
@@ -20,6 +20,7 @@ describe('Application Ports - Contract Tests', () => {
         update: async (client) => client,
         delete: async () => {},
         count: async () => 0,
+        updateRiskScore: async () => {},
       };
 
       expect(typeof port.findById).toBe('function');
@@ -29,6 +30,7 @@ describe('Application Ports - Contract Tests', () => {
       expect(typeof port.update).toBe('function');
       expect(typeof port.delete).toBe('function');
       expect(typeof port.count).toBe('function');
+      expect(typeof port.updateRiskScore).toBe('function');
     });
   });
 

@@ -38,4 +38,8 @@ export class Email {
   get localPart(): string {
     return this.email.split('@')[0];
   }
+
+  equals(other: Email): boolean {
+    return this.email === other.email;
+  }
 }
