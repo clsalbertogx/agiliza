@@ -23,6 +23,18 @@ vi.mock('@/infrastructure/database/prisma.service', () => ({
   })),
 }));
 
+/**
+ * Mock the onboarding factory to capture auto-trigger calls.
+ * The route does a dynamic import of create-onboarding.factory when
+ * a client is created without preferredChannel/preferredTime.
+ */
+const mockStartOnboarding = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/presentation/factories/create-onboarding.factory', () => ({
+  createOnboardingService: vi.fn(() => ({
+    startOnboarding: mockStartOnboarding,
+  })),
+}));
+
 import { clientRoutes } from '@/routes/client.routes';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
@@ -277,6 +289,53 @@ describe('Client API Routes', () => {
         },
       });
       expect(res.statusCode).toBe(400);
+    });
+
+    it('should auto-trigger onboarding when client created without preferences', async () => {
+      mockState.findById.mockResolvedValue(null);
+      mockState.create.mockResolvedValue(mockClient);
+      mockStartOnboarding.mockClear();
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/clients',
+        headers: { authorization: validToken },
+        payload: {
+          tenantId: TEST_TENANT_ID,
+          name: 'New Client',
+          phone: '5511999990000',
+        },
+      });
+
+      expect(res.statusCode).toBe(201);
+      // Auto-trigger should call startOnboarding for clients without preferences
+      expect(mockStartOnboarding).toHaveBeenCalledWith(
+        mockClient.id,
+        TEST_TENANT_ID,
+      );
+    });
+
+    it('should NOT auto-trigger onboarding when both preferredChannel and preferredTime are provided', async () => {
+      mockState.findById.mockResolvedValue(null);
+      mockState.create.mockResolvedValue(mockClient);
+      mockStartOnboarding.mockClear();
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/clients',
+        headers: { authorization: validToken },
+        payload: {
+          tenantId: TEST_TENANT_ID,
+          name: 'Pref Client',
+          phone: '5511999991111',
+          preferredChannel: 'EMAIL',
+          preferredTime: '09:00',
+        },
+      });
+
+      expect(res.statusCode).toBe(201);
+      // Auto-trigger should NOT fire when both preferences are provided
+      expect(mockStartOnboarding).not.toHaveBeenCalled();
     });
   });
 

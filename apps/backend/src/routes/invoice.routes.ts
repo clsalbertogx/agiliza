@@ -5,9 +5,9 @@ import {
   createListInvoicesUseCase,
   createGetInvoiceUseCase,
   createGetInvoiceStatsUseCase,
+  createProcessPaymentUseCase,
   createInvoiceRepository,
   createClientRepository,
-  createPaymentProvider,
 } from '@/presentation/factories';
 
 const createInvoiceSchema = z.object({
@@ -102,56 +102,16 @@ export async function invoiceRoutes(app: FastifyInstance) {
   // POST /api/invoices/:id/pay — Process payment (creates PIX charge)
   app.post('/api/invoices/:id/pay', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const invoice = await invoiceRepo.findByIdRaw(id, request.tenantId);
+    const useCase = createProcessPaymentUseCase();
+    const result = await useCase.execute({ invoiceId: id, tenantId: request.tenantId! });
 
-    if (!invoice) {
-      reply.code(404);
-      return { error: 'Invoice not found' };
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
     }
 
-    if (invoice.status === 'PAID') {
-      reply.code(400);
-      return { error: 'Invoice is already paid' };
-    }
-
-    // Create PIX charge via configured payment provider
-    try {
-      // Get tenant's payment provider config (in real impl, fetch from DB)
-      const provider = createPaymentProvider({
-        type: (process.env.PAYMENT_PROVIDER as 'asaas' | 'mercadopago' | 'pagbank' | 'polar') || 'asaas',
-        apiKey: process.env.ASAAS_API_KEY || 'sandbox-key',
-        environment: (process.env.ASAAS_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox',
-      });
-
-      const pixCharge = await provider.createPixCharge({
-        amount: Number(invoice.amount),
-        description: (invoice.description as string) || `Invoice ${invoice.id as string}`,
-        externalReference: invoice.id as string,
-      });
-
-      // Update invoice with PIX data (tenant-isolated)
-      await invoiceRepo.updateRaw(id, {
-        paymentMethod: 'PIX',
-        pixQRCode: pixCharge.qrCode,
-        pixCopyPaste: pixCharge.copyPaste,
-        pixExpiresAt: pixCharge.expiresAt,
-      }, request.tenantId);
-
-      reply.code(200);
-      return {
-        data: {
-          status: 'PENDING',
-          pix: {
-            qrCode: pixCharge.qrCode,
-            copyPaste: pixCharge.copyPaste,
-            expiresAt: pixCharge.expiresAt,
-          },
-        },
-      };
-    } catch (error: any) {
-      reply.code(502);
-      return { error: 'Payment provider error', message: error.message };
-    }
+    reply.code(200);
+    return { data: result.value };
   });
 
   // GET /api/invoices/:id/pix-qrcode — Get PIX QRCode

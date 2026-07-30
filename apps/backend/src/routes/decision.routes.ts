@@ -1,25 +1,30 @@
 import { FastifyInstance } from 'fastify';
-import { GetNextDecisionUseCase } from '@/application/usecases/get-next-decision.usecase';
-import { DecisionEngineService } from '@/application/services/decision-engine.service';
+import { createGetNextDecisionUseCase } from '@/presentation/factories';
 
 export async function decisionRoutes(app: FastifyInstance) {
-  const useCase = new GetNextDecisionUseCase(new DecisionEngineService());
   // GET /api/decisions/next-action?clientId=X&invoiceId=Y
-  app.get('/api/decisions/next-action', async (request) => {
-    const { clientId, invoiceId } = request.query as any;
+  app.get('/api/decisions/next-action', async (request, reply) => {
+    const { clientId, invoiceId } = request.query as Record<string, string | undefined>;
+    const tenantId = (request as any).tenantId as string | undefined;
 
-    const decision = await useCase.execute({
-      clientId: clientId || '00000000-0000-0000-0000-000000000001',
-      invoiceId: invoiceId || '00000000-0000-0000-0000-000000000010',
-    });
+    if (!clientId || !invoiceId) {
+      reply.code(400);
+      return { error: 'clientId and invoiceId are required' };
+    }
 
-    return {
-      data: {
-        action: decision.action,
-        channel: decision.channel,
-        templateName: decision.templateName,
-        scheduledAt: decision.scheduledAt.toISOString(),
-      },
-    };
+    if (!tenantId) {
+      reply.code(401);
+      return { error: 'Unauthorized' };
+    }
+
+    const useCase = createGetNextDecisionUseCase();
+    const result = await useCase.execute({ clientId, invoiceId, tenantId });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
+    }
+
+    return { data: result.value };
   });
 }

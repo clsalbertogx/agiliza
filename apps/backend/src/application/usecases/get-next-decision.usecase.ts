@@ -1,50 +1,50 @@
-import { DecisionEngineService, Decision } from '@/application/services/decision-engine.service';
-import { createClient, MessageChannel } from '@/domain/entities/client';
-import { createInvoice } from '@/domain/entities/invoice';
+import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import { DecisionEngineService } from '@/application/services/decision-engine.service';
+import { ApplicationError } from '@/application/errors/application.error';
+import { Either, success, failure } from '@/application/types/either';
 
 export interface GetNextDecisionInput {
   clientId: string;
   invoiceId: string;
+  tenantId: string;
 }
 
-/**
- * MVP use case that creates default mock client/invoice data
- * and delegates to the DecisionEngineService.
- * 
- * In a future iteration this will fetch real Client/Invoice from repositories.
- */
+export interface GetNextDecisionOutput {
+  action: string;
+  channel: string;
+  templateName: string;
+  scheduledAt: string;
+}
+
 export class GetNextDecisionUseCase {
   constructor(
+    private readonly clientRepo: ClientRepositoryPort,
+    private readonly invoiceRepo: InvoiceRepositoryPort,
     private readonly decisionEngine: DecisionEngineService,
   ) {}
 
-  async execute(input: GetNextDecisionInput): Promise<Decision> {
-    const clientResult = createClient({
-      id: input.clientId,
-      tenantId: '00000000-0000-0000-0000-000000000001',
-      name: 'Cliente',
-      phone: '5511999999999',
-      preferredChannel: MessageChannel.WHATSAPP,
-      preferredLeadDays: 3,
-    });
-
-    if (!clientResult.success) {
-      throw new Error(`Failed to create client: ${clientResult.value.message}`);
+  async execute(input: GetNextDecisionInput): Promise<Either<ApplicationError, GetNextDecisionOutput>> {
+    // 1. Fetch real client from database
+    const client = await this.clientRepo.findById(input.clientId, input.tenantId);
+    if (!client) {
+      return failure(ApplicationError.notFound('Client', input.clientId));
     }
 
-    const invoiceResult = createInvoice({
-      id: input.invoiceId,
-      tenantId: '00000000-0000-0000-0000-000000000001',
-      clientId: input.clientId,
-      amount: 100,
-      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      description: 'Default invoice',
-    });
-
-    if (!invoiceResult.success) {
-      throw new Error(`Failed to create invoice: ${invoiceResult.value.message}`);
+    // 2. Fetch real invoice from database
+    const invoice = await this.invoiceRepo.findById(input.invoiceId, input.tenantId);
+    if (!invoice) {
+      return failure(ApplicationError.notFound('Invoice', input.invoiceId));
     }
 
-    return this.decisionEngine.decideNextAction(clientResult.value, invoiceResult.value, 'default');
+    // 3. Get decision from engine
+    const decision = this.decisionEngine.decideNextAction(client, invoice, 'default');
+
+    return success({
+      action: decision.action,
+      channel: decision.channel,
+      templateName: decision.templateName,
+      scheduledAt: decision.scheduledAt.toISOString(),
+    });
   }
 }

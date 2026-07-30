@@ -6,10 +6,14 @@ import Redis from 'ioredis';
 import { env } from './config/env';
 import { registerRoutes } from './routes';
 import authPlugin from './infrastructure/plugins/auth.plugin';
-import { disconnectRedis, closeAllQueues } from './infrastructure/queue';
+import { disconnectRedis, closeAllQueues, startReminderWorker, closeWorker } from './infrastructure/queue';
+import { createReminderService } from './presentation/factories';
 import { InMemoryEventBus } from './infrastructure/event-bus/in-memory-event-bus';
 import { registerEventHandlers } from './presentation/factories/register-event-handlers';
 import { errorHandler } from './presentation/handler';
+
+// Module-level worker reference for graceful shutdown
+let reminderWorker: ReturnType<typeof startReminderWorker> | null = null;
 
 async function buildApp() {
   const app = Fastify({
@@ -64,6 +68,10 @@ async function buildApp() {
   const eventBus = new InMemoryEventBus();
   registerEventHandlers(eventBus);
 
+  // Start the reminder worker after event bus setup
+  const reminderService = createReminderService();
+  reminderWorker = startReminderWorker(reminderService);
+
   // Global error handler (must be registered after routes)
   app.setErrorHandler(errorHandler);
 
@@ -77,6 +85,7 @@ async function start() {
   const shutdown = async (signal: string) => {
     console.log(`[Server] Received ${signal}, shutting down gracefully...`);
     try {
+      if (reminderWorker) await closeWorker(reminderWorker);
       await closeAllQueues();
       await disconnectRedis();
       await app.close();

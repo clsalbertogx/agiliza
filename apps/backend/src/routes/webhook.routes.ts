@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { createHmacVerifier } from '@/presentation/factories';
+import { createProcessPaymentWebhookUseCase } from '@/presentation/factories';
 import { isFailure } from '@/application/types/either';
 
 /**
@@ -14,8 +14,6 @@ const PROVIDER_SIGNATURE_HEADERS: Record<string, string> = {
 };
 
 export async function webhookRoutes(app: FastifyInstance) {
-  const verifier = createHmacVerifier();
-
   // Webhook endpoints — burst rate limit of 10 req/s per provider IP
   const webhookRateLimit = {
     max: 10,
@@ -65,23 +63,21 @@ export async function webhookRoutes(app: FastifyInstance) {
       return;
     }
 
-    const result = await verifier.verify(provider, rawBody, signature, tenantId);
+    // Process the webhook using the use case (handles signature verification internally)
+    const useCase = createProcessPaymentWebhookUseCase();
+    const result = await useCase.execute({
+      provider,
+      rawBody,
+      signature,
+      tenantId,
+    });
 
     if (isFailure(result)) {
-      // The verifier returned an ApplicationError (e.g., DB failure)
       reply.code(result.value.statusCode).send({ error: result.value.message });
       return;
     }
 
-    if (!result.value) {
-      reply.code(401).send({ error: 'Invalid webhook signature' });
-      return;
-    }
-
-    // Process the webhook (MVP: log and acknowledge)
-    console.log(`Webhook received from ${provider}: ${JSON.stringify(request.body)}`);
-
-    reply.code(200).send({ received: true, provider });
+    reply.code(200).send(result.value);
   });
 
   // POST /api/webhooks/evolution

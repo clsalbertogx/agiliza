@@ -17,3 +17,6 @@ export { createCashFlowService, createInvoiceRepository } from './create-cash-fl
 export { createOnboardingService } from './create-onboarding.factory';
 export { createReminderService } from './create-reminder.factory';
 export { createHmacVerifier } from './create-webhook.factory';
+export { createProcessPaymentUseCase } from './create-process-payment.factory';
+export { createProcessPaymentWebhookUseCase } from './create-process-payment-webhook.factory';
+export { createGetNextDecisionUseCase } from './create-get-next-decision.factory';

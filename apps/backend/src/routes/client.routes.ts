@@ -8,9 +8,9 @@ const createClientSchema = z.object({
   phone: z.string().min(10).max(15),
   email: z.string().email().optional(),
   document: z.string().optional(),
-  preferredChannel: z.enum(['WHATSAPP', 'EMAIL', 'SMS']).optional().default('WHATSAPP'),
+  preferredChannel: z.enum(['WHATSAPP', 'EMAIL', 'SMS']).optional(),
   preferredTime: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:MM').optional(),
-  preferredLeadDays: z.number().int().min(1).max(14).optional().default(3),
+  preferredLeadDays: z.number().int().min(1).max(14).optional(),
 });
 
 const updateClientSchema = createClientSchema.partial();

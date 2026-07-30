@@ -25,3 +25,8 @@ export {
   createWorker,
   closeAllQueues,
 } from './queue-manager';
+
+export {
+  startReminderWorker,
+  closeWorker,
+} from './worker';
