@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 import { PaymentWebhookParserPort } from '@/application/ports/gateways/payment-webhook-parser.port';
 import { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
 import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
@@ -85,7 +85,7 @@ export class ProcessPaymentWebhookUseCase {
 
         // Record payment
         const paymentResult = createPayment({
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           tenantId: input.tenantId,
           invoiceId: webhookData.invoiceId,
           clientId: invoice.clientId,
@@ -116,7 +116,7 @@ export class ProcessPaymentWebhookUseCase {
               providerPaymentId: webhookData.providerPaymentId,
             },
           },
-          crypto.randomUUID(),
+          generateUUID(),
         );
         this.eventBus.publish(event);
       }

@@ -85,3 +85,12 @@ export type {
   NotificationBannerProps,
   BannerType,
 } from './notification-banner';
+
+// === UI primitives ===
+export { Button, buttonVariants } from './ui/button';
+export type { ButtonProps } from './ui/button';
+export { Input } from './ui/input';
+export type { InputProps } from './ui/input';
+export { Label } from './ui/label';
+export { Textarea } from './ui/textarea';
+export type { TextareaProps } from './ui/textarea';

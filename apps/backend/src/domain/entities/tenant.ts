@@ -1,5 +1,5 @@
 import { DomainError } from '../errors/domain-error';
-import { Either, success, failure } from '@/application/types/either';
+import { Either, success, failure } from '@/domain/types/either';
 
 export enum PaymentProvider {
   ASAAS = 'ASAAS',

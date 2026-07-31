@@ -2,6 +2,7 @@ import type { ClientRepositoryPort } from '@/application/ports/repositories/clie
 import type { EventRepositoryPort } from '@/application/ports/repositories/event.repository.port';
 import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
 import { MessageChannel } from '@/domain/entities/client';
+import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 
 interface OnboardingState {
   clientId: string;
@@ -173,7 +174,7 @@ export class OnboardingService {
     });
 
     await this.eventRepo.save({
-      eventId: crypto.randomUUID(),
+      eventId: generateUUID(),
       eventType: 'client.risk.updated',
       clientId,
       tenantId: state.tenantId,

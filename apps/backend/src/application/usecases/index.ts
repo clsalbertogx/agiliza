@@ -6,3 +6,8 @@ export * from './list-invoices.usecase';
 export * from './get-invoice.usecase';
 export * from './get-invoice-stats.usecase';
 export * from './list-payments-for-invoice.usecase';
+export * from './cancel-subscription.usecase';
+export * from './create-subscription.usecase';
+export * from './get-next-decision.usecase';
+export * from './process-payment.usecase';
+export * from './process-payment-webhook.usecase';

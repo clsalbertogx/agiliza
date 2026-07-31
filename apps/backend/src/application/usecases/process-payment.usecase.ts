@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 import { Either, success, failure, isFailure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
 import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
@@ -71,7 +71,7 @@ export class ProcessPaymentUseCase {
 
     // 5. Record payment
     const paymentResult = createPayment({
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       tenantId: input.tenantId,
       invoiceId: input.invoiceId,
       clientId: invoice.clientId,

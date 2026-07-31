@@ -3,7 +3,7 @@ import { Email } from '../value-objects/email';
 import { TaxId } from '../value-objects/tax-id';
 import { RiskScore, RiskLevel } from '../value-objects/risk-score';
 import { DomainError } from '../errors/domain-error';
-import { Either, success, failure } from '@/application/types/either';
+import { Either, success, failure } from '@/domain/types/either';
 
 export { RiskScore, RiskLevel } from '../value-objects/risk-score';
 

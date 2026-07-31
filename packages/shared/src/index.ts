@@ -30,4 +30,4 @@ export type { Invoice } from '../../backend/src/domain/contracts/interfaces';
 //  Domain Events (for frontend activity feed)
 // ──────────────────────────────────────────────
 
-export type { DomainEvent as PaymentEvent } from '../../backend/src/domain/events/domain-events';
+export type { PaymentEvent } from '../../backend/src/domain/contracts/interfaces';

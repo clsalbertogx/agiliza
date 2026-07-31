@@ -6,6 +6,7 @@ import type { QueuePort } from '@/application/ports/queue/queue.port';
 import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
 import type { Invoice } from '@/domain/entities/invoice';
 import type { Client } from '@/domain/entities/client';
+import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 
 export class ReminderService {
   private readonly decisionEngine: DecisionEngineService;
@@ -86,7 +87,7 @@ export class ReminderService {
 
     // Log decision
     await this.eventRepo.save({
-      eventId: crypto.randomUUID(),
+      eventId: generateUUID(),
       eventType: 'decision.made',
       clientId: client.id,
       tenantId: client.tenantId,

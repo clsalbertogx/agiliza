@@ -1,3 +1,4 @@
+// @deprecated — not wired yet
 'use client';
 
 import { useState, useMemo } from 'react';
