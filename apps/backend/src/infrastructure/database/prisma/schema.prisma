@@ -8,7 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  extensions = [pgvector, pgcrypto]
+  extensions = [vector, pgcrypto]
 }
 
 // ===================== ENUMS =====================
@@ -381,6 +381,7 @@ model PaymentProviderConfig {
   tenantId        String   @db.Uuid
   provider        String   // asaas | mercadopago | pagbank | polar
   apiKeyEncrypted String?
+  environment     String   @default("sandbox") // sandbox | production
   webhookSecret   String?
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())

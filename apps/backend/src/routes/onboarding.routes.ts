@@ -24,6 +24,26 @@ export async function onboardingRoutes(app: FastifyInstance) {
 
   // POST /api/onboarding/start — Start onboarding for a client
   app.post('/api/onboarding/start', {
+    schema: {
+      tags: ['Onboarding'],
+      summary: 'Start onboarding for a client',
+      description: 'Sends the first onboarding question via the configured message channel.',
+      body: {
+        type: 'object',
+        required: ['clientId', 'tenantId'],
+        properties: {
+          clientId: { type: 'string', format: 'uuid' },
+          tenantId: { type: 'string', format: 'uuid' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: { data: { type: 'object', additionalProperties: true } },
+          additionalProperties: true,
+        },
+      },
+    },
     config: { rateLimit: authRateLimit },
   }, async (request, reply) => {
     const parsed = startOnboardingSchema.safeParse(request.body);
@@ -44,6 +64,25 @@ export async function onboardingRoutes(app: FastifyInstance) {
 
   // POST /api/onboarding/answer — Process client's answer
   app.post('/api/onboarding/answer', {
+    schema: {
+      tags: ['Onboarding'],
+      summary: 'Process a client onboarding answer',
+      body: {
+        type: 'object',
+        required: ['clientId', 'answer'],
+        properties: {
+          clientId: { type: 'string', format: 'uuid' },
+          answer: { type: 'string', minLength: 1, maxLength: 100 },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: { data: { type: 'object', additionalProperties: true } },
+          additionalProperties: true,
+        },
+      },
+    },
     config: { rateLimit: authRateLimit },
   }, async (request, reply) => {
     const parsed = processAnswerSchema.safeParse(request.body);
@@ -63,6 +102,22 @@ export async function onboardingRoutes(app: FastifyInstance) {
 
   // GET /api/onboarding/status/:clientId — Check onboarding status
   app.get('/api/onboarding/status/:clientId', {
+    schema: {
+      tags: ['Onboarding'],
+      summary: 'Check onboarding status',
+      params: {
+        type: 'object',
+        required: ['clientId'],
+        properties: { clientId: { type: 'string' } },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: { data: { type: 'object', additionalProperties: true } },
+          additionalProperties: true,
+        },
+      },
+    },
     config: { rateLimit: authRateLimit },
   }, async (request, reply) => {
     const { clientId } = request.params as { clientId: string };

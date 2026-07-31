@@ -2,6 +2,8 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import helmet from '@fastify/helmet';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 import Redis from 'ioredis';
 import { env } from './config/env';
 import { registerRoutes } from './routes';
@@ -60,6 +62,43 @@ async function buildApp() {
       return (request as any).tenantId || request.ip;
     },
   });
+
+  // OpenAPI 3.0 documentation — core plugin always registered (it only
+  // collects route schemas in memory; it exposes nothing by itself).
+  await app.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: 'Agiliza API',
+        description: 'Gestão de Assinaturas e Cobrança Recorrente com IA Preditiva',
+        version: '0.8.0',
+      },
+      servers: [{ url: `http://localhost:${env.PORT}` }],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+          },
+        },
+      },
+    },
+  });
+
+  // Swagger UI at /docs — dev/test only. The UI (and its /docs/json spec
+  // endpoint) would leak route internals publicly in production, so it is
+  // not registered there. Registered BEFORE the auth plugin so /docs stays
+  // reachable without credentials.
+  if (env.NODE_ENV !== 'production') {
+    await app.register(fastifySwaggerUi, {
+      routePrefix: '/docs',
+      uiConfig: {
+        docExpansion: 'list',
+        deepLinking: false,
+      },
+      staticCSP: true,
+    });
+  }
 
   // Auth (applies to all routes except public ones)
   await app.register(authPlugin);

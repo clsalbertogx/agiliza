@@ -20,11 +20,50 @@ const createInvoiceSchema = z.object({
   paymentMethod: z.enum(['PIX', 'BOLETO', 'CREDIT_CARD']).optional(),
 });
 
+// Pass-through response envelopes for OpenAPI (see client.routes.ts).
+const dataEnvelope = {
+  type: 'object',
+  properties: {
+    data: { type: 'object', additionalProperties: true },
+  },
+  additionalProperties: true,
+};
+
+const listEnvelope = {
+  type: 'object',
+  properties: {
+    data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+    meta: { type: 'object', additionalProperties: true },
+  },
+  additionalProperties: true,
+};
+
 export async function invoiceRoutes(app: FastifyInstance) {
   const invoiceRepo = createInvoiceRepository();
   const clientRepo = createClientRepository();
   // POST /api/invoices — Create invoice (via use case)
-  app.post('/api/invoices', async (request, reply) => {
+  app.post('/api/invoices', {
+    schema: {
+      tags: ['Invoices'],
+      summary: 'Create a new invoice',
+      security: [{ bearerAuth: [] }],
+      body: {
+        type: 'object',
+        required: ['tenantId', 'clientId', 'amount', 'dueDate'],
+        properties: {
+          tenantId: { type: 'string', format: 'uuid' },
+          clientId: { type: 'string', format: 'uuid' },
+          amount: { type: 'number', exclusiveMinimum: 0 },
+          dueDate: { type: 'string', format: 'date-time' },
+          description: { type: 'string' },
+          paymentMethod: { type: 'string', enum: ['PIX', 'BOLETO', 'CREDIT_CARD'] },
+        },
+      },
+      response: {
+        201: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const parsed = createInvoiceSchema.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400);
@@ -52,7 +91,27 @@ export async function invoiceRoutes(app: FastifyInstance) {
   });
 
   // GET /api/invoices — List invoices (via use case)
-  app.get('/api/invoices', async (request) => {
+  app.get('/api/invoices', {
+    schema: {
+      tags: ['Invoices'],
+      summary: 'List invoices',
+      description: 'Paginated invoice list, filtered by the authenticated tenant unless a tenantId is passed.',
+      security: [{ bearerAuth: [] }],
+      querystring: {
+        type: 'object',
+        properties: {
+          tenantId: { type: 'string', format: 'uuid' },
+          page: { type: 'integer', minimum: 1 },
+          perPage: { type: 'integer', minimum: 1 },
+          status: { type: 'string' },
+          clientId: { type: 'string', format: 'uuid' },
+        },
+      },
+      response: {
+        200: listEnvelope,
+      },
+    },
+  }, async (request) => {
     const query = request.query as any;
     const tenantId = request.tenantId || query.tenantId;
 
@@ -69,7 +128,22 @@ export async function invoiceRoutes(app: FastifyInstance) {
   });
 
   // GET /api/invoices/stats — Get invoice stats (via use case, MUST be registered BEFORE :id)
-  app.get('/api/invoices/stats', async (request, reply) => {
+  app.get('/api/invoices/stats', {
+    schema: {
+      tags: ['Invoices'],
+      summary: 'Get invoice statistics',
+      security: [{ bearerAuth: [] }],
+      querystring: {
+        type: 'object',
+        properties: {
+          tenantId: { type: 'string', format: 'uuid' },
+        },
+      },
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const query = request.query as any;
     const tenantId = request.tenantId || query.tenantId;
 
@@ -85,7 +159,21 @@ export async function invoiceRoutes(app: FastifyInstance) {
   });
 
   // GET /api/invoices/:id — Get invoice (via use case, tenant-isolated)
-  app.get('/api/invoices/:id', async (request, reply) => {
+  app.get('/api/invoices/:id', {
+    schema: {
+      tags: ['Invoices'],
+      summary: 'Get an invoice by ID',
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string' } },
+      },
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const tenantId = request.tenantId;
 
@@ -101,7 +189,22 @@ export async function invoiceRoutes(app: FastifyInstance) {
   });
 
   // POST /api/invoices/:id/pay — Process payment (creates PIX charge)
-  app.post('/api/invoices/:id/pay', async (request, reply) => {
+  app.post('/api/invoices/:id/pay', {
+    schema: {
+      tags: ['Invoices'],
+      summary: 'Process payment for an invoice',
+      description: 'Creates a PIX charge at the tenant payment provider.',
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string' } },
+      },
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const useCase = createProcessPaymentUseCase();
     const result = await useCase.execute({ invoiceId: id, tenantId: request.tenantId! });
@@ -116,7 +219,27 @@ export async function invoiceRoutes(app: FastifyInstance) {
   });
 
   // GET /api/invoices/:id/payments — List payment history for invoice
-  app.get('/api/invoices/:id/payments', async (request, reply) => {
+  app.get('/api/invoices/:id/payments', {
+    schema: {
+      tags: ['Invoices'],
+      summary: 'List payments for an invoice',
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string' } },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          },
+          additionalProperties: true,
+        },
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const tenantId = request.tenantId;
 
@@ -132,7 +255,21 @@ export async function invoiceRoutes(app: FastifyInstance) {
   });
 
   // GET /api/invoices/:id/pix-qrcode — Get PIX QRCode
-  app.get('/api/invoices/:id/pix-qrcode', async (request, reply) => {
+  app.get('/api/invoices/:id/pix-qrcode', {
+    schema: {
+      tags: ['Invoices'],
+      summary: 'Get PIX QR code for an invoice',
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string' } },
+      },
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const invoice = await invoiceRepo.findByIdRaw(id, request.tenantId);
 

@@ -5,3 +5,4 @@ export * from './payment.repository.port';
 export * from './tenant.repository.port';
 export * from './event.repository.port';
 export * from './subscription.repository.port';
+export * from './payment-provider-config.repository.port';

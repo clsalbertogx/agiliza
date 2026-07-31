@@ -80,6 +80,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Apply database migrations
+        working-directory: apps/backend
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://dev:dev@localhost:5432/agiliza
+
       - name: Run Backend Tests
         working-directory: apps/backend
         env:
@@ -135,6 +141,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Apply database migrations
+        working-directory: apps/backend
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://dev:dev@localhost:5432/agiliza
 
       - name: Run Backend Coverage
         working-directory: apps/backend
@@ -206,6 +218,12 @@ jobs:
 
       - name: Install Playwright Browsers
         run: npx playwright install chromium
+
+      - name: Apply database migrations
+        working-directory: apps/backend
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://dev:dev@localhost:5432/agiliza
 
       - name: Start Backend
         run: |

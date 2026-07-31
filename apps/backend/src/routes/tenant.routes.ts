@@ -1,6 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { createTenantRepository, createIdGenerator, testPaymentProviderConnection } from '@/presentation/factories';
+import {
+  createTenantRepository,
+  createIdGenerator,
+  testPaymentProviderConnection,
+  createUpsertPaymentProviderConfigUseCase,
+  createGetPaymentProviderConfigUseCase,
+} from '@/presentation/factories';
 
 const createTenantSchema = z.object({
   name: z.string().min(1).max(255),
@@ -30,9 +36,78 @@ const decisionConfigSchema = z.object({
 
 const tenantRepo = createTenantRepository();
 
+// Pass-through response envelopes for OpenAPI (see client.routes.ts).
+const dataEnvelope = {
+  type: 'object',
+  properties: {
+    data: { type: 'object', additionalProperties: true },
+  },
+  additionalProperties: true,
+};
+
+const listEnvelope = {
+  type: 'object',
+  properties: {
+    data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+    meta: { type: 'object', additionalProperties: true },
+  },
+  additionalProperties: true,
+};
+
+const idParamsSchema = {
+  type: 'object',
+  required: ['id'],
+  properties: { id: { type: 'string' } },
+} as const;
+
+const createTenantBodySchema = {
+  type: 'object',
+  required: ['name', 'slug', 'email'],
+  properties: {
+    name: { type: 'string', minLength: 1, maxLength: 255 },
+    slug: { type: 'string', minLength: 3, maxLength: 100, pattern: '^[a-z0-9-]+$' },
+    document: { type: 'string' },
+    email: { type: 'string', format: 'email' },
+    phone: { type: 'string' },
+  },
+} as const;
+
+const paymentProviderBodySchema = {
+  type: 'object',
+  required: ['provider', 'apiKey'],
+  properties: {
+    provider: { type: 'string', enum: ['asaas', 'mercadopago', 'pagbank', 'polar'] },
+    apiKey: { type: 'string', minLength: 1 },
+    environment: { type: 'string', enum: ['sandbox', 'production'] },
+  },
+} as const;
+
+const decisionConfigBodySchema = {
+  type: 'object',
+  properties: {
+    defaultChannel: { type: 'string', enum: ['WHATSAPP', 'EMAIL', 'SMS'] },
+    sendReminders: { type: 'boolean' },
+    leadDays: { type: 'integer', minimum: 1, maximum: 14 },
+    businessHoursStart: { type: 'string', pattern: '^\\d{2}:\\d{2}$' },
+    businessHoursEnd: { type: 'string', pattern: '^\\d{2}:\\d{2}$' },
+    weekendReminders: { type: 'boolean' },
+    maxRemindersPerCycle: { type: 'integer', minimum: 1, maximum: 10 },
+  },
+} as const;
+
 export async function tenantRoutes(app: FastifyInstance) {
   // POST /api/tenants — Create tenant
-  app.post('/api/tenants', async (request, reply) => {
+  app.post('/api/tenants', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'Create a new tenant',
+      security: [{ bearerAuth: [] }],
+      body: createTenantBodySchema,
+      response: {
+        201: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const parsed = createTenantSchema.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400);
@@ -69,7 +144,24 @@ export async function tenantRoutes(app: FastifyInstance) {
   });
 
   // GET /api/tenants — List tenants
-  app.get('/api/tenants', async (request) => {
+  app.get('/api/tenants', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'List tenants',
+      security: [{ bearerAuth: [] }],
+      querystring: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', minimum: 1 },
+          perPage: { type: 'integer', minimum: 1 },
+          search: { type: 'string' },
+        },
+      },
+      response: {
+        200: listEnvelope,
+      },
+    },
+  }, async (request) => {
     const query = request.query as any;
     const page = Math.max(1, parseInt(query.page) || 1);
     const perPage = Math.min(100, Math.max(1, parseInt(query.perPage) || 10));
@@ -87,7 +179,17 @@ export async function tenantRoutes(app: FastifyInstance) {
   });
 
   // GET /api/tenants/:id — Get tenant
-  app.get('/api/tenants/:id', async (request, reply) => {
+  app.get('/api/tenants/:id', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'Get a tenant by ID',
+      security: [{ bearerAuth: [] }],
+      params: idParamsSchema,
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const tenant = await tenantRepo.findById(id);
 
@@ -100,7 +202,27 @@ export async function tenantRoutes(app: FastifyInstance) {
   });
 
   // PATCH /api/tenants/:id — Update tenant
-  app.patch('/api/tenants/:id', async (request, reply) => {
+  app.patch('/api/tenants/:id', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'Update a tenant',
+      security: [{ bearerAuth: [] }],
+      params: idParamsSchema,
+      body: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', minLength: 1, maxLength: 255 },
+          slug: { type: 'string', minLength: 3, maxLength: 100, pattern: '^[a-z0-9-]+$' },
+          document: { type: 'string' },
+          email: { type: 'string', format: 'email' },
+          phone: { type: 'string' },
+        },
+      },
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     
     const existing = await tenantRepo.findById(id);
@@ -123,7 +245,17 @@ export async function tenantRoutes(app: FastifyInstance) {
   });
 
   // GET /api/tenants/:id/config — Get tenant configuration
-  app.get('/api/tenants/:id/config', async (request, reply) => {
+  app.get('/api/tenants/:id/config', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'Get tenant configuration',
+      security: [{ bearerAuth: [] }],
+      params: idParamsSchema,
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const tenant = await tenantRepo.findById(id);
 
@@ -141,8 +273,20 @@ export async function tenantRoutes(app: FastifyInstance) {
     };
   });
 
-  // PATCH /api/tenants/:id/config — Update tenant general config
-  app.patch('/api/tenants/:id/config', async (request, reply) => {
+  // PATCH /api/tenants/:id/config — Update tenant general config.
+  // No body schema on purpose: config is an arbitrary JSON blob and a schema
+  // would strip unknown keys (Fastify ajv removeAdditional).
+  app.patch('/api/tenants/:id/config', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'Update tenant configuration',
+      security: [{ bearerAuth: [] }],
+      params: idParamsSchema,
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     
     const existing = await tenantRepo.findById(id);
@@ -156,27 +300,62 @@ export async function tenantRoutes(app: FastifyInstance) {
   });
 
   // GET /api/tenants/:id/payment-provider — Get payment provider config
-  app.get('/api/tenants/:id/payment-provider', async (request, reply) => {
+  app.get('/api/tenants/:id/payment-provider', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'Get payment provider configuration',
+      description: 'Returns the configuration for the tenant payment provider.',
+      security: [{ bearerAuth: [] }],
+      params: idParamsSchema,
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const tenant = await tenantRepo.findById(id);
 
+    // Check tenant exists
+    const tenant = await tenantRepo.findById(id);
     if (!tenant) {
       reply.code(404);
       return { error: 'Tenant not found' };
     }
 
+    const getConfig = createGetPaymentProviderConfigUseCase();
+    const config = await getConfig.execute(id, tenant.paymentProvider);
+
+    if (config.success && config.value) {
+      return {
+        data: {
+          provider: tenant.paymentProvider,
+          hasApiKey: true,
+          environment: config.value.environment,
+        },
+      };
+    }
+
     return {
       data: {
         provider: tenant.paymentProvider,
-        // Don't expose the full API key
-        hasApiKey: !!(tenant.paymentProviderConfig as any)?.apiKey,
-        environment: (tenant.paymentProviderConfig as any)?.environment || 'sandbox',
+        hasApiKey: false,
+        environment: 'sandbox',
       },
     };
   });
 
   // PUT /api/tenants/:id/payment-provider — Set payment provider
-  app.put('/api/tenants/:id/payment-provider', async (request, reply) => {
+  app.put('/api/tenants/:id/payment-provider', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'Set payment provider credentials',
+      security: [{ bearerAuth: [] }],
+      params: idParamsSchema,
+      body: paymentProviderBodySchema,
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     
     const existing = await tenantRepo.findById(id);
@@ -202,8 +381,23 @@ export async function tenantRoutes(app: FastifyInstance) {
       console.warn('Provider connection test warning:', testResult.error);
     }
 
-    const updated = await tenantRepo.updatePaymentProvider(id, parsed.data.provider, {
+    // Use the upsert use case to encrypt and persist
+    const upsertConfig = createUpsertPaymentProviderConfigUseCase();
+    const result = await upsertConfig.execute({
+      tenantId: id,
+      provider: parsed.data.provider,
       apiKey: parsed.data.apiKey,
+      environment: parsed.data.environment,
+    });
+
+    if (!result.success) {
+      reply.code(500);
+      return { error: 'Failed to save payment provider configuration' };
+    }
+
+    // Also update the tenant's default payment provider
+    const updated = await tenantRepo.updatePaymentProvider(id, parsed.data.provider, {
+      apiKey: '***ENCRYPTED***',
       environment: parsed.data.environment,
     });
 
@@ -211,7 +405,17 @@ export async function tenantRoutes(app: FastifyInstance) {
   });
 
   // GET /api/tenants/:id/decision-config — Get decision config
-  app.get('/api/tenants/:id/decision-config', async (request, reply) => {
+  app.get('/api/tenants/:id/decision-config', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'Get decision engine configuration',
+      security: [{ bearerAuth: [] }],
+      params: idParamsSchema,
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const tenant = await tenantRepo.findById(id);
 
@@ -224,7 +428,18 @@ export async function tenantRoutes(app: FastifyInstance) {
   });
 
   // PUT /api/tenants/:id/decision-config — Update decision config
-  app.put('/api/tenants/:id/decision-config', async (request, reply) => {
+  app.put('/api/tenants/:id/decision-config', {
+    schema: {
+      tags: ['Tenants'],
+      summary: 'Update decision engine configuration',
+      security: [{ bearerAuth: [] }],
+      params: idParamsSchema,
+      body: decisionConfigBodySchema,
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     
     const existing = await tenantRepo.findById(id);

@@ -10,6 +10,11 @@ const mockState = vi.hoisted(() => ({
   findBySlug: vi.fn(),
 }));
 
+const mockPaymentProviderConfigState = vi.hoisted(() => ({
+  upsert: vi.fn().mockResolvedValue(undefined),
+  findUnique: vi.fn(),
+}));
+
 vi.mock('@/infrastructure/database/prisma.service', () => ({
   getPrismaClient: vi.fn(() => ({
     tenant: {
@@ -20,6 +25,10 @@ vi.mock('@/infrastructure/database/prisma.service', () => ({
       update: mockState.update,
       count: mockState.count,
     },
+    paymentProviderConfig: {
+      upsert: mockPaymentProviderConfigState.upsert,
+      findUnique: mockPaymentProviderConfigState.findUnique,
+    },
   })),
 }));
 
@@ -27,6 +36,9 @@ import { tenantRoutes } from '@/routes/tenant.routes';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const VALID_TOKEN = 'test-valid-token';
+
+// Ensure encryption key is set for the encryption service used in routes
+process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
 describe('Tenant API Routes', () => {
   let app: ReturnType<typeof Fastify>;
@@ -130,6 +142,7 @@ describe('Tenant API Routes', () => {
       mockState.findUnique.mockResolvedValue(mockTenant);
       // updatePaymentProvider calls prisma.tenant.update
       mockState.update.mockResolvedValue(mockTenant);
+      mockPaymentProviderConfigState.upsert.mockResolvedValue(undefined);
 
       const res = await app.inject({
         method: 'PUT',
@@ -160,6 +173,30 @@ describe('Tenant API Routes', () => {
 
     it('should never return API key in response (always masked)', async () => {
       mockState.findUnique.mockResolvedValue(mockTenant);
+
+      // Encrypt a real key so the decryption service can authenticate it
+      const { createCipheriv, randomBytes } = await import('node:crypto');
+      const key = Buffer.from('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 'hex');
+      const iv = randomBytes(16);
+      const cipher = createCipheriv('aes-256-gcm', key, iv);
+      let encrypted = cipher.update('asaas_test_key', 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+      const encryptedPayload = JSON.stringify({
+        ciphertext: encrypted,
+        iv: iv.toString('hex'),
+        tag: cipher.getAuthTag().toString('hex'),
+      });
+
+      mockPaymentProviderConfigState.findUnique.mockResolvedValue({
+        id: 'config-1',
+        tenantId: TEST_TENANT_ID,
+        provider: 'asaas',
+        apiKeyEncrypted: encryptedPayload,
+        environment: 'sandbox',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
       const res = await app.inject({
         method: 'GET',

@@ -22,7 +22,23 @@ export async function webhookRoutes(app: FastifyInstance) {
   };
 
   // POST /api/webhooks/payment/:provider
+  // Schema is intentionally minimal: no body schema (provider payloads are
+  // arbitrary and must reach the handler intact) and provider is a plain
+  // string so the route's own validation produces its stable error contract.
   app.post('/api/webhooks/payment/:provider', {
+    schema: {
+      tags: ['Webhooks'],
+      summary: 'Process a payment provider webhook',
+      description: 'Public endpoint. Verifies the provider signature and processes the event.',
+      params: {
+        type: 'object',
+        required: ['provider'],
+        properties: { provider: { type: 'string' } },
+      },
+      response: {
+        200: { type: 'object', additionalProperties: true },
+      },
+    },
     config: { rateLimit: webhookRateLimit },
   }, async (request, reply) => {
     const { provider } = request.params as { provider: string };
@@ -82,6 +98,10 @@ export async function webhookRoutes(app: FastifyInstance) {
 
   // POST /api/webhooks/evolution
   app.post('/api/webhooks/evolution', {
+    schema: {
+      tags: ['Webhooks'],
+      summary: 'Receive a message provider (Evolution API) webhook',
+    },
     config: { rateLimit: webhookRateLimit },
   }, async (request, reply) => {
     // Validate API key

@@ -17,7 +17,29 @@ export async function reminderRoutes(app: FastifyInstance) {
   const reminderService = createReminderService();
 
   // POST /api/reminders/schedule — Schedule a reminder
-  app.post('/api/reminders/schedule', async (request, reply) => {
+  app.post('/api/reminders/schedule', {
+    schema: {
+      tags: ['Reminders'],
+      summary: 'Schedule a reminder for an invoice',
+      security: [{ bearerAuth: [] }],
+      body: {
+        type: 'object',
+        required: ['invoiceId', 'tenantId'],
+        properties: {
+          invoiceId: { type: 'string', format: 'uuid' },
+          tenantId: { type: 'string', format: 'uuid' },
+          scheduledAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: { data: { type: 'object', additionalProperties: true } },
+          additionalProperties: true,
+        },
+      },
+    },
+  }, async (request, reply) => {
     const parsed = scheduleReminderSchema.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400);
@@ -41,7 +63,28 @@ export async function reminderRoutes(app: FastifyInstance) {
   });
 
   // POST /api/reminders/send-now — Send reminder immediately
-  app.post('/api/reminders/send-now', async (request, reply) => {
+  app.post('/api/reminders/send-now', {
+    schema: {
+      tags: ['Reminders'],
+      summary: 'Send reminder immediately',
+      security: [{ bearerAuth: [] }],
+      body: {
+        type: 'object',
+        required: ['invoiceId', 'tenantId'],
+        properties: {
+          invoiceId: { type: 'string', format: 'uuid' },
+          tenantId: { type: 'string', format: 'uuid' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: { data: { type: 'object', additionalProperties: true } },
+          additionalProperties: true,
+        },
+      },
+    },
+  }, async (request, reply) => {
     const parsed = sendNowSchema.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400);
@@ -61,7 +104,35 @@ export async function reminderRoutes(app: FastifyInstance) {
   });
 
   // GET /api/messages — List messages
-  app.get('/api/messages', async (request) => {
+  app.get('/api/messages', {
+    schema: {
+      tags: ['Messages'],
+      summary: 'List sent messages',
+      description: 'Paginated list of sent messages (event type MESSAGE_SENT).',
+      security: [{ bearerAuth: [] }],
+      querystring: {
+        type: 'object',
+        properties: {
+          tenantId: { type: 'string', format: 'uuid' },
+          page: { type: 'integer', minimum: 1 },
+          perPage: { type: 'integer', minimum: 1 },
+          status: { type: 'string' },
+          clientId: { type: 'string', format: 'uuid' },
+          invoiceId: { type: 'string', format: 'uuid' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+            meta: { type: 'object', additionalProperties: true },
+          },
+          additionalProperties: true,
+        },
+      },
+    },
+  }, async (request) => {
     const query = request.query as any;
     const tenantId = request.tenantId || query.tenantId;
     const page = Math.max(1, parseInt(query.page) || 1);
@@ -92,7 +163,25 @@ export async function reminderRoutes(app: FastifyInstance) {
   });
 
   // GET /api/messages/:id/tracking — Get message tracking timeline
-  app.get('/api/messages/:id/tracking', async (request, reply) => {
+  app.get('/api/messages/:id/tracking', {
+    schema: {
+      tags: ['Messages'],
+      summary: 'Get message tracking timeline',
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: { id: { type: 'string' } },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: { data: { type: 'object', additionalProperties: true } },
+          additionalProperties: true,
+        },
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const eventRepo = createEventRepository();
 
@@ -122,7 +211,21 @@ export async function reminderRoutes(app: FastifyInstance) {
   });
 
   // POST /api/reminders/process-pending — Process all pending reminders for a tenant
-  app.post('/api/reminders/process-pending', async (request, reply) => {
+  app.post('/api/reminders/process-pending', {
+    schema: {
+      tags: ['Reminders'],
+      summary: 'Process all pending reminders for a tenant',
+      description: 'Routes through the decision engine to send pending reminders.',
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          type: 'object',
+          properties: { data: { type: 'object', additionalProperties: true } },
+          additionalProperties: true,
+        },
+      },
+    },
+  }, async (request, reply) => {
     const body = request.body as any;
     const tenantId = request.tenantId || body.tenantId;
 

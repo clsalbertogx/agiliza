@@ -11,3 +11,5 @@ export * from './create-subscription.usecase';
 export * from './get-next-decision.usecase';
 export * from './process-payment.usecase';
 export * from './process-payment-webhook.usecase';
+export * from './upsert-payment-provider-config.usecase';
+export * from './get-payment-provider-config.usecase';

@@ -25,3 +25,7 @@ export { createCancelSubscriptionUseCase } from './create-cancel-subscription.fa
 export { createListPaymentsForInvoiceUseCase } from './create-list-payments.factory';
 export { createRecurringInvoiceUseCase } from './create-recurring-invoice.factory';
 export { registerEventHandlers } from './register-event-handlers';
+export { createUpsertPaymentProviderConfigUseCase } from './create-upsert-payment-provider-config.factory';
+export { createGetPaymentProviderConfigUseCase } from './create-get-payment-provider-config.factory';
+export { createEncryptionService } from './create-encryption.factory';
+export { createPaymentProviderConfigRepository } from './create-payment-provider-config-repository.factory';
