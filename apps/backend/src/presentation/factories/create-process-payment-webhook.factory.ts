@@ -2,6 +2,7 @@ import { ProcessPaymentWebhookUseCase } from '@/application/usecases/process-pay
 import { PerTenantHmacVerifier } from '@/infrastructure/payment/per-tenant-hmac-verifier';
 import { AsaasWebhookParser } from '@/infrastructure/payment/asaas-webhook-parser';
 import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
+import { PrismaPaymentRepository } from '@/infrastructure/database/repositories/payment.repository';
 import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 
 export function createProcessPaymentWebhookUseCase(): ProcessPaymentWebhookUseCase {
@@ -9,6 +10,7 @@ export function createProcessPaymentWebhookUseCase(): ProcessPaymentWebhookUseCa
     new PerTenantHmacVerifier(),
     new AsaasWebhookParser(),
     new PrismaInvoiceRepository(),
+    new PrismaPaymentRepository(),
     new InMemoryEventBus(),
   );
 }

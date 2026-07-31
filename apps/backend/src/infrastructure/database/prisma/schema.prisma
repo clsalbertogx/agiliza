@@ -63,6 +63,9 @@ enum EventType {
   CLIENT_CREATED
   CLIENT_RISK_UPDATED
   DECISION_MADE
+  SUBSCRIPTION_CREATED
+  SUBSCRIPTION_CANCELLED
+  SUBSCRIPTION_EXPIRED
 }
 
 // ===================== MODELS =====================
@@ -192,11 +195,13 @@ model Subscription {
   clientId  String   @db.Uuid
 
   // Subscription details
-  planName    String
+  plan        String
   amount      Decimal       @db.Decimal(10, 2)
-  frequency   String        // monthly, weekly, yearly
-  status      String        @default("active") // active, paused, cancelled, expired
-  nextBilling DateTime?
+  billingCycle String       // MONTHLY, BIMONTHLY, QUARTERLY, SEMIANNUAL, ANNUAL
+  status      String        @default("ACTIVE") // ACTIVE, CANCELLED, EXPIRED, PAUSED
+  startDate   DateTime      @default(now())
+  endDate     DateTime?
+  nextBilling DateTime
   cancelledAt DateTime?
 
   createdAt DateTime @default(now())

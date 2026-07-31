@@ -6,6 +6,7 @@ import {
   createGetInvoiceUseCase,
   createGetInvoiceStatsUseCase,
   createProcessPaymentUseCase,
+  createListPaymentsForInvoiceUseCase,
   createInvoiceRepository,
   createClientRepository,
 } from '@/presentation/factories';
@@ -111,6 +112,22 @@ export async function invoiceRoutes(app: FastifyInstance) {
     }
 
     reply.code(200);
+    return { data: result.value };
+  });
+
+  // GET /api/invoices/:id/payments — List payment history for invoice
+  app.get('/api/invoices/:id/payments', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const tenantId = request.tenantId;
+
+    const useCase = createListPaymentsForInvoiceUseCase();
+    const result = await useCase.execute({ invoiceId: id, tenantId: tenantId! });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
+    }
+
     return { data: result.value };
   });
 

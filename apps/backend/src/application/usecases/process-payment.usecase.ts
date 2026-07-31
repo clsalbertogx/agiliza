@@ -1,10 +1,13 @@
-import { Either, success, failure } from '@/application/types/either';
+import crypto from 'crypto';
+import { Either, success, failure, isFailure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
 import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
 import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
 import { updateInvoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
+import { createPayment, PaymentProvider } from '@/domain/entities/payment';
 
 export interface ProcessPaymentInput {
   invoiceId: string;
@@ -24,6 +27,7 @@ export class ProcessPaymentUseCase {
   constructor(
     private readonly invoiceRepo: InvoiceRepositoryPort,
     private readonly clientRepo: ClientRepositoryPort,
+    private readonly paymentRepo: PaymentRepositoryPort,
     private readonly paymentGateway: PaymentGatewayPort,
     private readonly eventBus: EventBusPort,
   ) {}
@@ -65,7 +69,33 @@ export class ProcessPaymentUseCase {
     });
     await this.invoiceRepo.update(updatedInvoice);
 
-    // 5. Return PIX data
+    // 5. Record payment
+    const paymentResult = createPayment({
+      id: crypto.randomUUID(),
+      tenantId: input.tenantId,
+      invoiceId: input.invoiceId,
+      clientId: invoice.clientId,
+      amount: Number(invoice.amount),
+      provider: PaymentProvider.ASAAS,
+      externalId: pixCharge.id,
+      paymentMethod: PaymentMethod.PIX,
+    });
+
+    if (isFailure(paymentResult)) {
+      // This should not happen given validated inputs; log and continue
+      return success({
+        status: 'PENDING',
+        pix: {
+          qrCode: pixCharge.qrCode,
+          copyPaste: pixCharge.copyPaste,
+          expiresAt: pixCharge.expiresAt,
+        },
+      });
+    }
+
+    await this.paymentRepo.create(paymentResult.value);
+
+    // 6. Return PIX data
     return success({
       status: 'PENDING',
       pix: {

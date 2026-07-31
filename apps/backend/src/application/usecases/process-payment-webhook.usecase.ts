@@ -1,10 +1,13 @@
+import crypto from 'crypto';
 import { PaymentWebhookParserPort } from '@/application/ports/gateways/payment-webhook-parser.port';
 import { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
 import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
 import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import { ApplicationError } from '@/application/errors/application.error';
 import { Either, success, failure, isFailure } from '@/application/types/either';
 import { updateInvoice, InvoiceStatus } from '@/domain/entities/invoice';
+import { createPayment, PaymentStatus, updatePayment } from '@/domain/entities/payment';
 import { createDomainEvent } from '@/domain/events/domain-events';
 
 export interface ProcessPaymentWebhookInput {
@@ -24,6 +27,7 @@ export class ProcessPaymentWebhookUseCase {
     private readonly verifier: WebhookVerifierPort,
     private readonly parser: PaymentWebhookParserPort,
     private readonly invoiceRepo: InvoiceRepositoryPort,
+    private readonly paymentRepo: PaymentRepositoryPort,
     private readonly eventBus: EventBusPort,
   ) {}
 
@@ -78,6 +82,26 @@ export class ProcessPaymentWebhookUseCase {
         });
 
         await this.invoiceRepo.update(updatedInvoice);
+
+        // Record payment
+        const paymentResult = createPayment({
+          id: crypto.randomUUID(),
+          tenantId: input.tenantId,
+          invoiceId: webhookData.invoiceId,
+          clientId: invoice.clientId,
+          amount: webhookData.amount ?? Number(invoice.amount),
+          provider: input.provider as any,
+          externalId: webhookData.providerPaymentId,
+          paymentMethod: invoice.paymentMethod || 'PIX',
+        });
+
+        if (!isFailure(paymentResult)) {
+          const confirmedPayment = updatePayment(paymentResult.value, {
+            status: PaymentStatus.CONFIRMED,
+            webhookReceivedAt: new Date(),
+          });
+          await this.paymentRepo.create(confirmedPayment);
+        }
 
         // Publish payment.confirmed event
         const event = createDomainEvent(

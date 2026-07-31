@@ -5,3 +5,4 @@ export * from './get-client.usecase';
 export * from './list-invoices.usecase';
 export * from './get-invoice.usecase';
 export * from './get-invoice-stats.usecase';
+export * from './list-payments-for-invoice.usecase';

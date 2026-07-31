@@ -3,6 +3,7 @@ import { isSuccess, isFailure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
 import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
 import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
 import { Invoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
@@ -27,6 +28,12 @@ const mockClientRepo: ClientRepositoryPort = {
   delete: vi.fn(),
   count: vi.fn(),
   updateRiskScore: vi.fn(),
+};
+
+const mockPaymentRepo: PaymentRepositoryPort = {
+  create: vi.fn(),
+  findByInvoiceId: vi.fn(),
+  findById: vi.fn(),
 };
 
 const mockPaymentGateway: PaymentGatewayPort = {
@@ -82,7 +89,7 @@ describe('ProcessPaymentUseCase', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new ProcessPaymentUseCase(mockInvoiceRepo, mockClientRepo, mockPaymentGateway, mockEventBus);
+    useCase = new ProcessPaymentUseCase(mockInvoiceRepo, mockClientRepo, mockPaymentRepo, mockPaymentGateway, mockEventBus);
   });
 
   describe('Happy Path', () => {

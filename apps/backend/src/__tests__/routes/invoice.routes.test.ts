@@ -29,6 +29,9 @@ vi.mock('@/infrastructure/database/prisma.service', () => {
         findFirst: mockState.findById,
         findMany: mockState.findMany,
       },
+      payment: {
+        findMany: mockState.findMany,
+      },
     })),
   };
 });
@@ -347,6 +350,60 @@ describe('Invoice API Routes', () => {
         headers: { authorization: validToken },
       });
       expect(res.statusCode).toBe(404);
+    });
+  });
+
+  describe('GET /api/invoices/:id/payments — List Payment History', () => {
+    it('should return payment history for an invoice', async () => {
+      const mockPayments = [
+        {
+          id: 'pay-001',
+          invoiceId: TEST_INVOICE_ID,
+          tenantId: TEST_TENANT_ID,
+          clientId: TEST_CLIENT_ID,
+          amount: 150.00,
+          method: 'PIX',
+          provider: 'ASAAS',
+          providerPaymentId: 'ext_001',
+          status: 'CONFIRMED',
+          fee: 1.50,
+          netAmount: 148.50,
+          webhookReceivedAt: null,
+          webhookRetryCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+      mockState.findMany.mockResolvedValue(mockPayments);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/invoices/${TEST_INVOICE_ID}/payments`,
+        headers: { authorization: validToken },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().data).toBeDefined();
+      expect(res.json().data).toHaveLength(1);
+    });
+
+    it('should return 401 without auth token', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/invoices/${TEST_INVOICE_ID}/payments`,
+      });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('should return empty array when no payments exist', async () => {
+      mockState.findMany.mockResolvedValue([]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/invoices/${TEST_INVOICE_ID}/payments`,
+        headers: { authorization: validToken },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().data).toEqual([]);
     });
   });
 

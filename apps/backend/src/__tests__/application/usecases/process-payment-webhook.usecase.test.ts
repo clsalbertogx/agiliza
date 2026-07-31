@@ -5,6 +5,7 @@ import { ProcessPaymentWebhookUseCase, ProcessPaymentWebhookInput } from '@/appl
 import { PaymentWebhookParserPort, PaymentWebhookData } from '@/application/ports/gateways/payment-webhook-parser.port';
 import { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
 import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
 import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import { Invoice, InvoiceStatus } from '@/domain/entities/invoice';
 
@@ -26,6 +27,12 @@ const mockInvoiceRepo: InvoiceRepositoryPort = {
   delete: vi.fn(),
   count: vi.fn(),
   getStats: vi.fn(),
+};
+
+const mockPaymentRepo: PaymentRepositoryPort = {
+  create: vi.fn(),
+  findByInvoiceId: vi.fn(),
+  findById: vi.fn(),
 };
 
 const mockEventBus: EventBusPort = {
@@ -72,6 +79,7 @@ function makeUseCase() {
     mockVerifier,
     mockParser,
     mockInvoiceRepo,
+    mockPaymentRepo,
     mockEventBus,
   );
 }

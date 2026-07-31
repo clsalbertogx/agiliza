@@ -10,7 +10,10 @@ export type DomainEventType =
   | 'message.delivered'
   | 'message.read'
   | 'message.clicked'
-  | 'decision.made';
+  | 'decision.made'
+  | 'subscription.created'
+  | 'subscription.cancelled'
+  | 'subscription.expired';
 
 export interface DomainEvent {
   eventId: string;

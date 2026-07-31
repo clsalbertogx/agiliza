@@ -20,3 +20,6 @@ export { createHmacVerifier } from './create-webhook.factory';
 export { createProcessPaymentUseCase } from './create-process-payment.factory';
 export { createProcessPaymentWebhookUseCase } from './create-process-payment-webhook.factory';
 export { createGetNextDecisionUseCase } from './create-get-next-decision.factory';
+export { createCreateSubscriptionUseCase, createSubscriptionRepository } from './create-subscription.factory';
+export { createCancelSubscriptionUseCase } from './create-cancel-subscription.factory';
+export { createListPaymentsForInvoiceUseCase } from './create-list-payments.factory';
