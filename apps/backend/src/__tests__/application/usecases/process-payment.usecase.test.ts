@@ -39,8 +39,11 @@ const mockPaymentRepo: PaymentRepositoryPort = {
 
 const mockPaymentGateway: PaymentGatewayPort = {
   createPixCharge: vi.fn(),
+  createCreditCardCharge: vi.fn(),
+  createBoletoCharge: vi.fn(),
   getCharge: vi.fn(),
   cancelCharge: vi.fn(),
+  verifyWebhook: vi.fn(),
   handleWebhook: vi.fn(),
 };
 

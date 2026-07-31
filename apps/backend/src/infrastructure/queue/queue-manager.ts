@@ -1,17 +1,28 @@
 import { Queue, Worker, type Job } from 'bullmq';
 import { getRedis } from './redis.service';
-import { DEFAULT_JOB_OPTIONS, type QueueName } from './queue-definitions';
+import {
+  DEFAULT_JOB_OPTIONS,
+  DLQ_JOB_OPTIONS,
+  QueueNames,
+  type QueueName,
+} from './queue-definitions';
 
 const queues = new Map<QueueName, Queue>();
 
 /**
  * Get or create a BullMQ queue instance.
+ *
+ * The DLQ queue (FAILED_WEBHOOKS) is created with `DLQ_JOB_OPTIONS` so jobs
+ * are kept indefinitely for manual review.
  */
 export function getQueue(name: QueueName): Queue {
   if (!queues.has(name)) {
+    const defaultJobOptions =
+      name === QueueNames.FAILED_WEBHOOKS ? DLQ_JOB_OPTIONS : DEFAULT_JOB_OPTIONS;
+
     const queue = new Queue(name, {
       connection: getRedis(),
-      defaultJobOptions: DEFAULT_JOB_OPTIONS,
+      defaultJobOptions,
     });
 
     queue.on('error', (err) => {
@@ -38,6 +49,14 @@ export async function addJob<T extends Record<string, unknown>>(
     delay: opts?.delay,
   });
   return job.id ?? '';
+}
+
+/**
+ * Add a failed-webhook DLQ entry. Kept as a dedicated helper so callers
+ * (i.e. the retry base class's adapter) don't need to know the job name.
+ */
+export async function addFailedWebhookJob(data: Record<string, unknown>): Promise<string> {
+  return addJob(QueueNames.FAILED_WEBHOOKS, 'failed-webhook', data);
 }
 
 /**

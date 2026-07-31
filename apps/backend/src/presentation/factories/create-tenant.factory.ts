@@ -24,7 +24,7 @@ export function createIdGenerator(): IdGeneratorPort {
 
 export function createPaymentProvider(
   config: {
-    type: 'asaas' | 'mercadopago' | 'pagbank' | 'polar';
+    type: 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar';
     apiKey: string;
     environment?: 'sandbox' | 'production';
   },
@@ -33,7 +33,7 @@ export function createPaymentProvider(
 }
 
 export function testPaymentProviderConnection(config: {
-  type: 'asaas' | 'mercadopago' | 'pagbank' | 'polar';
+  type: 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar';
   apiKey: string;
   environment?: 'sandbox' | 'production';
 }): { success: boolean; error?: string } {

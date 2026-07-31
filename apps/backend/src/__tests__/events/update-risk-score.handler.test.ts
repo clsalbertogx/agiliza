@@ -82,20 +82,15 @@ describe('UpdateRiskScoreHandler', () => {
   });
 
   describe('error handling', () => {
-    it('should catch and log errors without throwing', async () => {
+    it('should throw transient errors so the retry loop in handleWithRetry can catch them', async () => {
       const { invoiceRepo, clientRepo, riskCalculator } = createMocks();
       const handler = new UpdateRiskScoreHandler(clientRepo, invoiceRepo, riskCalculator as unknown as RiskCalculatorService);
 
       riskCalculator.calculate.mockRejectedValue(new Error('Risk calculation failed'));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      await expect(handler.handle(makeEvent('payment.confirmed'))).resolves.toBeUndefined();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[UpdateRiskScoreHandler] Error:',
-        expect.any(Error)
+      await expect(handler.handle(makeEvent('payment.confirmed'))).rejects.toThrow(
+        'Risk calculation failed',
       );
-      consoleSpy.mockRestore();
     });
   });
 });

@@ -164,20 +164,15 @@ describe('SendReceiptHandler', () => {
   });
 
   describe('error handling', () => {
-    it('should catch and log errors without throwing', async () => {
+    it('should throw transient errors so the retry loop in handleWithRetry can catch them', async () => {
       const { invoiceRepo, clientRepo, messageProvider } = createMocks();
       const handler = new SendReceiptHandler(invoiceRepo, clientRepo, messageProvider);
 
       invoiceRepo.findById.mockRejectedValue(new Error('Database connection lost'));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      await expect(handler.handle(makePaymentConfirmedEvent())).resolves.toBeUndefined();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[SendReceiptHandler] Error:',
-        expect.any(Error)
+      await expect(handler.handle(makePaymentConfirmedEvent())).rejects.toThrow(
+        'Database connection lost',
       );
-      consoleSpy.mockRestore();
     });
   });
 });

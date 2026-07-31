@@ -1,14 +1,23 @@
 import { DomainEvent } from '@/domain/events/domain-events';
+import { RetryableWebhookHandler } from '@/application/events/handlers/retryable-webhook-handler';
 import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import { RiskCalculatorService } from '@/application/services/risk-calculator.service';
+import type { DLQPort } from '@/application/ports/queue/dlq.port';
 
-export class UpdateRiskScoreHandler {
+export class UpdateRiskScoreHandler extends RetryableWebhookHandler {
   constructor(
     private readonly clientRepo: ClientRepositoryPort,
     private readonly invoiceRepo: InvoiceRepositoryPort,
-    private readonly riskCalculator: RiskCalculatorService
-  ) {}
+    private readonly riskCalculator: RiskCalculatorService,
+    dlqPort?: DLQPort,
+  ) {
+    super(dlqPort);
+  }
+
+  getEventType(): string {
+    return 'payment.confirmed';
+  }
 
   async handle(event: DomainEvent): Promise<void> {
     const eventsThatAffectRisk: string[] = [
@@ -20,14 +29,10 @@ export class UpdateRiskScoreHandler {
     ];
     if (!eventsThatAffectRisk.includes(event.eventType)) return;
 
-    try {
-      const clientId = event.clientId;
-      if (!clientId) return;
+    const clientId = event.clientId;
+    if (!clientId) return;
 
-      const newScore = await this.riskCalculator.calculate(clientId, event.tenantId);
-      await this.clientRepo.updateRiskScore(clientId, newScore);
-    } catch (error) {
-      console.error('[UpdateRiskScoreHandler] Error:', error);
-    }
+    const newScore = await this.riskCalculator.calculate(clientId, event.tenantId);
+    await this.clientRepo.updateRiskScore(clientId, newScore);
   }
 }

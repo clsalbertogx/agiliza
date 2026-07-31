@@ -8,7 +8,7 @@ import Redis from 'ioredis';
 import { env } from './config/env';
 import { registerRoutes } from './routes';
 import authPlugin from './infrastructure/plugins/auth.plugin';
-import { disconnectRedis, closeAllQueues, startReminderWorker, closeWorker } from './infrastructure/queue';
+import { disconnectRedis, closeAllQueues, startReminderWorker, startDeadLetterWorker, closeWorker } from './infrastructure/queue';
 import { createRecurringInvoiceQueue, scheduleRecurringInvoiceJob, startRecurringInvoiceWorker } from './infrastructure/queue/recurring-invoice.worker';
 import { createReminderService, createRecurringInvoiceUseCase } from './presentation/factories';
 import { InMemoryEventBus } from './infrastructure/event-bus/in-memory-event-bus';
@@ -19,6 +19,7 @@ import { errorHandler } from './presentation/handler';
 let reminderWorker: ReturnType<typeof startReminderWorker> | null = null;
 let recurringInvoiceWorker: ReturnType<typeof startRecurringInvoiceWorker> | null = null;
 let recurringInvoiceQueue: ReturnType<typeof createRecurringInvoiceQueue> | null = null;
+let deadLetterWorker: ReturnType<typeof startDeadLetterWorker> | null = null;
 
 async function buildApp() {
   const app = Fastify({
@@ -120,6 +121,9 @@ async function buildApp() {
   await scheduleRecurringInvoiceJob(recurringInvoiceQueue);
   recurringInvoiceWorker = startRecurringInvoiceWorker(recurringInvoiceUseCase);
 
+  // Start the dead-letter queue worker
+  deadLetterWorker = startDeadLetterWorker();
+
   // Global error handler (must be registered after routes)
   app.setErrorHandler(errorHandler);
 
@@ -135,6 +139,7 @@ async function start() {
     try {
       if (reminderWorker) await closeWorker(reminderWorker);
       if (recurringInvoiceWorker) await closeWorker(recurringInvoiceWorker);
+      if (deadLetterWorker) await closeWorker(deadLetterWorker);
       if (recurringInvoiceQueue) await recurringInvoiceQueue.close();
       await closeAllQueues();
       await disconnectRedis();

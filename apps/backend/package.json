@@ -37,7 +37,9 @@
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vitest/coverage-v8": "^1.6.1",
+    "mercadopago": "^3.2.1",
     "prisma": "^5.10.0",
+    "stripe": "^22.4.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0",
     "vitest": "^1.3.0"

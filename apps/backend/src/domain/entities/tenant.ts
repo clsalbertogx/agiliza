@@ -4,6 +4,7 @@ import { Either, success, failure } from '@/domain/types/either';
 export enum PaymentProvider {
   ASAAS = 'ASAAS',
   MERCADO_PAGO = 'MERCADO_PAGO',
+  STRIPE = 'STRIPE',
   PAGBANK = 'PAGBANK',
   POLAR = 'POLAR',
 }

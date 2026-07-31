@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,23 +8,64 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type PaymentProvider = 'asaas' | 'mercadopago' | 'pagbank' | 'polar';
 type Environment = 'sandbox' | 'production';
 
-interface PaymentProviderConfig {
-  provider: PaymentProvider;
-  hasApiKey: boolean;
-  environment: Environment;
+type ProviderField = string;
+
+interface ProviderDefinition {
+  value: string;
+  label: string;
+  fields: ProviderField[];
+}
+
+const PROVIDERS: ProviderDefinition[] = [
+  { value: 'asaas', label: 'Asaas', fields: ['apiKey', 'environment'] },
+  { value: 'mercadopago', label: 'Mercado Pago', fields: ['accessToken', 'environment'] },
+  { value: 'stripe', label: 'Stripe', fields: ['secretKey', 'publishableKey', 'webhookSecret', 'environment'] },
+  { value: 'pagbank', label: 'PagBank', fields: ['accessToken', 'environment'] },
+  { value: 'polar', label: 'Polar', fields: ['accessToken', 'environment'] },
+];
+
+const SECRET_FIELDS = new Set(['apiKey', 'accessToken', 'secretKey', 'webhookSecret']);
+
+const FIELD_LABELS: Record<string, string> = {
+  apiKey: 'API Key',
+  accessToken: 'Access Token',
+  secretKey: 'Secret Key',
+  publishableKey: 'Publishable Key',
+  webhookSecret: 'Webhook Secret',
+  environment: 'Ambiente',
+};
+
+const REQUIRED_FIELDS_BY_PROVIDER: Record<string, string[]> = {
+  asaas: ['apiKey'],
+  mercadopago: ['accessToken'],
+  stripe: ['secretKey', 'publishableKey'],
+  pagbank: ['accessToken'],
+  polar: ['accessToken'],
+};
+
+type FieldValueMap = Record<string, string>;
+
+interface PaymentConfigResponse {
+  provider: string;
+  environment: string;
+  [key: string]: unknown;
 }
 
 export default function SettingsPage() {
-  const [provider, setProvider] = useState<PaymentProvider>('asaas');
-  const [apiKey, setApiKey] = useState('');
-  const [environment, setEnvironment] = useState<Environment>('sandbox');
+  const [provider, setProvider] = useState<string>('asaas');
+  const [config, setConfig] = useState<FieldValueMap>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const currentProvider = useMemo<ProviderDefinition>(
+    () => PROVIDERS.find((p) => p.value === provider) ?? PROVIDERS[0]!,
+    [provider],
+  );
 
   useEffect(() => {
     loadConfig();
@@ -34,10 +75,17 @@ export default function SettingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<{ data: PaymentProviderConfig }>('/api/tenants/demo/payment-provider');
+      const res = await api.get<{ data: PaymentConfigResponse }>('/api/tenants/demo/payment-config');
       if (res.data) {
         setProvider(res.data.provider);
-        setEnvironment(res.data.environment);
+        const loaded: FieldValueMap = {};
+        for (const [key, value] of Object.entries(res.data)) {
+          if (key === 'provider') continue;
+          if (typeof value === 'string') {
+            loaded[key] = value;
+          }
+        }
+        setConfig(loaded);
       }
     } catch {
       // No config yet — that's ok
@@ -46,16 +94,47 @@ export default function SettingsPage() {
     }
   }
 
+  function handleProviderChange(newProvider: string) {
+    setProvider(newProvider);
+    setConfig({ environment: 'sandbox' });
+    setValidationErrors([]);
+    setSaved(false);
+    setError(null);
+  }
+
+  function handleFieldChange(field: string, value: string) {
+    setConfig((prev) => ({ ...prev, [field]: value }));
+    setValidationErrors([]);
+  }
+
+  function validate(): string[] {
+    const required = REQUIRED_FIELDS_BY_PROVIDER[provider] ?? [];
+    const missing: string[] = [];
+    for (const field of required) {
+      if (!config[field] || config[field]!.trim().length === 0) {
+        missing.push(FIELD_LABELS[field] ?? field);
+      }
+    }
+    return missing;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    const missing = validate();
+    if (missing.length > 0) {
+      setValidationErrors(missing);
+      return;
+    }
+    setValidationErrors([]);
+
     setSaving(true);
     setError(null);
     setSaved(false);
     try {
-      await api.put('/api/tenants/demo/payment-provider', {
+      await api.put('/api/tenants/demo/payment-config', {
         provider,
-        apiKey,
-        environment,
+        ...config,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -100,39 +179,60 @@ export default function SettingsPage() {
               <select
                 id="provider"
                 value={provider}
-                onChange={(e) => setProvider(e.target.value as PaymentProvider)}
+                onChange={(e) => handleProviderChange(e.target.value)}
                 className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="asaas">Asaas</option>
-                <option value="mercadopago">Mercado Pago</option>
-                <option value="pagbank">PagBank</option>
-                <option value="polar">Polar</option>
+                {PROVIDERS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="apiKey">API Key</Label>
-              <Input
-                id="apiKey"
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="sua_chave_api"
-              />
-            </div>
+            {currentProvider.fields.map((field) => {
+              if (field === 'environment') {
+                return (
+                  <div key={field} className="space-y-2">
+                    <Label htmlFor={field}>{FIELD_LABELS[field] ?? field}</Label>
+                    <select
+                      id={field}
+                      value={config[field] ?? 'sandbox'}
+                      onChange={(e) => handleFieldChange(field, e.target.value)}
+                      className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="sandbox">Sandbox</option>
+                      <option value="production">Produção</option>
+                    </select>
+                  </div>
+                );
+              }
 
-            <div className="space-y-2">
-              <Label htmlFor="environment">Ambiente</Label>
-              <select
-                id="environment"
-                value={environment}
-                onChange={(e) => setEnvironment(e.target.value as Environment)}
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="sandbox">Sandbox</option>
-                <option value="production">Produção</option>
-              </select>
-            </div>
+              const isSecret = SECRET_FIELDS.has(field);
+              return (
+                <div key={field} className="space-y-2">
+                  <Label htmlFor={field}>{FIELD_LABELS[field] ?? field}</Label>
+                  <Input
+                    id={field}
+                    type={isSecret ? 'password' : 'text'}
+                    value={config[field] ?? ''}
+                    onChange={(e) => handleFieldChange(field, e.target.value)}
+                    placeholder={isSecret ? '••••••••' : ''}
+                  />
+                </div>
+              );
+            })}
+
+            {validationErrors.length > 0 && (
+              <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md" role="alert">
+                <p className="font-medium">Campos obrigatórios:</p>
+                <ul className="list-disc list-inside">
+                  {validationErrors.map((field) => (
+                    <li key={field}>{field}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {error && (
               <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md" role="alert">

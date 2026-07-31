@@ -1,9 +1,17 @@
-import { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
+import type {
+  PaymentGatewayPort,
+  PixChargeResponse,
+  CreditCardChargeInput,
+  CreditCardChargeResponse,
+  BoletoChargeInput,
+  BoletoChargeResponse,
+} from '@/application/ports/payment-gateway.port';
 import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 
 interface AsaasConfig {
   apiKey: string;
   environment: 'sandbox' | 'production';
+  webhookSecret?: string;
 }
 
 export class AsaasPaymentProvider implements PaymentGatewayPort {
@@ -61,6 +69,46 @@ export class AsaasPaymentProvider implements PaymentGatewayPort {
 
   async cancelCharge(providerPaymentId: string): Promise<void> {
     // In real implementation: DELETE /v3/payments/{id}
+  }
+
+  async createCreditCardCharge(input: CreditCardChargeInput): Promise<CreditCardChargeResponse> {
+    const id = generateUUID();
+    return {
+      id,
+      status: 'CONFIRMED',
+      amount: input.amount,
+      currency: 'BRL',
+      paymentMethod: 'CREDIT_CARD',
+      fee: input.amount * 0.02,
+      netAmount: input.amount * 0.98,
+    };
+  }
+
+  async createBoletoCharge(input: BoletoChargeInput): Promise<BoletoChargeResponse> {
+    const id = generateUUID();
+    const now = new Date();
+    return {
+      id,
+      status: 'PENDING',
+      amount: input.amount,
+      currency: 'BRL',
+      barcode: `001${(input.amount * 100).toFixed(0).padStart(10, '0')}`,
+      boletoUrl: `${this.baseUrl}/boletos/${id}/boleto.pdf`,
+      dueDate: input.dueDate || new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
+    };
+  }
+
+  async verifyWebhook(provider: string, payload: string, signature: string): Promise<boolean> {
+    if (provider !== 'asaas') return false;
+    const { createHmac, timingSafeEqual } = require('node:crypto') as typeof import('node:crypto');
+    const secret = process.env.ASAAS_WEBHOOK_SECRET || '';
+    if (!secret) return false;
+    const expected = createHmac('sha256', secret).update(payload).digest('hex');
+    try {
+      return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    } catch {
+      return false;
+    }
   }
 
   handleWebhook(payload: any) {

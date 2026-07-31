@@ -144,39 +144,25 @@ describe('AutoPayHandler', () => {
   });
 
   describe('error handling', () => {
-    it('should catch and log errors from processPayment without throwing', async () => {
+    it('should throw transient errors from processPayment so the retry loop in handleWithRetry can catch them', async () => {
       const { processPayment, renewSubscription } = createMocks();
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
 
       processPayment.execute.mockRejectedValue(new Error('Database connection lost'));
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      await expect(handler.handle(makeSubscriptionInvoiceCreatedEvent())).resolves.toBeUndefined();
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        '[AutoPay] Error processing invoice invoice-123:',
-        expect.any(Error),
+      await expect(handler.handle(makeSubscriptionInvoiceCreatedEvent())).rejects.toThrow(
+        'Database connection lost',
       );
-      consoleErrorSpy.mockRestore();
     });
 
-    it('should catch and log errors from renewSubscription without throwing', async () => {
+    it('should throw transient errors from renewSubscription so the retry loop in handleWithRetry can catch them', async () => {
       const { processPayment, renewSubscription } = createMocks();
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
 
       processPayment.execute.mockResolvedValue(success({ status: 'PENDING', pix: { qrCode: 'qr', copyPaste: 'copy', expiresAt: new Date() } }));
       renewSubscription.execute.mockRejectedValue(new Error('Failed to renew'));
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      await expect(handler.handle(makeSubscriptionInvoiceCreatedEvent())).resolves.toBeUndefined();
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        '[AutoPay] Error processing invoice invoice-123:',
-        expect.any(Error),
-      );
-      consoleErrorSpy.mockRestore();
+      await expect(handler.handle(makeSubscriptionInvoiceCreatedEvent())).rejects.toThrow('Failed to renew');
     });
   });
 

@@ -357,7 +357,7 @@ describe('Recurring Billing Flow — Integration', () => {
       consoleWarnSpy.mockRestore();
     });
 
-    it('should catch thrown errors from processPayment without crashing', async () => {
+    it('should propagate thrown errors from processPayment so handleWithRetry can catch them', async () => {
       const processPayment = {
         execute: vi.fn().mockRejectedValue(new Error('Database connection lost')),
       };
@@ -367,18 +367,10 @@ describe('Recurring Billing Flow — Integration', () => {
       };
 
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       await expect(
         handler.handle(makeSubscriptionInvoiceCreatedEvent()),
-      ).resolves.toBeUndefined();
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Error processing invoice'),
-        expect.any(Error),
-      );
-
-      consoleErrorSpy.mockRestore();
+      ).rejects.toThrow('Database connection lost');
     });
   });
 

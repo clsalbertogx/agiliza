@@ -7,14 +7,20 @@ describe('Gateway Ports', () => {
     it('should have correct method signatures with Either return types', () => {
       const port: PaymentGatewayPort = {
         createPixCharge: async () => ({ success: true, value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' } }),
+        createCreditCardCharge: async () => ({ success: true, value: { id: '', status: '', amount: 0, currency: '', paymentMethod: '' } }),
+        createBoletoCharge: async () => ({ success: true, value: { id: '', status: '', amount: 0, currency: '', barcode: '' } }),
         getCharge: async () => ({ success: true, value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' } }),
         cancelCharge: async () => ({ success: true, value: undefined }),
+        verifyWebhook: async () => true,
         handleWebhook: () => ({ success: true, value: { event: '', paymentId: '', status: '', metadata: {} } }),
       };
 
       expect(typeof port.createPixCharge).toBe('function');
+      expect(typeof port.createCreditCardCharge).toBe('function');
+      expect(typeof port.createBoletoCharge).toBe('function');
       expect(typeof port.getCharge).toBe('function');
       expect(typeof port.cancelCharge).toBe('function');
+      expect(typeof port.verifyWebhook).toBe('function');
       expect(typeof port.handleWebhook).toBe('function');
     });
   });

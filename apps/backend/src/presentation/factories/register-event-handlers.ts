@@ -13,6 +13,7 @@ import { NotifyOutboundHandler } from '@/application/events/handlers/notify-outb
 import { AutoPayHandler } from '@/application/events/handlers/auto-pay.handler';
 import { ProcessPaymentUseCase } from '@/application/usecases/process-payment.usecase';
 import { RenewSubscriptionUseCase } from '@/application/usecases/renew-subscription.usecase';
+import { BullMQDLQPublisher } from '@/infrastructure/queue/bullmq-dlq.publisher';
 import { env } from '@/config/env';
 
 export function registerEventHandlers(eventBus: EventBusPort): void {
@@ -53,25 +54,32 @@ export function registerEventHandlers(eventBus: EventBusPort): void {
     idGenerator,
   );
 
+  // DLQ adapter — shared by all retryable handlers so failed events land
+  // in the same `failed-webhooks` queue for manual inspection.
+  const dlqPublisher = new BullMQDLQPublisher();
+
   // Handlers
-  const sendReceipt = new SendReceiptHandler(invoiceRepo, clientRepo, messageProvider);
-  const updateRisk = new UpdateRiskScoreHandler(clientRepo, invoiceRepo, riskCalculator);
+  const sendReceipt = new SendReceiptHandler(invoiceRepo, clientRepo, messageProvider, dlqPublisher);
+  const updateRisk = new UpdateRiskScoreHandler(clientRepo, invoiceRepo, riskCalculator, dlqPublisher);
   const notifyOutbound = new NotifyOutboundHandler(
     env.OUTBOUND_WEBHOOK_URL,
     env.OUTBOUND_WEBHOOK_API_KEY,
+    dlqPublisher,
   );
-  const autoPay = new AutoPayHandler(processPayment, renewSubscription);
+  const autoPay = new AutoPayHandler(processPayment, renewSubscription, dlqPublisher);
 
-  // Subscribe handlers to events
-  eventBus.subscribe('payment.confirmed', (e) => sendReceipt.handle(e));
-  eventBus.subscribe('payment.confirmed', (e) => updateRisk.handle(e));
-  eventBus.subscribe('payment.failed', (e) => updateRisk.handle(e));
-  eventBus.subscribe('invoice.overdue', (e) => updateRisk.handle(e));
-  eventBus.subscribe('message.read', (e) => updateRisk.handle(e));
-  eventBus.subscribe('message.clicked', (e) => updateRisk.handle(e));
-  eventBus.subscribe('client.created', (e) => notifyOutbound.handle(e));
-  eventBus.subscribe('payment.confirmed', (e) => notifyOutbound.handle(e));
-  eventBus.subscribe('invoice.overdue', (e) => notifyOutbound.handle(e));
-  eventBus.subscribe('decision.made', (e) => notifyOutbound.handle(e));
-  eventBus.subscribe('subscription.invoice.created', (e) => autoPay.handle(e));
+  // Subscribe handlers to events. We wrap each `handle` call with
+  // `handleWithRetry` so transient failures are retried with exponential
+  // backoff and end up in the DLQ after `maxRetries`.
+  eventBus.subscribe('payment.confirmed', (e) => sendReceipt.handleWithRetry(e));
+  eventBus.subscribe('payment.confirmed', (e) => updateRisk.handleWithRetry(e));
+  eventBus.subscribe('payment.failed', (e) => updateRisk.handleWithRetry(e));
+  eventBus.subscribe('invoice.overdue', (e) => updateRisk.handleWithRetry(e));
+  eventBus.subscribe('message.read', (e) => updateRisk.handleWithRetry(e));
+  eventBus.subscribe('message.clicked', (e) => updateRisk.handleWithRetry(e));
+  eventBus.subscribe('client.created', (e) => notifyOutbound.handleWithRetry(e));
+  eventBus.subscribe('payment.confirmed', (e) => notifyOutbound.handleWithRetry(e));
+  eventBus.subscribe('invoice.overdue', (e) => notifyOutbound.handleWithRetry(e));
+  eventBus.subscribe('decision.made', (e) => notifyOutbound.handleWithRetry(e));
+  eventBus.subscribe('subscription.invoice.created', (e) => autoPay.handleWithRetry(e));
 }

@@ -13,6 +13,7 @@ export enum PaymentStatus {
 export enum PaymentProvider {
   ASAAS = 'ASAAS',
   MERCADO_PAGO = 'MERCADO_PAGO',
+  STRIPE = 'STRIPE',
   PAGBANK = 'PAGBANK',
   POLAR = 'POLAR',
 }
@@ -191,7 +192,7 @@ export const paymentSchema = z.object({
   clientId: z.string().uuid(),
   amount: z.number().positive(),
   method: z.string(),
-  provider: z.enum(['ASAAS', 'MERCADO_PAGO', 'PAGBANK', 'POLAR']),
+  provider: z.enum(['ASAAS', 'MERCADO_PAGO', 'STRIPE', 'PAGBANK', 'POLAR']),
   providerPaymentId: z.string().optional(),
   status: z.enum(['PENDING', 'CONFIRMED', 'FAILED', 'CANCELLED', 'REFUNDED']),
   fee: z.number().optional(),

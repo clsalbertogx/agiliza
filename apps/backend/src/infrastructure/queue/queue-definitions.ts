@@ -9,6 +9,7 @@ export const QueueNames = {
   PROCESS_WEBHOOK: 'process-webhook',
   SEND_MESSAGE: 'send-message',
   REMINDERS: 'reminders',
+  FAILED_WEBHOOKS: 'failed-webhooks',
 } as const;
 
 export type QueueName = (typeof QueueNames)[keyof typeof QueueNames];
@@ -60,3 +61,31 @@ export const DEFAULT_JOB_OPTIONS = {
     age: 3600 * 24 * 7, // 7 days
   },
 };
+
+/**
+ * Dead-letter queue job options.
+ * DLQ jobs are NOT retried by the queue itself — the retry/backoff is handled
+ * in-process by `RetryableWebhookHandler.handleWithRetry`. Once a job lands
+ * here it is preserved for manual inspection.
+ */
+export const DLQ_JOB_OPTIONS = {
+  removeOnComplete: false,
+  removeOnFail: false,
+  attempts: 1,
+};
+
+/**
+ * Zod schema for the payload stored in the `failed-webhooks` (DLQ) queue.
+ */
+export const FailedWebhookPayloadSchema = z.object({
+  event: z.record(z.string(), z.unknown()),
+  error: z.object({
+    message: z.string(),
+    name: z.string(),
+    stack: z.string().optional(),
+  }),
+  attempts: z.number().int().nonnegative(),
+  failedAt: z.string().datetime(),
+});
+
+export type FailedWebhookPayload = z.infer<typeof FailedWebhookPayloadSchema>;

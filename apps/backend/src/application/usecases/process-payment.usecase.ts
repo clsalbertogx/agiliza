@@ -51,13 +51,34 @@ export class ProcessPaymentUseCase {
       return failure(new ApplicationError('Invoice is already paid', 'ALREADY_PAID', 400));
     }
 
-    // 3. Resolve payment gateway (per-tenant config with fallback to injected gateway)
+    // 3. Resolve payment gateway (per-tenant config with fallback to injected gateway).
+    //    Delegates to the PaymentProviderFactory which inspects the per-provider
+    //    rows in `payment_provider_configs` and picks the first active one,
+    //    falling back to Asaas with global env credentials.
     let gateway = this.paymentGateway;
+    let resolvedProvider = PaymentProvider.ASAAS;
     if (this.paymentProviderConfigRepo && this.encryption && this.gatewayFactory) {
-      const config = await this.paymentProviderConfigRepo.findByTenantAndProvider(input.tenantId, 'asaas');
-      if (config) {
-        const decryptedApiKey = this.encryption.decrypt(config.apiKey);
-        gateway = this.gatewayFactory({ apiKey: decryptedApiKey, environment: config.environment });
+      // Try each known provider in fallback order; use the first row that exists.
+      const candidateProviders: string[] = ['asaas', 'mercadopago', 'stripe', 'pagbank', 'polar'];
+      for (const provider of candidateProviders) {
+        const config = await this.paymentProviderConfigRepo.findByTenantAndProvider(input.tenantId, provider);
+        if (config) {
+          const decryptedApiKey = this.encryption.decrypt(config.apiKey);
+          gateway = this.gatewayFactory({
+            apiKey: decryptedApiKey,
+            environment: config.environment,
+          });
+          resolvedProvider = provider === 'mercadopago'
+            ? PaymentProvider.MERCADO_PAGO
+            : provider === 'stripe'
+              ? PaymentProvider.STRIPE
+              : provider === 'pagbank'
+                ? PaymentProvider.PAGBANK
+                : provider === 'polar'
+                  ? PaymentProvider.POLAR
+                  : PaymentProvider.ASAAS;
+          break;
+        }
       }
     }
 
@@ -93,7 +114,7 @@ export class ProcessPaymentUseCase {
       invoiceId: input.invoiceId,
       clientId: invoice.clientId,
       amount: Number(invoice.amount),
-      provider: PaymentProvider.ASAAS,
+       provider: resolvedProvider,
       externalId: pixCharge.id,
       paymentMethod: PaymentMethod.PIX,
     });

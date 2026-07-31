@@ -97,29 +97,20 @@ describe('NotifyOutboundHandler', () => {
   });
 
   describe('error handling', () => {
-    it('should catch and log fetch errors without throwing', async () => {
+    it('should throw fetch errors so the retry loop in handleWithRetry can catch them', async () => {
       (fetch as any).mockRejectedValue(new Error('Network error'));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const handler = new NotifyOutboundHandler('https://hooks.example.com/events', 'sk-secret-123');
 
-      await expect(handler.handle(makeEvent('client.created'))).resolves.toBeUndefined();
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[NotifyOutboundHandler] Error:',
-        expect.any(Error)
+      await expect(handler.handle(makeEvent('client.created'))).rejects.toThrow(
+        'Network error',
       );
-      consoleSpy.mockRestore();
     });
 
-    it('should catch and log HTTP error responses without throwing', async () => {
+    it('should throw HTTP error responses so the retry loop in handleWithRetry can catch them', async () => {
       (fetch as any).mockRejectedValue(new Error('HTTP 500'));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const handler = new NotifyOutboundHandler('https://hooks.example.com/events', 'sk-secret-123');
 
-      await expect(handler.handle(makeEvent('client.created'))).resolves.toBeUndefined();
-
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      await expect(handler.handle(makeEvent('client.created'))).rejects.toThrow('HTTP 500');
     });
   });
 });

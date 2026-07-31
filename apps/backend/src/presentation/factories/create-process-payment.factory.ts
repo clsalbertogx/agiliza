@@ -2,9 +2,9 @@ import { ProcessPaymentUseCase, PaymentGatewayFactory } from '@/application/usec
 import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
 import { PrismaClientRepository } from '@/infrastructure/database/repositories/client.repository';
 import { PrismaPaymentRepository } from '@/infrastructure/database/repositories/payment.repository';
+import { PaymentProviderFactory } from '@/infrastructure/payment/payment-provider.factory';
 import { AsaasPaymentProvider } from '@/infrastructure/payment/asaas.provider';
 import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
-import { PaymentProviderFactory } from '@/infrastructure/payment/payment-provider.factory';
 import { createPaymentProviderConfigRepository } from './create-payment-provider-config-repository.factory';
 import { createEncryptionService } from './create-encryption.factory';
 
