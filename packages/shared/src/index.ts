@@ -11,11 +11,11 @@
 //  Enums (API Contract)
 // ──────────────────────────────────────────────
 
-export type { PaymentProvider } from '../../backend/src/domain/contracts/enums';
-export type { PaymentMethod } from '../../backend/src/domain/contracts/enums';
-export type { InvoiceStatus } from '../../backend/src/domain/contracts/enums';
-export type { ClientRiskScore } from '../../backend/src/domain/contracts/enums';
-export type { MessageChannel } from '../../backend/src/domain/contracts/enums';
+export type { PaymentProvider } from '../../../apps/backend/src/domain/contracts/enums';
+export type { PaymentMethod } from '../../../apps/backend/src/domain/contracts/enums';
+export type { InvoiceStatus } from '../../../apps/backend/src/domain/contracts/enums';
+export type { ClientRiskScore } from '../../../apps/backend/src/domain/contracts/enums';
+export type { MessageChannel } from '../../../apps/backend/src/domain/contracts/enums';
 
 // ──────────────────────────────────────────────
 //  API Contract Interfaces (simplified views)
@@ -23,11 +23,11 @@ export type { MessageChannel } from '../../backend/src/domain/contracts/enums';
 //  Zod-inferred types may be richer internally.
 // ──────────────────────────────────────────────
 
-export type { ClientProfile } from '../../backend/src/domain/contracts/interfaces';
-export type { Invoice } from '../../backend/src/domain/contracts/interfaces';
+export type { ClientProfile } from '../../../apps/backend/src/domain/contracts/interfaces';
+export type { Invoice } from '../../../apps/backend/src/domain/contracts/interfaces';
 
 // ──────────────────────────────────────────────
 //  Domain Events (for frontend activity feed)
 // ──────────────────────────────────────────────
 
-export type { PaymentEvent } from '../../backend/src/domain/contracts/interfaces';
+export type { PaymentEvent } from '../../../apps/backend/src/domain/contracts/interfaces';

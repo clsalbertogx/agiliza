@@ -1,8 +1,9 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "lib": ["ES2022"],
     "strict": true,
     "esModuleInterop": true,
@@ -12,8 +13,10 @@
     "declaration": true,
     "declarationMap": true,
     "noEmit": true,
+    "rootDir": "../..",
     "baseUrl": ".",
     "paths": {
+      "@/*": ["./src/*"],
       "@agiliza/shared": ["./src/index.ts"]
     }
   },
