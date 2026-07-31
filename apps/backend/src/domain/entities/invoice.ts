@@ -20,6 +20,7 @@ export interface Invoice {
   id: string;
   tenantId: string;
   clientId: string;
+  subscriptionId?: string;
   amount: number;
   dueDate: Date;
   description?: string;
@@ -127,6 +128,7 @@ export function createInvoiceFromPersistence(data: PersistenceInvoice): Invoice 
     id: data.id,
     tenantId: data.tenantId,
     clientId: data.clientId,
+    subscriptionId: data.subscriptionId ?? undefined,
     amount: data.amount,
     dueDate: data.dueDate,
     description: data.description ?? undefined,
@@ -148,7 +150,7 @@ export function invoiceToPersistence(invoice: Invoice): PersistenceInvoice {
     id: invoice.id,
     tenantId: invoice.tenantId,
     clientId: invoice.clientId,
-    subscriptionId: null,
+    subscriptionId: invoice.subscriptionId ?? null,
     amount: invoice.amount,
     dueDate: invoice.dueDate,
     description: invoice.description ?? null,

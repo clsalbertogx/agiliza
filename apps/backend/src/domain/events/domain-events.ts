@@ -2,6 +2,7 @@ export type DomainEventType =
   | 'payment.confirmed'
   | 'payment.failed'
   | 'invoice.created'
+  | 'subscription.invoice.created'
   | 'invoice.overdue'
   | 'invoice.paid'
   | 'client.created'
@@ -13,7 +14,10 @@ export type DomainEventType =
   | 'decision.made'
   | 'subscription.created'
   | 'subscription.cancelled'
-  | 'subscription.expired';
+  | 'subscription.expired'
+  | 'subscription.renewed'
+  | 'subscription.paused'
+  | 'subscription.resumed';
 
 export interface DomainEvent {
   eventId: string;

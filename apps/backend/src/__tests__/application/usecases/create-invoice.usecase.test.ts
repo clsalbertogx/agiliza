@@ -12,6 +12,7 @@ import { CreateInvoiceUseCase, CreateInvoiceInput } from '@/application/usecases
 
 const mockInvoiceRepo: InvoiceRepositoryPort = {
   findById: vi.fn(),
+  findExistingForSubscription: vi.fn(),
   findMany: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),

@@ -59,6 +59,17 @@ export class PrismaSubscriptionRepository implements SubscriptionRepositoryPort 
     return result.map((r) => this.mapper.toDomain(r as unknown as PersistenceSubscription));
   }
 
+  async findActiveByNextBillingBefore(date: Date): Promise<Subscription[]> {
+    const result = await this.txClient.subscription.findMany({
+      where: {
+        status: 'ACTIVE',
+        nextBilling: { lte: date },
+      },
+      orderBy: { nextBilling: 'asc' },
+    });
+    return result.map((r) => this.mapper.toDomain(r as unknown as PersistenceSubscription));
+  }
+
   async update(id: string, data: Partial<Subscription>): Promise<Subscription> {
     const { id: _id, tenantId, clientId, plan, amount, billingCycle, status, startDate, endDate, nextBilling, cancelledAt, createdAt: _createdAt, updatedAt: _updatedAt } = data as any;
     const updateData: Record<string, unknown> = {};

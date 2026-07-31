@@ -5,6 +5,7 @@ import type { DomainEvent } from '@/domain/events/domain-events';
 function createMocks() {
   const invoiceRepo = {
     findById: vi.fn(),
+    findExistingForSubscription: vi.fn(),
     findMany: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),

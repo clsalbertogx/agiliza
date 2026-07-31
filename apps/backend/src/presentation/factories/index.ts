@@ -23,4 +23,5 @@ export { createGetNextDecisionUseCase } from './create-get-next-decision.factory
 export { createCreateSubscriptionUseCase, createSubscriptionRepository } from './create-subscription.factory';
 export { createCancelSubscriptionUseCase } from './create-cancel-subscription.factory';
 export { createListPaymentsForInvoiceUseCase } from './create-list-payments.factory';
+export { createRecurringInvoiceUseCase } from './create-recurring-invoice.factory';
 export { registerEventHandlers } from './register-event-handlers';

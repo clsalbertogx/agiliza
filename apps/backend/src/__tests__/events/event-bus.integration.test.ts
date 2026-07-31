@@ -69,6 +69,7 @@ function makeMockClient() {
 function wireHandlersWithMocks(eventBus: InMemoryEventBus) {
   const invoiceRepo: InvoiceRepositoryPort = {
     findById: vi.fn().mockResolvedValue(makeMockInvoice()),
+    findExistingForSubscription: vi.fn(),
     findMany: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),

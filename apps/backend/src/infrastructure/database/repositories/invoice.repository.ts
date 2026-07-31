@@ -35,6 +35,24 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
     return result ? this.mapper.toDomain(result as unknown as PersistenceInvoice) : null;
   }
 
+  async findExistingForSubscription(subscriptionId: string, referenceMonth: string): Promise<Invoice | null> {
+    // Parse reference month to date range
+    const [year, month] = referenceMonth.split('-').map(Number);
+    const startOfMonth = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const startOfNextMonth = new Date(year, month, 1, 0, 0, 0, 0);
+
+    const result = await this.txClient.invoice.findFirst({
+      where: {
+        subscriptionId,
+        dueDate: {
+          gte: startOfMonth,
+          lt: startOfNextMonth,
+        },
+      },
+    });
+    return result ? this.mapper.toDomain(result as unknown as PersistenceInvoice) : null;
+  }
+
   async findMany(params: {
     tenantId: string;
     page?: number;

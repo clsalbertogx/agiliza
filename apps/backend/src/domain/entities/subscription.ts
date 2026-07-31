@@ -189,3 +189,42 @@ export function cancelSubscription(subscription: Subscription): Subscription {
     updatedAt: new Date(),
   };
 }
+
+export function expireSubscription(subscription: Subscription): Subscription {
+  return {
+    ...subscription,
+    status: SubscriptionStatus.EXPIRED,
+    endDate: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
+export function renewSubscription(
+  subscription: Subscription,
+  nextBilling: Date,
+  endDate?: Date,
+): Subscription {
+  return {
+    ...subscription,
+    status: SubscriptionStatus.ACTIVE,
+    nextBilling,
+    ...(endDate !== undefined ? { endDate } : {}),
+    updatedAt: new Date(),
+  };
+}
+
+export function pauseSubscription(subscription: Subscription): Subscription {
+  return {
+    ...subscription,
+    status: SubscriptionStatus.PAUSED,
+    updatedAt: new Date(),
+  };
+}
+
+export function resumeSubscription(subscription: Subscription): Subscription {
+  return {
+    ...subscription,
+    status: SubscriptionStatus.ACTIVE,
+    updatedAt: new Date(),
+  };
+}

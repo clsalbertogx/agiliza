@@ -33,6 +33,7 @@ describe('Repository Ports', () => {
     it('should have correct method signatures', () => {
       const port: InvoiceRepositoryPort = {
         findById: async () => null,
+        findExistingForSubscription: async () => null,
         findMany: async () => ({ data: [], total: 0 }),
         create: async (invoice) => invoice,
         update: async (invoice) => invoice,

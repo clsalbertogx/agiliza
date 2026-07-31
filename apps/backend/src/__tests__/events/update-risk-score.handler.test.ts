@@ -7,6 +7,7 @@ import { RiskScore } from '@/domain/entities/client';
 function createMocks() {
   const invoiceRepo = {
     findById: vi.fn(),
+    findExistingForSubscription: vi.fn(),
     findMany: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),

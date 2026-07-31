@@ -7,13 +7,16 @@ import { env } from './config/env';
 import { registerRoutes } from './routes';
 import authPlugin from './infrastructure/plugins/auth.plugin';
 import { disconnectRedis, closeAllQueues, startReminderWorker, closeWorker } from './infrastructure/queue';
-import { createReminderService } from './presentation/factories';
+import { createRecurringInvoiceQueue, scheduleRecurringInvoiceJob, startRecurringInvoiceWorker } from './infrastructure/queue/recurring-invoice.worker';
+import { createReminderService, createRecurringInvoiceUseCase } from './presentation/factories';
 import { InMemoryEventBus } from './infrastructure/event-bus/in-memory-event-bus';
 import { registerEventHandlers } from './presentation/factories/register-event-handlers';
 import { errorHandler } from './presentation/handler';
 
-// Module-level worker reference for graceful shutdown
+// Module-level worker references for graceful shutdown
 let reminderWorker: ReturnType<typeof startReminderWorker> | null = null;
+let recurringInvoiceWorker: ReturnType<typeof startRecurringInvoiceWorker> | null = null;
+let recurringInvoiceQueue: ReturnType<typeof createRecurringInvoiceQueue> | null = null;
 
 async function buildApp() {
   const app = Fastify({
@@ -72,6 +75,12 @@ async function buildApp() {
   const reminderService = createReminderService();
   reminderWorker = startReminderWorker(reminderService);
 
+  // Start the recurring invoice worker
+  const recurringInvoiceUseCase = createRecurringInvoiceUseCase();
+  recurringInvoiceQueue = createRecurringInvoiceQueue();
+  await scheduleRecurringInvoiceJob(recurringInvoiceQueue);
+  recurringInvoiceWorker = startRecurringInvoiceWorker(recurringInvoiceUseCase);
+
   // Global error handler (must be registered after routes)
   app.setErrorHandler(errorHandler);
 
@@ -86,6 +95,8 @@ async function start() {
     console.log(`[Server] Received ${signal}, shutting down gracefully...`);
     try {
       if (reminderWorker) await closeWorker(reminderWorker);
+      if (recurringInvoiceWorker) await closeWorker(recurringInvoiceWorker);
+      if (recurringInvoiceQueue) await recurringInvoiceQueue.close();
       await closeAllQueues();
       await disconnectRedis();
       await app.close();

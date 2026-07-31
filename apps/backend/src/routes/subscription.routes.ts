@@ -2,6 +2,10 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { createCreateSubscriptionUseCase, createSubscriptionRepository } from '@/presentation/factories/create-subscription.factory';
 import { createCancelSubscriptionUseCase } from '@/presentation/factories/create-cancel-subscription.factory';
+import { createExpireSubscriptionUseCase } from '@/presentation/factories/create-expire-subscription.factory';
+import { createRenewSubscriptionUseCase } from '@/presentation/factories/create-renew-subscription.factory';
+import { createPauseSubscriptionUseCase } from '@/presentation/factories/create-pause-subscription.factory';
+import { createResumeSubscriptionUseCase } from '@/presentation/factories/create-resume-subscription.factory';
 import { BillingCycle } from '@/domain/entities/subscription';
 
 const billingCycleValues = Object.values(BillingCycle) as [string, ...string[]];
@@ -88,6 +92,90 @@ export async function subscriptionRoutes(app: FastifyInstance) {
 
     const useCase = createCancelSubscriptionUseCase();
     const result = await useCase.execute({ id, tenantId });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
+    }
+
+    return { data: result.value };
+  });
+
+  // PATCH /api/subscriptions/:id/expire — Expire subscription
+  app.patch('/api/subscriptions/:id/expire', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const tenantId = request.tenantId;
+
+    if (!tenantId) {
+      reply.code(401);
+      return { error: 'Unauthorized' };
+    }
+
+    const useCase = createExpireSubscriptionUseCase();
+    const result = await useCase.execute({ subscriptionId: id, tenantId });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
+    }
+
+    return { data: result.value };
+  });
+
+  // PATCH /api/subscriptions/:id/renew — Renew subscription
+  app.patch('/api/subscriptions/:id/renew', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const tenantId = request.tenantId;
+
+    if (!tenantId) {
+      reply.code(401);
+      return { error: 'Unauthorized' };
+    }
+
+    const useCase = createRenewSubscriptionUseCase();
+    const result = await useCase.execute({ subscriptionId: id, tenantId });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
+    }
+
+    return { data: result.value };
+  });
+
+  // PATCH /api/subscriptions/:id/pause — Pause subscription
+  app.patch('/api/subscriptions/:id/pause', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const tenantId = request.tenantId;
+
+    if (!tenantId) {
+      reply.code(401);
+      return { error: 'Unauthorized' };
+    }
+
+    const useCase = createPauseSubscriptionUseCase();
+    const result = await useCase.execute({ subscriptionId: id, tenantId });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
+    }
+
+    return { data: result.value };
+  });
+
+  // PATCH /api/subscriptions/:id/resume — Resume subscription
+  app.patch('/api/subscriptions/:id/resume', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const tenantId = request.tenantId;
+
+    if (!tenantId) {
+      reply.code(401);
+      return { error: 'Unauthorized' };
+    }
+
+    const useCase = createResumeSubscriptionUseCase();
+    const result = await useCase.execute({ subscriptionId: id, tenantId });
 
     if (!result.success) {
       reply.code(result.value.statusCode);
