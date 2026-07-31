@@ -27,7 +27,7 @@ const envSchema = z.object({
   STRIPE_PUBLISHABLE_KEY: z.string().default(''),
   STRIPE_WEBHOOK_SECRET: z.string().default(''),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
-  OUTBOUND_WEBHOOK_URL: z.string().url().optional(),
+  OUTBOUND_WEBHOOK_URL: z.string().url().optional().or(z.literal('')),
   OUTBOUND_WEBHOOK_API_KEY: z.string().optional(),
 });
 
