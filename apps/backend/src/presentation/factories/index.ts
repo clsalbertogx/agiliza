@@ -22,6 +22,15 @@ export { createProcessPaymentWebhookUseCase } from './create-process-payment-web
 export { createGetNextDecisionUseCase } from './create-get-next-decision.factory';
 export { createCreateSubscriptionUseCase, createSubscriptionRepository } from './create-subscription.factory';
 export { createCancelSubscriptionUseCase } from './create-cancel-subscription.factory';
+export { createExpireSubscriptionUseCase } from './create-expire-subscription.factory';
+export { createRenewSubscriptionUseCase } from './create-renew-subscription.factory';
+export { createPauseSubscriptionUseCase } from './create-pause-subscription.factory';
+export { createResumeSubscriptionUseCase } from './create-resume-subscription.factory';
+export { createAutoRenewSubscriptionUseCase } from './create-auto-renew-subscription.factory';
+export { createUpgradeSubscriptionUseCase } from './create-upgrade-subscription.factory';
+export { createStartTrialSubscriptionUseCase } from './create-start-trial-subscription.factory';
+export { createSetGracePeriodSubscriptionUseCase } from './create-set-grace-period-subscription.factory';
+export { createToggleAutoRenewSubscriptionUseCase } from './create-toggle-auto-renew-subscription.factory';
 export { createListPaymentsForInvoiceUseCase } from './create-list-payments.factory';
 export { createRecurringInvoiceUseCase } from './create-recurring-invoice.factory';
 export { registerEventHandlers } from './register-event-handlers';

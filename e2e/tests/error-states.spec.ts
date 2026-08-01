@@ -21,7 +21,7 @@ test.describe('Error States', () => {
 
   test('should return 401 for missing auth header', async ({ request }) => {
     const response = await request.get(`${API_URL}/api/clients`, {
-      headers: {} as any,
+      headers: {},
     });
     expect([401, 403]).toContain(response.status());
   });

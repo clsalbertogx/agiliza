@@ -198,11 +198,16 @@ model Subscription {
   plan        String
   amount      Decimal       @db.Decimal(10, 2)
   billingCycle String       // MONTHLY, BIMONTHLY, QUARTERLY, SEMIANNUAL, ANNUAL
-  status      String        @default("ACTIVE") // ACTIVE, CANCELLED, EXPIRED, PAUSED
+  status      String        @default("ACTIVE") // ACTIVE, CANCELLED, EXPIRED, PAUSED, GRACE_PERIOD, TRIAL
   startDate   DateTime      @default(now())
   endDate     DateTime?
   nextBilling DateTime
   cancelledAt DateTime?
+  trialDays   Int?
+  gracePeriodDays Int?
+  trialEndsAt DateTime?
+  gracePeriodEndsAt DateTime?
+  autoRenew   Boolean       @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

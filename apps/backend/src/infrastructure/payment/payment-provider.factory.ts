@@ -2,6 +2,8 @@ import { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
 import { AsaasPaymentProvider } from './asaas.provider';
 import { MercadoPagoGateway } from './mercadopago.gateway';
 import { StripeGateway } from './stripe.gateway';
+import { PagBankGateway } from './pagbank.gateway';
+import { PolarGateway } from './polar.gateway';
 import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
 import type { EncryptionPort } from '@/application/ports/gateways/encryption.port';
 import { env } from '@/config/env';
@@ -76,8 +78,18 @@ export class PaymentProviderFactory {
           webhookSecret: config.webhookSecret,
         });
       case 'pagbank':
+        return new PagBankGateway({
+          accessToken: config.apiKey,
+          publicKey: config.publicKey,
+          environment: config.environment || 'sandbox',
+          webhookSecret: config.webhookSecret,
+        });
       case 'polar':
-        throw new Error(`${config.type} provider is not yet implemented`);
+        return new PolarGateway({
+          accessToken: config.apiKey,
+          environment: config.environment || 'sandbox',
+          webhookSecret: config.webhookSecret,
+        });
       default:
         throw new Error(`Unknown payment provider: ${(config as any).type}`);
     }
@@ -182,6 +194,21 @@ export class PaymentProviderFactory {
           apiKey: env.STRIPE_SECRET_KEY,
           publishableKey: env.STRIPE_PUBLISHABLE_KEY,
           webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+        });
+      case 'pagbank':
+        if (!env.PAGBANK_ACCESS_TOKEN) return null;
+        return PaymentProviderFactory.create({
+          type: 'pagbank',
+          apiKey: env.PAGBANK_ACCESS_TOKEN,
+          publicKey: env.PAGBANK_PUBLIC_KEY,
+          webhookSecret: env.PAGBANK_WEBHOOK_SECRET,
+        });
+      case 'polar':
+        if (!env.POLAR_ACCESS_TOKEN) return null;
+        return PaymentProviderFactory.create({
+          type: 'polar',
+          apiKey: env.POLAR_ACCESS_TOKEN,
+          webhookSecret: env.POLAR_WEBHOOK_SECRET,
         });
       case 'asaas':
         return this.envFallback();

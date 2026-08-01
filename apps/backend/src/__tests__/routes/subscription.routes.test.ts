@@ -292,4 +292,145 @@ describe('Subscription API Routes', () => {
       expect(res.statusCode).toBe(404);
     });
   });
+
+  describe('PATCH /api/subscriptions/:id/trial — Start Trial', () => {
+    it('should start a trial on an active subscription', async () => {
+      mockState.findById.mockResolvedValue(mockSubscription);
+      const trialMock = {
+        ...mockSubscription,
+        status: 'TRIAL',
+        trialDays: 14,
+        trialEndsAt: new Date('2026-08-15'),
+      };
+      mockState.cancel.mockResolvedValue(trialMock);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/trial`,
+        headers: { authorization: validToken },
+        payload: {
+          tenantId: TEST_TENANT_ID,
+          trialDays: 14,
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().data.status).toBe('TRIAL');
+      expect(res.json().data.trialDays).toBe(14);
+    });
+
+    it('should return 400 for invalid trialDays', async () => {
+      mockState.findById.mockResolvedValue(mockSubscription);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/trial`,
+        headers: { authorization: validToken },
+        payload: {
+          tenantId: TEST_TENANT_ID,
+          trialDays: 0,
+        },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should return 404 for non-existent subscription', async () => {
+      mockState.findById.mockResolvedValue(null);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/api/subscriptions/non-existent-id/trial',
+        headers: { authorization: validToken },
+        payload: {
+          tenantId: TEST_TENANT_ID,
+          trialDays: 7,
+        },
+      });
+
+      expect(res.statusCode).toBe(404);
+    });
+  });
+
+  describe('PATCH /api/subscriptions/:id/grace-period — Set Grace Period', () => {
+    it('should set grace period on a subscription', async () => {
+      mockState.findById.mockResolvedValue(mockSubscription);
+      const graceMock = {
+        ...mockSubscription,
+        status: 'GRACE_PERIOD',
+        gracePeriodDays: 7,
+        gracePeriodEndsAt: new Date('2026-08-22'),
+      };
+      mockState.cancel.mockResolvedValue(graceMock);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/grace-period`,
+        headers: { authorization: validToken },
+        payload: {
+          tenantId: TEST_TENANT_ID,
+          days: 7,
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().data.status).toBe('GRACE_PERIOD');
+      expect(res.json().data.gracePeriodDays).toBe(7);
+    });
+
+    it('should return 400 for invalid days', async () => {
+      mockState.findById.mockResolvedValue(mockSubscription);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/grace-period`,
+        headers: { authorization: validToken },
+        payload: {
+          tenantId: TEST_TENANT_ID,
+          days: 0,
+        },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+  });
+
+  describe('PATCH /api/subscriptions/:id/auto-renew — Toggle Auto-Renew', () => {
+    it('should disable auto-renew on a subscription', async () => {
+      mockState.findById.mockResolvedValue(mockSubscription);
+      const autoRenewMock = {
+        ...mockSubscription,
+        autoRenew: false,
+      };
+      mockState.cancel.mockResolvedValue(autoRenewMock);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/auto-renew`,
+        headers: { authorization: validToken },
+        payload: {
+          tenantId: TEST_TENANT_ID,
+          autoRenew: false,
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.json().data.autoRenew).toBe(false);
+    });
+
+    it('should return 400 for missing autoRenew field', async () => {
+      mockState.findById.mockResolvedValue(mockSubscription);
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/auto-renew`,
+        headers: { authorization: validToken },
+        payload: {
+          tenantId: TEST_TENANT_ID,
+        },
+      });
+
+      expect(res.statusCode).toBe(400);
+    });
+  });
 });

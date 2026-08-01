@@ -18,7 +18,7 @@ async function authPlugin(app: FastifyInstance) {
   app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
     // /docs (Swagger UI) is public in dev/test — the plugin is only
     // registered there (see src/index.ts). In production it does not exist.
-    const publicPaths = ['/api/health', '/api/webhooks/', '/docs'];
+    const publicPaths = ['/api/health', '/api/ready', '/api/webhooks/', '/metrics', '/docs'];
     if (publicPaths.some(path => request.url.startsWith(path))) {
       return;
     }

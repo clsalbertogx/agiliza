@@ -70,8 +70,38 @@ export class PrismaSubscriptionRepository implements SubscriptionRepositoryPort 
     return result.map((r) => this.mapper.toDomain(r as unknown as PersistenceSubscription));
   }
 
+  async findDueForRenewal(from: Date, to: Date): Promise<Subscription[]> {
+    const result = await this.txClient.subscription.findMany({
+      where: {
+        nextBilling: { gte: from, lte: to },
+        status: { in: ['ACTIVE', 'GRACE_PERIOD'] },
+      },
+      orderBy: { nextBilling: 'asc' },
+    });
+    return result.map((r) => this.mapper.toDomain(r as unknown as PersistenceSubscription));
+  }
+
   async update(id: string, data: Partial<Subscription>): Promise<Subscription> {
-    const { id: _id, tenantId, clientId, plan, amount, billingCycle, status, startDate, endDate, nextBilling, cancelledAt, createdAt: _createdAt, updatedAt: _updatedAt } = data as any;
+    const {
+      id: _id,
+      tenantId,
+      clientId,
+      plan,
+      amount,
+      billingCycle,
+      status,
+      startDate,
+      endDate,
+      nextBilling,
+      cancelledAt,
+      trialDays,
+      gracePeriodDays,
+      trialEndsAt,
+      gracePeriodEndsAt,
+      autoRenew,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+    } = data as any;
     const updateData: Record<string, unknown> = {};
     if (tenantId !== undefined) updateData.tenantId = tenantId;
     if (clientId !== undefined) updateData.clientId = clientId;
@@ -80,9 +110,14 @@ export class PrismaSubscriptionRepository implements SubscriptionRepositoryPort 
     if (billingCycle !== undefined) updateData.billingCycle = billingCycle;
     if (status !== undefined) updateData.status = status;
     if (startDate !== undefined) updateData.startDate = startDate;
-    if (endDate !== undefined) updateData.endDate = endDate;
+    if ('endDate' in data) updateData.endDate = endDate ?? null;
     if (nextBilling !== undefined) updateData.nextBilling = nextBilling;
-    if (cancelledAt !== undefined) updateData.cancelledAt = cancelledAt;
+    if ('cancelledAt' in data) updateData.cancelledAt = cancelledAt ?? null;
+    if ('trialDays' in data) updateData.trialDays = trialDays ?? null;
+    if ('gracePeriodDays' in data) updateData.gracePeriodDays = gracePeriodDays ?? null;
+    if ('trialEndsAt' in data) updateData.trialEndsAt = trialEndsAt ?? null;
+    if ('gracePeriodEndsAt' in data) updateData.gracePeriodEndsAt = gracePeriodEndsAt ?? null;
+    if (autoRenew !== undefined) updateData.autoRenew = autoRenew;
     const result = await this.txClient.subscription.update({
       where: { id },
       data: updateData as any,

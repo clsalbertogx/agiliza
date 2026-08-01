@@ -17,7 +17,8 @@ export type DomainEventType =
   | 'subscription.expired'
   | 'subscription.renewed'
   | 'subscription.paused'
-  | 'subscription.resumed';
+  | 'subscription.resumed'
+  | 'subscription.updated';
 
 export interface DomainEvent {
   eventId: string;

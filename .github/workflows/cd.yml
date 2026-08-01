@@ -5,6 +5,12 @@ on:
     tags:
       - 'v*.*.*'
 
+# Prevent parallel deployments for the same tag/ref: a newer release must not
+# overwrite the deployment of a still-running older one.
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-and-push:
     name: Build & Push Docker Images
@@ -12,6 +18,20 @@ jobs:
     permissions:
       contents: read
       packages: write
+
+    # Redis is required by the smoke test: the API registers @fastify/rate-limit
+    # with a Redis store, and the plugin fails closed (throws 500) when Redis is
+    # unreachable. The health endpoint stays DB-free, so no database is needed.
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
@@ -32,6 +52,7 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Build and push Backend
+        id: build-backend
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -44,6 +65,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build and push Frontend
+        id: build-frontend
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -54,6 +76,33 @@ jobs:
             ghcr.io/${{ github.repository }}/frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Smoke test - run backend container
+        env:
+          BACKEND_IMAGE: ghcr.io/${{ github.repository }}/backend:${{ steps.version.outputs.VERSION }}
+        run: |
+          docker run -d --name agiliza-smoke-test \
+            -e NODE_ENV=test \
+            -e REDIS_URL=redis://localhost:6379 \
+            -p 8080:3333 \
+            "$BACKEND_IMAGE"
+          # Always clean up the container, even on failure
+          trap 'docker rm -f agiliza-smoke-test >/dev/null 2>&1 || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -sf http://localhost:8080/api/health; then
+              echo "::notice::Smoke test passed - backend container is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Smoke test failed - backend container did not become healthy"
+          docker logs agiliza-smoke-test
+          exit 1
+
+      - name: Output image digests
+        run: |
+          echo "Backend image digest: ${{ steps.build-backend.outputs.digest }}"
+          echo "Frontend image digest: ${{ steps.build-frontend.outputs.digest }}"
 
   # deploy-staging:
   #   name: Deploy to Staging

@@ -175,9 +175,9 @@ jobs:
 
   e2e:
     name: E2E Tests
-    needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    needs: test
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
 
     services:
       postgres:
@@ -185,24 +185,21 @@ jobs:
         env:
           POSTGRES_USER: dev
           POSTGRES_PASSWORD: dev
-          POSTGRES_DB: agiliza
+          POSTGRES_DB: agiliza_test
+        ports: ['5432:5432']
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
+          --health-cmd="pg_isready -U dev"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
       redis:
         image: redis:7-alpine
+        ports: ['6379:6379']
         options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - uses: actions/checkout@v4
@@ -219,35 +216,27 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install chromium
 
-      - name: Apply database migrations
-        working-directory: apps/backend
-        run: npx prisma migrate deploy
+      - name: Run database migrations
+        run: cd apps/backend && npx prisma migrate deploy --schema=src/infrastructure/database/prisma/schema.prisma
         env:
-          DATABASE_URL: postgresql://dev:dev@localhost:5432/agiliza
+          DATABASE_URL: postgresql://dev:dev@localhost:5432/agiliza_test
 
-      - name: Start Backend
-        run: |
-          cd apps/backend
-          npx tsx src/index.ts &
+      - name: Start backend
+        run: cd apps/backend && npx tsx src/index.ts &
         env:
-          DATABASE_URL: postgresql://dev:dev@localhost:5432/agiliza
+          DATABASE_URL: postgresql://dev:dev@localhost:5432/agiliza_test
           REDIS_URL: redis://localhost:6379
-          JWT_SECRET: ci-test-secret
+          JWT_SECRET: test-secret
           NODE_ENV: test
 
-      - name: Wait for Health Endpoint
-        run: |
-          npx wait-on http://localhost:3333/api/health --timeout 30000 \
-            || (echo "::error::Backend health check timed out after 30s — the server may have failed to start"; exit 1)
+      - name: Wait for backend health
+        run: npx wait-on http://localhost:3333/api/health --timeout 30000
 
-      - name: Run E2E Tests
+      - name: Run E2E tests
         run: npx playwright test --config=e2e/playwright.config.ts
         env:
-          DATABASE_URL: postgresql://dev:dev@localhost:5432/agiliza
-          REDIS_URL: redis://localhost:6379
-          JWT_SECRET: ci-test-secret
-          NODE_ENV: test
           API_URL: http://localhost:3333
+          BASE_URL: http://localhost:3000
 
       - name: Upload Playwright Report
         if: failure()

@@ -8,9 +8,11 @@ import Redis from 'ioredis';
 import { env } from './config/env';
 import { registerRoutes } from './routes';
 import authPlugin from './infrastructure/plugins/auth.plugin';
+import observabilityPlugin from './infrastructure/plugins/observability.plugin';
 import { disconnectRedis, closeAllQueues, startReminderWorker, startDeadLetterWorker, closeWorker } from './infrastructure/queue';
 import { createRecurringInvoiceQueue, scheduleRecurringInvoiceJob, startRecurringInvoiceWorker } from './infrastructure/queue/recurring-invoice.worker';
-import { createReminderService, createRecurringInvoiceUseCase } from './presentation/factories';
+import { createAutoRenewQueue, scheduleAutoRenewJob, startAutoRenewWorker } from './infrastructure/queue/auto-renew.worker';
+import { createReminderService, createRecurringInvoiceUseCase, createAutoRenewSubscriptionUseCase, createSubscriptionRepository } from './presentation/factories';
 import { InMemoryEventBus } from './infrastructure/event-bus/in-memory-event-bus';
 import { registerEventHandlers } from './presentation/factories/register-event-handlers';
 import { errorHandler } from './presentation/handler';
@@ -19,6 +21,8 @@ import { errorHandler } from './presentation/handler';
 let reminderWorker: ReturnType<typeof startReminderWorker> | null = null;
 let recurringInvoiceWorker: ReturnType<typeof startRecurringInvoiceWorker> | null = null;
 let recurringInvoiceQueue: ReturnType<typeof createRecurringInvoiceQueue> | null = null;
+let autoRenewWorker: ReturnType<typeof startAutoRenewWorker> | null = null;
+let autoRenewQueue: ReturnType<typeof createAutoRenewQueue> | null = null;
 let deadLetterWorker: ReturnType<typeof startDeadLetterWorker> | null = null;
 
 async function buildApp() {
@@ -101,6 +105,9 @@ async function buildApp() {
     });
   }
 
+  // Observability — logging + metrics (registered before auth so startTime is set on every request)
+  await app.register(observabilityPlugin);
+
   // Auth (applies to all routes except public ones)
   await app.register(authPlugin);
 
@@ -121,6 +128,13 @@ async function buildApp() {
   await scheduleRecurringInvoiceJob(recurringInvoiceQueue);
   recurringInvoiceWorker = startRecurringInvoiceWorker(recurringInvoiceUseCase);
 
+  // Start the auto-renew worker (daily cron at 5:00 AM)
+  const autoRenewUseCase = createAutoRenewSubscriptionUseCase();
+  const autoRenewSubscriptionRepo = createSubscriptionRepository();
+  autoRenewQueue = createAutoRenewQueue();
+  await scheduleAutoRenewJob(autoRenewQueue);
+  autoRenewWorker = startAutoRenewWorker(autoRenewUseCase, autoRenewSubscriptionRepo);
+
   // Start the dead-letter queue worker
   deadLetterWorker = startDeadLetterWorker();
 
@@ -139,8 +153,10 @@ async function start() {
     try {
       if (reminderWorker) await closeWorker(reminderWorker);
       if (recurringInvoiceWorker) await closeWorker(recurringInvoiceWorker);
+      if (autoRenewWorker) await closeWorker(autoRenewWorker);
       if (deadLetterWorker) await closeWorker(deadLetterWorker);
       if (recurringInvoiceQueue) await recurringInvoiceQueue.close();
+      if (autoRenewQueue) await autoRenewQueue.close();
       await closeAllQueues();
       await disconnectRedis();
       await app.close();

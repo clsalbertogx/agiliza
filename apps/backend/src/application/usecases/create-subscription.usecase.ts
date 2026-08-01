@@ -13,6 +13,9 @@ export interface CreateSubscriptionInput {
   plan: string;
   amount: number;
   billingCycle: BillingCycle;
+  trialDays?: number;
+  gracePeriodDays?: number;
+  autoRenew?: boolean;
 }
 
 export class CreateSubscriptionUseCase {
@@ -42,6 +45,9 @@ export class CreateSubscriptionUseCase {
       plan: input.plan,
       amount: input.amount,
       billingCycle: input.billingCycle,
+      trialDays: input.trialDays,
+      gracePeriodDays: input.gracePeriodDays,
+      autoRenew: input.autoRenew,
       nextBilling,
       startDate: now,
     });

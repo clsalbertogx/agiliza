@@ -6,6 +6,10 @@ import {
   subscriptionToViewModel,
   updateSubscription,
   cancelSubscription,
+  startTrial,
+  enterGracePeriod,
+  hasActiveTrial,
+  isInGracePeriod,
   SubscriptionStatus,
   BillingCycle,
   type Subscription,
@@ -121,21 +125,26 @@ describe('Subscription Domain Entity', () => {
   describe('createSubscriptionFromPersistence', () => {
     it('should restore a subscription from persistence data', () => {
       const now = new Date();
-      const persistence = {
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000010',
-        clientId: '00000000-0000-0000-0000-000000000020',
-        plan: 'Premium Plan',
-        amount: 99.90,
-        billingCycle: 'MONTHLY',
-        status: 'ACTIVE',
-        startDate: now,
-        endDate: null,
-        nextBilling: new Date('2026-09-01'),
-        cancelledAt: null,
-        createdAt: now,
-        updatedAt: now,
-      };
+       const persistence = {
+         id: '00000000-0000-0000-0000-000000000001',
+         tenantId: '00000000-0000-0000-0000-000000000010',
+         clientId: '00000000-0000-0000-0000-000000000020',
+         plan: 'Premium Plan',
+         amount: 99.90,
+         billingCycle: 'MONTHLY',
+         status: 'ACTIVE',
+         startDate: now,
+         endDate: null,
+         nextBilling: new Date('2026-09-01'),
+         cancelledAt: null,
+         trialDays: null,
+         gracePeriodDays: null,
+         trialEndsAt: null,
+         gracePeriodEndsAt: null,
+         autoRenew: null,
+         createdAt: now,
+         updatedAt: now,
+       };
 
       const subscription = createSubscriptionFromPersistence(persistence);
 
@@ -149,21 +158,26 @@ describe('Subscription Domain Entity', () => {
 
     it('should handle nullable fields as undefined', () => {
       const now = new Date();
-      const persistence = {
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000010',
-        clientId: '00000000-0000-0000-0000-000000000020',
-        plan: 'Basic',
-        amount: 49.90,
-        billingCycle: 'ANNUAL',
-        status: 'CANCELLED',
-        startDate: now,
-        endDate: new Date('2027-08-01'),
-        nextBilling: new Date('2026-09-01'),
-        cancelledAt: new Date('2026-08-15'),
-        createdAt: now,
-        updatedAt: now,
-      };
+const persistence = {
+         id: '00000000-0000-0000-0000-000000000001',
+         tenantId: '00000000-0000-0000-0000-000000000010',
+         clientId: '00000000-0000-0000-0000-000000000020',
+         plan: 'Basic',
+         amount: 49.90,
+         billingCycle: 'ANNUAL',
+         status: 'CANCELLED',
+         startDate: now,
+         endDate: new Date('2027-08-01'),
+         nextBilling: new Date('2026-09-01'),
+         cancelledAt: new Date('2026-08-15'),
+         trialDays: 14,
+         gracePeriodDays: null,
+         trialEndsAt: new Date('2026-08-15'),
+         gracePeriodEndsAt: null,
+         autoRenew: null,
+         createdAt: now,
+         updatedAt: now,
+       };
 
       const subscription = createSubscriptionFromPersistence(persistence);
 
@@ -301,6 +315,272 @@ describe('Subscription Domain Entity', () => {
       expect(cancelled.cancelledAt).toBeInstanceOf(Date);
       expect(cancelled.updatedAt.getTime()).toBeGreaterThanOrEqual(now.getTime());
       expect(cancelled.id).toBe(subscription.id);
+    });
+  });
+
+  describe('Trial and Grace Period fields', () => {
+    it('should create subscription with default autoRenew true and no trial', () => {
+      const result = createSubscription(validInput);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.autoRenew).toBe(true);
+        expect(result.value.trialDays).toBeUndefined();
+        expect(result.value.trialEndsAt).toBeUndefined();
+        expect(result.value.gracePeriodDays).toBeUndefined();
+        expect(result.value.status).toBe(SubscriptionStatus.ACTIVE);
+      }
+    });
+
+    it('should create subscription in TRIAL status when trialDays > 0', () => {
+      const result = createSubscription({
+        ...validInput,
+        trialDays: 7,
+        gracePeriodDays: 5,
+        autoRenew: false,
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.value.status).toBe(SubscriptionStatus.TRIAL);
+        expect(result.value.trialDays).toBe(7);
+        expect(result.value.gracePeriodDays).toBe(5);
+        expect(result.value.autoRenew).toBe(false);
+        expect(result.value.trialEndsAt).toBeInstanceOf(Date);
+        // trialEndsAt = startDate + 7 days
+        expect(result.value.trialEndsAt?.getTime()).toBe(
+          validInput.startDate.getTime() + 7 * 86400000,
+        );
+      }
+    });
+
+    it('should reject negative trialDays', () => {
+      const result = createSubscription({ ...validInput, trialDays: -1 });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.value.message).toContain('Trial days must be non-negative');
+      }
+    });
+
+    it('should reject negative gracePeriodDays', () => {
+      const result = createSubscription({ ...validInput, gracePeriodDays: -1 });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.value.message).toContain('Grace period days must be non-negative');
+      }
+    });
+  });
+
+  describe('startTrial', () => {
+    it('should set status to TRIAL and compute trialEndsAt from startDate', () => {
+      const now = new Date('2026-08-01');
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.ACTIVE,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const trial = startTrial(subscription, 14);
+
+      expect(trial.status).toBe(SubscriptionStatus.TRIAL);
+      expect(trial.trialDays).toBe(14);
+      expect(trial.trialEndsAt).toBeInstanceOf(Date);
+      expect(trial.trialEndsAt?.getTime()).toBe(now.getTime() + 14 * 86400000);
+    });
+
+    it('should throw when trialDays is not positive', () => {
+      const now = new Date();
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.ACTIVE,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      expect(() => startTrial(subscription, 0)).toThrow('Trial days must be positive');
+    });
+  });
+
+  describe('enterGracePeriod', () => {
+    it('should set status to GRACE_PERIOD and set gracePeriodEndsAt', () => {
+      const now = new Date();
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.EXPIRED,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const grace = enterGracePeriod(subscription, 5);
+
+      expect(grace.status).toBe(SubscriptionStatus.GRACE_PERIOD);
+      expect(grace.gracePeriodDays).toBe(5);
+      expect(grace.gracePeriodEndsAt).toBeInstanceOf(Date);
+    });
+
+    it('should throw when days is not positive', () => {
+      const now = new Date();
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.EXPIRED,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      expect(() => enterGracePeriod(subscription, 0)).toThrow('Grace period days must be positive');
+    });
+  });
+
+  describe('hasActiveTrial', () => {
+    it('should return true when trialEndsAt is in the future', () => {
+      const now = new Date('2026-08-15');
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.TRIAL,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        trialEndsAt: new Date('2026-09-01'),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      expect(hasActiveTrial(subscription, new Date('2026-08-15'))).toBe(true);
+    });
+
+    it('should return false when trialEndsAt is in the past', () => {
+      const now = new Date('2026-08-15');
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.TRIAL,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        trialEndsAt: new Date('2026-08-01'),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      expect(hasActiveTrial(subscription, new Date('2026-08-15'))).toBe(false);
+    });
+
+    it('should return false when trialEndsAt is not set', () => {
+      const now = new Date();
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.ACTIVE,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      expect(hasActiveTrial(subscription)).toBe(false);
+    });
+  });
+
+  describe('isInGracePeriod', () => {
+    it('should return true when gracePeriodEndsAt is in the future', () => {
+      const now = new Date('2026-08-15');
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.GRACE_PERIOD,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        gracePeriodEndsAt: new Date('2026-09-01'),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      expect(isInGracePeriod(subscription, new Date('2026-08-15'))).toBe(true);
+    });
+
+    it('should return false when gracePeriodEndsAt is in the past', () => {
+      const now = new Date('2026-08-15');
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.GRACE_PERIOD,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        gracePeriodEndsAt: new Date('2026-08-01'),
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      expect(isInGracePeriod(subscription, new Date('2026-08-15'))).toBe(false);
+    });
+
+    it('should return false when gracePeriodEndsAt is not set', () => {
+      const now = new Date();
+      const subscription: Subscription = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.90,
+        billingCycle: BillingCycle.MONTHLY,
+        status: SubscriptionStatus.ACTIVE,
+        nextBilling: new Date('2026-09-01'),
+        startDate: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      expect(isInGracePeriod(subscription)).toBe(false);
     });
   });
 });
