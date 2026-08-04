@@ -12,7 +12,7 @@ import observabilityPlugin from './infrastructure/plugins/observability.plugin';
 import { disconnectRedis, closeAllQueues, startReminderWorker, startDeadLetterWorker, closeWorker } from './infrastructure/queue';
 import { createRecurringInvoiceQueue, scheduleRecurringInvoiceJob, startRecurringInvoiceWorker } from './infrastructure/queue/recurring-invoice.worker';
 import { createAutoRenewQueue, scheduleAutoRenewJob, startAutoRenewWorker } from './infrastructure/queue/auto-renew.worker';
-import { createReminderService, createRecurringInvoiceUseCase, createAutoRenewSubscriptionUseCase, createSubscriptionRepository } from './presentation/factories';
+import { createReminderService, createRecurringInvoiceUseCase, createAutoRenewSubscriptionUseCase, createSubscriptionRepository, createAlertService } from './presentation/factories';
 import { InMemoryEventBus } from './infrastructure/event-bus/in-memory-event-bus';
 import { registerEventHandlers } from './presentation/factories/register-event-handlers';
 import { errorHandler } from './presentation/handler';
@@ -136,7 +136,8 @@ async function buildApp() {
   autoRenewWorker = startAutoRenewWorker(autoRenewUseCase, autoRenewSubscriptionRepo);
 
   // Start the dead-letter queue worker
-  deadLetterWorker = startDeadLetterWorker();
+  const alertService = createAlertService();
+  deadLetterWorker = startDeadLetterWorker(alertService);
 
   // Global error handler (must be registered after routes)
   app.setErrorHandler(errorHandler);

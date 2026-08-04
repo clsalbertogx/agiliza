@@ -31,6 +31,7 @@ export { createUpgradeSubscriptionUseCase } from './create-upgrade-subscription.
 export { createStartTrialSubscriptionUseCase } from './create-start-trial-subscription.factory';
 export { createSetGracePeriodSubscriptionUseCase } from './create-set-grace-period-subscription.factory';
 export { createToggleAutoRenewSubscriptionUseCase } from './create-toggle-auto-renew-subscription.factory';
+export { createGetSubscriptionAnalyticsUseCase } from './create-subscription-analytics.factory';
 export { createListPaymentsForInvoiceUseCase } from './create-list-payments.factory';
 export { createRecurringInvoiceUseCase } from './create-recurring-invoice.factory';
 export { registerEventHandlers } from './register-event-handlers';
@@ -38,3 +39,4 @@ export { createUpsertPaymentProviderConfigUseCase } from './create-upsert-paymen
 export { createGetPaymentProviderConfigUseCase } from './create-get-payment-provider-config.factory';
 export { createEncryptionService } from './create-encryption.factory';
 export { createPaymentProviderConfigRepository } from './create-payment-provider-config-repository.factory';
+export { createAlertService } from './create-alert-service.factory';

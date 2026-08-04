@@ -71,6 +71,7 @@ function makeSubscriptionRepoMock(
     findByClientId: vi.fn(),
     findActiveByNextBillingBefore: vi.fn(),
     findDueForRenewal: vi.fn().mockResolvedValue(dueForRenewal),
+    getSubscriptionsForAnalytics: vi.fn(),
     update: vi.fn(),
     cancel: vi.fn(),
   };

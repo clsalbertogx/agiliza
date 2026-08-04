@@ -1,5 +1,14 @@
 name: CD Pipeline
 
+# Required GitHub repository secrets (Settings → Secrets and variables → Actions).
+# Without these, `deploy-staging` fails on tag push:
+#   STAGING_HOST  - hostname/IP of the staging server (SSH, port 22)
+#   STAGING_USER  - SSH user with docker access on the staging server
+#   STAGING_KEY   - SSH private key used to authenticate against STAGING_HOST
+#   STAGING_PATH  - directory on the server holding docker-compose.staging.yml + .env.staging
+# Rollback relies on the `:previous` image tag, which the deploy script preserves locally
+# on the server (see the deploy-staging job below).
+
 on:
   push:
     tags:
@@ -104,11 +113,100 @@ jobs:
           echo "Backend image digest: ${{ steps.build-backend.outputs.digest }}"
           echo "Frontend image digest: ${{ steps.build-frontend.outputs.digest }}"
 
-  # deploy-staging:
-  #   name: Deploy to Staging
-  #   needs: build-and-push
-  #   runs-on: ubuntu-latest
-  #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-  #   steps:
-  #     - name: Trigger staging deployment
-  #       run: echo "Add your deploy step here (SSH, Helm, etc.)"
+  # Deploy the freshly built image (from `build-and-push`) to a staging server via SSH.
+  #
+  # Trigger: any tag push `v*.*.*` (same condition that gates `on.push.tags`).
+  #
+  # Rollback strategy (kept on the server, not the repo — images are pulled once and
+  # re-tagged locally so `:previous` always holds the release running before this deploy):
+  #   1. pull the new release images (tag = git tag)
+  #   2. tag `:latest -> :previous` (preserve the last good release)
+  #   3. tag `<tag> -> :latest` (point compose at the new release)
+  #   4. `docker compose up -d --force-recreate`
+  #   5. poll http://localhost:3333/api/health
+  #   6. on failure, re-tag `:previous -> :latest` and recreate (one-shot rollback)
+  # NOTE: `docker tag` copies a tag reference; it does not "rename". So the new release
+  # must be pinned to :latest explicitly (step 3) for compose to actually pick it up, and
+  # rollback must re-pin :previous -> :latest (step 6) — a bare `up --force-recreate`
+  # would just redeploy the same broken image.
+  #
+  # The compose file MUST declare `pull_policy: missing` (see docker/docker-compose.staging.yml)
+  # so that `docker compose up` does not re-pull `:latest` from GHCR: with the default
+  # "always" pull for `:latest`, the local :previous re-tag would be overwritten and the
+  # rollback would silently do nothing.
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build-and-push
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_KEY }}
+          port: 22
+          # Raise the per-step SSH command timeout: the script pulls multiple images,
+          # recreates containers and runs a 60s health-check loop. The 10m default can
+          # abort a slow pull on staging.
+          command_timeout: 20m
+          script: |
+            set -e
+
+            BACKEND_IMAGE="ghcr.io/${{ github.repository }}/backend"
+            FRONTEND_IMAGE="ghcr.io/${{ github.repository }}/frontend"
+            VERSION="${{ steps.version.outputs.VERSION }}"
+
+            echo "Deploying version ${VERSION}..."
+            cd "${{ secrets.STAGING_PATH }}"
+
+            # Pull the release images (tagged with the git tag just pushed).
+            echo "Pulling latest images..."
+            docker pull "${BACKEND_IMAGE}:${VERSION}"
+            docker pull "${FRONTEND_IMAGE}:${VERSION}"
+
+            # Preserve the currently-running images under :previous for rollback.
+            # On the very first deploy there is no local :latest — `|| true` swallows that.
+            docker tag "${BACKEND_IMAGE}:latest" "${BACKEND_IMAGE}:previous" 2>/dev/null || true
+            docker tag "${FRONTEND_IMAGE}:latest" "${FRONTEND_IMAGE}:previous" 2>/dev/null || true
+
+            # Pin :latest to the new release so compose (unpinned to the commit) picks it up.
+            docker tag "${BACKEND_IMAGE}:${VERSION}" "${BACKEND_IMAGE}:latest"
+            docker tag "${FRONTEND_IMAGE}:${VERSION}" "${FRONTEND_IMAGE}:latest"
+
+            echo "Deploying new version..."
+            docker compose -f docker-compose.staging.yml up -d --force-recreate
+
+            # Health check with a bounded retry loop (up to 30 x 2s = 60s).
+            HEALTH_URL="http://localhost:3333/api/health"
+            healthy=0
+            for attempt in $(seq 1 30); do
+              if curl -sf "$HEALTH_URL" >/dev/null; then
+                echo "Health check OK after ${attempt} attempt(s)."
+                healthy=1
+                break
+              fi
+              echo "Health check attempt ${attempt}/30 failed — retrying..."
+              sleep 2
+            done
+
+            if [ "$healthy" -ne 1 ]; then
+              echo "::error::Health check failed — rolling back to :previous"
+              # Re-pin the last good release and recreate. One-shot: no retry loop.
+              docker tag "${BACKEND_IMAGE}:previous" "${BACKEND_IMAGE}:latest" 2>/dev/null || true
+              docker tag "${FRONTEND_IMAGE}:previous" "${FRONTEND_IMAGE}:latest" 2>/dev/null || true
+              docker compose -f docker-compose.staging.yml up -d --force-recreate
+              echo "::error::Rollback complete — staging reverted to :previous"
+              exit 1
+            fi
+
+            echo "Deploy successful. Health OK."

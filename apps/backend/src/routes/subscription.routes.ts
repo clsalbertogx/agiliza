@@ -11,6 +11,7 @@ import { createUpgradeSubscriptionUseCase } from '@/presentation/factories/creat
 import { createStartTrialSubscriptionUseCase } from '@/presentation/factories/create-start-trial-subscription.factory';
 import { createSetGracePeriodSubscriptionUseCase } from '@/presentation/factories/create-set-grace-period-subscription.factory';
 import { createToggleAutoRenewSubscriptionUseCase } from '@/presentation/factories/create-toggle-auto-renew-subscription.factory';
+import { createGetSubscriptionAnalyticsUseCase } from '@/presentation/factories/create-subscription-analytics.factory';
 import { BillingCycle, type Subscription } from '@/domain/entities/subscription';
 
 const billingCycleValues = Object.values(BillingCycle) as [string, ...string[]];
@@ -176,6 +177,46 @@ export async function subscriptionRoutes(app: FastifyInstance) {
 
     const subscriptions = await subscriptionRepo.findByTenantId(tenantId);
     return { data: subscriptions };
+  });
+
+  // GET /api/subscriptions/analytics — Subscription revenue analytics (MRR, churn, LTV)
+  app.get('/api/subscriptions/analytics', {
+    schema: {
+      tags: ['Subscriptions'],
+      summary: 'Get subscription revenue analytics (MRR, churn, LTV)',
+      security: [{ bearerAuth: [] }],
+      querystring: {
+        type: 'object',
+        properties: {
+          from: { type: 'string', format: 'date' },
+          to: { type: 'string', format: 'date' },
+        },
+      },
+      response: {
+        200: dataEnvelope,
+      },
+    },
+  }, async (request, reply) => {
+    const tenantId = request.tenantId;
+
+    if (!tenantId) {
+      reply.code(401);
+      return { error: 'Unauthorized' };
+    }
+
+    const query = request.query as { from?: string; to?: string };
+    const from = query.from ? new Date(query.from) : undefined;
+    const to = query.to ? new Date(query.to) : undefined;
+
+    const useCase = createGetSubscriptionAnalyticsUseCase();
+    const result = await useCase.execute({ tenantId, from, to });
+
+    if (!result.success) {
+      reply.code(result.value.statusCode);
+      return { error: result.value.message };
+    }
+
+    return { data: result.value };
   });
 
   // GET /api/subscriptions/:id — Get subscription by id

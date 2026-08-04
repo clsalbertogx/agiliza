@@ -81,6 +81,21 @@ export class PrismaSubscriptionRepository implements SubscriptionRepositoryPort 
     return result.map((r) => this.mapper.toDomain(r as unknown as PersistenceSubscription));
   }
 
+  async getSubscriptionsForAnalytics(
+    tenantId: string,
+    from: Date,
+    to: Date,
+  ): Promise<Subscription[]> {
+    const result = await this.txClient.subscription.findMany({
+      where: {
+        tenantId,
+        createdAt: { gte: from, lte: to },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return result.map((r) => this.mapper.toDomain(r as unknown as PersistenceSubscription));
+  }
+
   async update(id: string, data: Partial<Subscription>): Promise<Subscription> {
     const {
       id: _id,

@@ -1,0 +1,40 @@
+version: '3.8'
+name: agiliza-staging
+
+# Staging deployment template — used by the `deploy-staging` job in .github/workflows/cd.yml.
+# Expected on the staging server at $STAGING_PATH/docker-compose.staging.yml, next to the
+# runtime env file `.env.staging` (same directory, so `env_file` resolves).
+# Images are published to GHCR (ghcr.io/clsalbertogx/agiliza/{backend,frontend}) by the
+# `build-and-push` job on every tag push (v*). Requires Docker Compose v2 on the server.
+#
+# IMPORTANT — `pull_policy: missing` is not optional:
+# the deploy script switches versions by re-tagging local images (:previous <-> :latest).
+# Compose's DEFAULT pull policy for the `latest` tag is "always" — it would re-pull
+# :latest from GHCR on every `up`, overwriting the local re-tag and silently defeating
+# the CD rollback. `missing` only pulls when the image is absent locally, so the
+# re-tagged image wins and rollback works.
+
+services:
+  backend:
+    image: ghcr.io/clsalbertogx/agiliza/backend:latest
+    ports: ['3333:3333']
+    env_file: .env.staging
+    restart: unless-stopped
+    networks: [agiliza-net]
+    pull_policy: missing
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3333/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    image: ghcr.io/clsalbertogx/agiliza/frontend:latest
+    ports: ['3000:3000']
+    restart: unless-stopped
+    networks: [agiliza-net]
+    pull_policy: missing
+
+networks:
+  agiliza-net:

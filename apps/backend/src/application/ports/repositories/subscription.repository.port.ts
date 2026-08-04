@@ -7,6 +7,7 @@ export interface SubscriptionRepositoryPort {
   findByClientId(clientId: string, tenantId?: string): Promise<Subscription[]>;
   findActiveByNextBillingBefore(date: Date): Promise<Subscription[]>;
   findDueForRenewal(from: Date, to: Date): Promise<Subscription[]>;
+  getSubscriptionsForAnalytics(tenantId: string, from: Date, to: Date): Promise<Subscription[]>;
   update(id: string, data: Partial<Subscription>): Promise<Subscription>;
   cancel(id: string, tenantId: string): Promise<Subscription>;
 }

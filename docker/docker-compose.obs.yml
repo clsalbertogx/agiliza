@@ -1,0 +1,44 @@
+version: '3.8'
+name: agiliza-obs
+services:
+  # Observability stack — Prometheus scraping backend /metrics + Grafana dashboards.
+  # Usage: docker compose -f docker/docker-compose.obs.yml up -d
+  # Then open Grafana at http://localhost:3001 (admin / admin)
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: agiliza-prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - agiliza-net
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: agiliza-grafana
+    ports:
+      - '3000:3000'
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - agiliza-net
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  agiliza-net:
+    external: true

@@ -35,6 +35,7 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   OUTBOUND_WEBHOOK_URL: z.string().url().optional().or(z.literal('')),
   OUTBOUND_WEBHOOK_API_KEY: z.string().optional(),
+  SLACK_WEBHOOK_URL: z.string().url().optional().or(z.literal('')),
 });
 
 const parsed = envSchema.safeParse(process.env);

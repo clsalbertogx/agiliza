@@ -56,6 +56,7 @@ describe('CreateInvoiceForSubscriptionUseCase', () => {
       findByClientId: vi.fn(),
       findActiveByNextBillingBefore: vi.fn(),
       findDueForRenewal: vi.fn(),
+      getSubscriptionsForAnalytics: vi.fn(),
       update: vi.fn(),
       cancel: vi.fn(),
     };

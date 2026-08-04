@@ -13,6 +13,8 @@ import { NotifyOutboundHandler } from '@/application/events/handlers/notify-outb
 import { AutoPayHandler } from '@/application/events/handlers/auto-pay.handler';
 import { ProcessPaymentUseCase } from '@/application/usecases/process-payment.usecase';
 import { RenewSubscriptionUseCase } from '@/application/usecases/renew-subscription.usecase';
+import { AlertOnPaymentFailedHandler } from '@/application/events/handlers/alert-on-payment-failed.handler';
+import { createAlertService } from '@/presentation/factories/create-alert-service.factory';
 import { BullMQDLQPublisher } from '@/infrastructure/queue/bullmq-dlq.publisher';
 import { env } from '@/config/env';
 
@@ -58,6 +60,11 @@ export function registerEventHandlers(eventBus: EventBusPort): void {
   // in the same `failed-webhooks` queue for manual inspection.
   const dlqPublisher = new BullMQDLQPublisher();
 
+  // Alerting — notifies on critical events (payment failures, DLQ drains).
+  // Silently no-ops when SLACK_WEBHOOK_URL is not configured.
+  const alertService = createAlertService();
+  const alertOnPaymentFailed = new AlertOnPaymentFailedHandler(alertService);
+
   // Handlers
   const sendReceipt = new SendReceiptHandler(invoiceRepo, clientRepo, messageProvider, dlqPublisher);
   const updateRisk = new UpdateRiskScoreHandler(clientRepo, invoiceRepo, riskCalculator, dlqPublisher);
@@ -74,6 +81,7 @@ export function registerEventHandlers(eventBus: EventBusPort): void {
   eventBus.subscribe('payment.confirmed', (e) => sendReceipt.handleWithRetry(e));
   eventBus.subscribe('payment.confirmed', (e) => updateRisk.handleWithRetry(e));
   eventBus.subscribe('payment.failed', (e) => updateRisk.handleWithRetry(e));
+  eventBus.subscribe('payment.failed', (e) => alertOnPaymentFailed.handle(e));
   eventBus.subscribe('invoice.overdue', (e) => updateRisk.handleWithRetry(e));
   eventBus.subscribe('message.read', (e) => updateRisk.handleWithRetry(e));
   eventBus.subscribe('message.clicked', (e) => updateRisk.handleWithRetry(e));

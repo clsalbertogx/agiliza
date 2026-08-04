@@ -228,6 +228,41 @@ describe('Subscription API Routes', () => {
     });
   });
 
+  describe('GET /api/subscriptions/analytics — Subscription Analytics', () => {
+    it('should return MRR, churn, LTV and counts', async () => {
+      const cancelledSubscription = {
+        ...mockSubscription,
+        id: '00000000-0000-0000-0000-000000000004',
+        status: 'CANCELLED',
+        cancelledAt: new Date('2026-08-10'),
+      };
+      mockState.findByTenantId.mockResolvedValue([mockSubscription, cancelledSubscription]);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/subscriptions/analytics',
+        headers: { authorization: validToken },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.data.mrr).toBe(99.9);
+      expect(body.data.churn).toBe(50);
+      expect(body.data.ltv).toBe(199.8);
+      expect(body.data.activeCount).toBe(1);
+      expect(body.data.cancelledCount).toBe(1);
+    });
+
+    it('should return 401 without auth token', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/subscriptions/analytics',
+      });
+
+      expect(res.statusCode).toBe(401);
+    });
+  });
+
   describe('GET /api/subscriptions/:id — Get Subscription by ID', () => {
     it('should return subscription by ID', async () => {
       mockState.findById.mockResolvedValue(mockSubscription);
