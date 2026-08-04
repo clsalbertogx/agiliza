@@ -62,7 +62,10 @@ describe('CORS Validation — SEC-07', () => {
       const headers: Record<string, string> = {};
 
       if (corsResult.allowed) {
-        headers['access-control-allow-origin'] = corsResult.origin!;
+        const allowedOrigin = corsResult.origin;
+        if (allowedOrigin) {
+          headers['access-control-allow-origin'] = allowedOrigin;
+        }
         headers['access-control-allow-methods'] = ALLOWED_METHODS.join(', ');
         headers['access-control-allow-headers'] = ALLOWED_HEADERS.join(', ');
         headers['access-control-max-age'] = '86400';
@@ -87,7 +90,10 @@ describe('CORS Validation — SEC-07', () => {
       const headers: Record<string, string> = {};
 
       if (corsResult.allowed) {
-        headers['access-control-allow-origin'] = corsResult.origin!;
+        const allowedOrigin = corsResult.origin;
+        if (allowedOrigin) {
+          headers['access-control-allow-origin'] = allowedOrigin;
+        }
         headers['access-control-allow-methods'] = ALLOWED_METHODS.join(', ');
         headers['access-control-allow-headers'] = ALLOWED_HEADERS.join(', ');
         headers['access-control-max-age'] = '86400';
@@ -121,7 +127,7 @@ describe('CORS Validation — SEC-07', () => {
     // Webhook endpoints don't need CORS because they are server-to-server
     // However, HMAC signature is still required for authentication
 
-    function simulateWebhookEndpoint(requestOrigin: string | undefined, hasValidHmac: boolean): { status: number } {
+    function simulateWebhookEndpoint(_requestOrigin: string | undefined, hasValidHmac: boolean): { status: number } {
       // CORS is not checked for webhook endpoints
       // But HMAC is required regardless of origin
       if (!hasValidHmac) {

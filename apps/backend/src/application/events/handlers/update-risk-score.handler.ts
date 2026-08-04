@@ -8,7 +8,7 @@ import type { DomainEvent } from '@/domain/events/domain-events';
 export class UpdateRiskScoreHandler extends RetryableWebhookHandler {
   constructor(
     private readonly clientRepo: ClientRepositoryPort,
-    private readonly invoiceRepo: InvoiceRepositoryPort,
+    readonly _invoiceRepo: InvoiceRepositoryPort,
     private readonly riskCalculator: RiskCalculatorService,
     dlqPort?: DLQPort,
   ) {

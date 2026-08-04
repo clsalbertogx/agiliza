@@ -50,7 +50,7 @@ export class CashFlowService {
     const paidHistorical = allInvoices.filter((i) => i.status === 'PAID').length;
     const overdueHistorical = allInvoices.filter((i) => i.status === 'OVERDUE').length;
 
-    const paymentRate = totalHistorical > 0 ? paidHistorical / totalHistorical : 0.85;
+    const _paymentRate = totalHistorical > 0 ? paidHistorical / totalHistorical : 0.85;
     const defaultRate = totalHistorical > 0 ? overdueHistorical / totalHistorical : 0.12;
     const recoveryRate = 0.3; // 30% recovery from defaults (MVP estimate)
 

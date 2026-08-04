@@ -61,7 +61,7 @@ describe('AesEncryptionService', () => {
     const encrypted = service.encrypt(plaintext);
     const parsed = JSON.parse(encrypted);
     // Tamper with ciphertext
-    const tampered = JSON.stringify({ ...parsed, ciphertext: parsed.ciphertext.slice(0, -2) + 'ff' });
+    const tampered = JSON.stringify({ ...parsed, ciphertext: `${parsed.ciphertext.slice(0, -2)}ff` });
 
     expect(() => service.decrypt(tampered)).toThrow();
   });

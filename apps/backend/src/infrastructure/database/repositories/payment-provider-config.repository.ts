@@ -39,7 +39,7 @@ export class PrismaPaymentProviderConfigRepository implements PaymentProviderCon
       },
     });
 
-    if (!result || !result.apiKeyEncrypted) {
+    if (!result?.apiKeyEncrypted) {
       return null;
     }
 

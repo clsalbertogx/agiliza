@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createToken, validateApiKey, verifyToken } from '@/infrastructure/auth';
 
 /** Helper: sign header.body with HMAC-SHA256 (mirrors jwt.strategy.ts) */
@@ -224,7 +224,7 @@ describe('Authentication — SEC-01', () => {
 
     it('should detect and reject stolen/rotated refresh tokens', () => {
       // Given a stolen refresh token that was already rotated
-      const rotatedToken = 'rotated-refresh-token';
+      const _rotatedToken = 'rotated-refresh-token';
       const tokenFamily = new Map<string, number>();
       tokenFamily.set('family-1', 2); // version 2 is current
 

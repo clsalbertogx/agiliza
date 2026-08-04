@@ -1,21 +1,8 @@
 'use client';
 
-import {
-  AlertTriangle,
-  Calendar,
-  Clock,
-  Edit3,
-  Mail,
-  MessageCircle,
-  Phone,
-  TrendingDown,
-  TrendingUp,
-  User,
-} from 'lucide-react';
+import { Calendar, Clock, Edit3, Mail, MessageCircle, Phone, TrendingDown, TrendingUp } from 'lucide-react';
 import { ErrorState } from '@/components/error-state';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { RiskBadge } from '@/components/risk-badge';
-import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -216,6 +203,7 @@ export function ClientDetailCard({ client, onEdit, isLoading = false, error = nu
                 {/* Risk meter */}
                 {riskPercent !== null && (
                   <div className="space-y-1">
+                    {/* biome-ignore lint/a11y/useSemanticElements: custom-styled meter (Tailwind fill bar); native <meter> would change visual design */}
                     <div
                       className="h-2 bg-gray-200 rounded-full overflow-hidden"
                       role="meter"
@@ -237,7 +225,7 @@ export function ClientDetailCard({ client, onEdit, isLoading = false, error = nu
 
                 {/* Risk features */}
                 {client.riskFeatures && client.riskFeatures.length > 0 ? (
-                  <ul className="space-y-1.5" role="list">
+                  <ul className="space-y-1.5">
                     {client.riskFeatures.map((feature) => (
                       <li key={feature.name} className="flex items-center gap-2 text-sm text-gray-600">
                         {feature.impact > 0 ? (

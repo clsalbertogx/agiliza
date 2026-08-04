@@ -1,9 +1,8 @@
 'use client';
 
-import { Check, Clock, Copy, Loader2, QrCode, X } from 'lucide-react';
+import { Check, Clock, Copy, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ErrorState } from '@/components/error-state';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { PaymentStatus } from '@/components/payment-status';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -76,7 +75,7 @@ export function PixPaymentFlow({
   error = null,
 }: PixPaymentFlowProps) {
   const [copied, setCopied] = useState(false);
-  const [fadingOut, setFadingOut] = useState(false);
+  const [_fadingOut, setFadingOut] = useState(false);
   const [pollTimer, setPollTimer] = useState(0);
   const statusRef = useRef<HTMLDivElement>(null);
 
@@ -201,6 +200,7 @@ export function PixPaymentFlow({
 
           {/* QR Code */}
           <div className={`relative ${pollStatus === 'processing' ? 'opacity-50' : ''}`}>
+            {/* biome-ignore lint/performance/noImgElement: dynamically-generated base64 PNG QR code; next/image cannot optimize data URIs */}
             <img
               src={`data:image/png;base64,${pixData.qrCodeBase64}`}
               alt="QR Code para pagamento PIX"
@@ -216,10 +216,7 @@ export function PixPaymentFlow({
           {/* Copy button */}
           <div className="w-full max-w-sm">
             <div className="flex gap-2">
-              <code
-                className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 truncate"
-                aria-label="Chave PIX para copiar"
-              >
+              <code aria-label="Chave PIX para copiar" className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 truncate">
                 {pixData.copyPasteKey}
               </code>
               <Button

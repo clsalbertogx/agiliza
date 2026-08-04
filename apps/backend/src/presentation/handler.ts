@@ -2,7 +2,7 @@ import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
 import { ApplicationError } from '@/application/errors/application.error';
 
-export function errorHandler(error: FastifyError | Error, request: FastifyRequest, reply: FastifyReply): void {
+export function errorHandler(error: FastifyError | Error, _request: FastifyRequest, reply: FastifyReply): void {
   // 1. Zod validation errors → 400
   if (error instanceof ZodError) {
     reply.status(400).send({

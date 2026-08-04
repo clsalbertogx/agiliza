@@ -99,14 +99,18 @@ describe('Brute Force Protection — SEC-09', () => {
     const correctPassword = 'correct-password';
 
     // When 4 consecutive login attempts fail (4 < 5, still not locked)
-    let result: { success: boolean; locked: boolean; status: number };
+    let result: { success: boolean; locked: boolean; status: number } = {
+      success: false,
+      locked: false,
+      status: 401,
+    };
     for (let i = 0; i < 4; i++) {
       result = attemptLogin(email, 'wrong-password', correctPassword);
     }
 
     // After 4 failures, the 5th attempt should still be allowed (401, not locked)
-    expect(result!.status).toBe(401);
-    expect(result!.locked).toBe(false);
+    expect(result.status).toBe(401);
+    expect(result.locked).toBe(false);
 
     // The 5th failed attempt triggers the lockout — returns 429 immediately
     result = attemptLogin(email, 'wrong-password-5th', correctPassword);
@@ -132,7 +136,7 @@ describe('Brute Force Protection — SEC-09', () => {
       email: string,
       password: string,
       correctPassword: string,
-      ip: string,
+      _ip: string,
     ): { success: boolean; status: number } {
       const now = Date.now();
       const state = accountLockState.get(email) || { failedAttempts: 0, lockedUntil: null };
@@ -236,7 +240,9 @@ describe('Brute Force Protection — SEC-09', () => {
     expect(result.status).toBe(429);
 
     // Simulate cool-down period passing (reset lock state)
-    const account = accounts.get(email)!;
+    const account = accounts.get(email);
+    expect(account).toBeDefined();
+    if (!account) throw new Error('Account not seeded');
     account.lockedUntil = null; // Lockout expired
     account.failedAttempts = 0;
 

@@ -30,10 +30,10 @@ export type PaymentGatewayFactory = (config: { apiKey: string; environment: stri
 export class ProcessPaymentUseCase {
   constructor(
     private readonly invoiceRepo: InvoiceRepositoryPort,
-    private readonly clientRepo: ClientRepositoryPort,
+    readonly _clientRepo: ClientRepositoryPort,
     private readonly paymentRepo: PaymentRepositoryPort,
     private readonly paymentGateway: PaymentGatewayPort,
-    private readonly eventBus: EventBusPort,
+    readonly _eventBus: EventBusPort,
     private readonly paymentProviderConfigRepo?: PaymentProviderConfigRepositoryPort,
     private readonly encryption?: EncryptionPort,
     private readonly gatewayFactory?: PaymentGatewayFactory,
@@ -94,7 +94,7 @@ export class ProcessPaymentUseCase {
     } catch (error: any) {
       return failure(
         new ApplicationError(
-          'Payment provider error: ' + (error.message || 'Unknown error'),
+          `Payment provider error: ${error.message || 'Unknown error'}`,
           'PAYMENT_PROVIDER_ERROR',
           502,
         ),

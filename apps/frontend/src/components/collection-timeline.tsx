@@ -1,9 +1,8 @@
 'use client';
 
-import { AlertCircle, Check, Clock, Mail, MessageSquare, Phone, X } from 'lucide-react';
+import { AlertCircle, Check, Clock, Mail, MessageSquare, X } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -138,7 +137,7 @@ export function CollectionTimeline({
         <CardTitle>Histórico de Cobrança</CardTitle>
       </CardHeader>
       <CardContent>
-        <ol role="list" aria-label="Linha do tempo de cobrança" className="space-y-0">
+        <ol aria-label="Linha do tempo de cobrança" className="space-y-0">
           {events.map((event, idx) => {
             const config = eventConfig[event.event] ?? eventConfig.queued;
             const isLast = idx === events.length - 1;
@@ -186,7 +185,7 @@ export function CollectionTimeline({
 
           {/* Pending dot for last item */}
           {isPending && (
-            <li role="listitem" className="flex items-start gap-3">
+            <li className="flex items-start gap-3">
               <div className="flex flex-col items-center">
                 <div className="w-4 h-4 rounded-full bg-gray-300 animate-pulse" aria-hidden="true" />
               </div>

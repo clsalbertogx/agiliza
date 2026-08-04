@@ -4,7 +4,7 @@ import type { DomainMapper } from './mapper.interface';
 
 export type { PersistenceInvoice } from '@/domain/entities/invoice';
 
-function toDate(value: Date | string | null | undefined): Date | undefined {
+function _toDate(value: Date | string | null | undefined): Date | undefined {
   if (value == null) return undefined;
   return typeof value === 'string' ? new Date(value) : value;
 }

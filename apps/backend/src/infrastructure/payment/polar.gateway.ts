@@ -7,7 +7,6 @@ import type {
   PaymentGatewayPort,
   PixChargeResponse,
 } from '@/application/ports/payment-gateway.port';
-import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 
 /**
  * Minimal contract surface that the Polar API client must expose.

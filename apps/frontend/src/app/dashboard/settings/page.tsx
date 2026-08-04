@@ -8,8 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/lib/api';
 
-type Environment = 'sandbox' | 'production';
-
 type ProviderField = string;
 
 interface ProviderDefinition {
@@ -62,10 +60,10 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  const currentProvider = useMemo<ProviderDefinition>(
-    () => PROVIDERS.find((p) => p.value === provider) ?? PROVIDERS[0]!,
-    [provider],
-  );
+  const currentProvider = useMemo<ProviderDefinition>(() => {
+    const found = PROVIDERS.find((p) => p.value === provider);
+    return found ?? PROVIDERS[0] ?? { value: 'asaas', label: 'Asaas', fields: ['apiKey', 'environment'] };
+  }, [provider]);
 
   const loadConfig = useCallback(async () => {
     setLoading(true);
@@ -111,7 +109,7 @@ export default function SettingsPage() {
     const required = REQUIRED_FIELDS_BY_PROVIDER[provider] ?? [];
     const missing: string[] = [];
     for (const field of required) {
-      if (!config[field] || config[field]!.trim().length === 0) {
+      if (!config[field] || config[field]?.trim().length === 0) {
         missing.push(FIELD_LABELS[field] ?? field);
       }
     }

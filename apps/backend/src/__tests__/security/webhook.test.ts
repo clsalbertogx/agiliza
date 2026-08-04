@@ -4,20 +4,20 @@ process.env.MERCADOPAGO_WEBHOOK_SECRET = 'mp-test-secret-key';
 process.env.EVOLUTION_API_KEY = 'evolution-secret-key-123';
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type {
   getSignatureHeader as HeaderFn,
   verifyWebhookSignature as VerifyFn,
 } from '@/infrastructure/payment/hmac-verifier';
 
 let verifyWebhookSignature: typeof VerifyFn;
-let getSignatureHeader: typeof HeaderFn;
+let _getSignatureHeader: typeof HeaderFn;
 
 beforeAll(async () => {
   // Dynamic import ensures env vars are set before module initializes
   const mod = await import('@/infrastructure/payment/hmac-verifier');
   verifyWebhookSignature = mod.verifyWebhookSignature;
-  getSignatureHeader = mod.getSignatureHeader;
+  _getSignatureHeader = mod.getSignatureHeader;
 });
 
 describe('Webhook Security', () => {
@@ -122,7 +122,7 @@ describe('Webhook Security', () => {
 
         // Check timestamp freshness (within 5 minutes)
         const now = Math.floor(Date.now() / 1000);
-        if (Math.abs(now - parseInt(ts)) > 300) return false;
+        if (Math.abs(now - parseInt(ts, 10)) > 300) return false;
 
         // Verify HMAC(ts + '.' + body, secret)
         const expected = createHmac('sha256', secretKey).update(`${ts}.${rawBody}`).digest('hex');
@@ -168,7 +168,7 @@ describe('Webhook Security', () => {
 
         // Check timestamp freshness (within 5 minutes)
         const now = Math.floor(Date.now() / 1000);
-        if (Math.abs(now - parseInt(ts)) > 300) return false;
+        if (Math.abs(now - parseInt(ts, 10)) > 300) return false;
 
         const expected = createHmac('sha256', secretKey).update(`${ts}.${rawBody}`).digest('hex');
         try {

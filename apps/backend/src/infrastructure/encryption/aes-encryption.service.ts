@@ -3,7 +3,7 @@ import type { EncryptionPort } from '@/application/ports/gateways/encryption.por
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
-const TAG_LENGTH = 16;
+const _TAG_LENGTH = 16;
 
 interface EncryptedData {
   ciphertext: string;
@@ -15,7 +15,7 @@ export class AesEncryptionService implements EncryptionPort {
   private readonly key: Buffer;
 
   constructor(keyHex: string) {
-    if (!keyHex || keyHex.length !== 64) {
+    if (keyHex?.length !== 64) {
       throw new Error('ENCRYPTION_KEY must be a 32-byte hex string (64 hex chars)');
     }
     this.key = Buffer.from(keyHex, 'hex');

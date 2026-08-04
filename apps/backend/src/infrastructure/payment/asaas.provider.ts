@@ -24,13 +24,6 @@ export class AsaasPaymentProvider implements PaymentGatewayPort {
       config.environment === 'production' ? 'https://api.asaas.com/v3' : 'https://api-sandbox.asaas.com/v3';
   }
 
-  private getHeaders(): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      access_token: this.apiKey,
-    };
-  }
-
   async createPixCharge(params: {
     amount: number;
     description: string;
@@ -68,7 +61,7 @@ export class AsaasPaymentProvider implements PaymentGatewayPort {
     };
   }
 
-  async cancelCharge(providerPaymentId: string): Promise<void> {
+  async cancelCharge(_providerPaymentId: string): Promise<void> {
     // In real implementation: DELETE /v3/payments/{id}
   }
 

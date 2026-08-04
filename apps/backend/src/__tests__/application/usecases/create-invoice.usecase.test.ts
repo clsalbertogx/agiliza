@@ -1,14 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApplicationError } from '@/application/errors/application.error';
 import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { Either, isFailure, isSuccess } from '@/application/types/either';
+import { isFailure, isSuccess } from '@/application/types/either';
 import { type CreateInvoiceInput, CreateInvoiceUseCase } from '@/application/usecases/create-invoice.usecase';
-import { type Client, createClient, MessageChannel, RiskScore } from '@/domain/entities/client';
-import { createInvoice, type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
+import { type Client, MessageChannel, RiskScore } from '@/domain/entities/client';
+import { type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
 import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { Money } from '@/domain/value-objects/money';
 
 const mockInvoiceRepo: InvoiceRepositoryPort = {
   findById: vi.fn(),

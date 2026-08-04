@@ -2,9 +2,8 @@
 // Exported from the barrel; natural home: message delivery/detail view.
 'use client';
 
-import { AlertCircle, Check, ChevronRight, Clock, Download, Eye, MousePointerClick, Send, X } from 'lucide-react';
+import { AlertCircle, Clock, Download, Eye, MousePointerClick, Send } from 'lucide-react';
 import { ErrorState } from '@/components/error-state';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { StatusBadge } from '@/components/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -138,7 +137,7 @@ function TimelineNode({
   // Pending node (future event)
   if (isPending) {
     return (
-      <li className="flex items-start gap-3" role="listitem">
+      <li className="flex items-start gap-3">
         <div className="flex flex-col items-center">
           <div className="w-5 h-5 rounded-full bg-gray-200 animate-pulse" aria-hidden="true" />
           {!isLast && <div className="w-0.5 flex-1 bg-gray-200 mt-1" aria-hidden="true" />}
@@ -151,7 +150,7 @@ function TimelineNode({
   }
 
   return (
-    <li className="flex items-start gap-3" role="listitem">
+    <li className="flex items-start gap-3">
       <div className="flex flex-col items-center">
         <div className={`w-5 h-5 rounded-full flex items-center justify-center ${config.bgColor}`}>
           <div className={config.color}>{config.icon}</div>
@@ -206,7 +205,7 @@ export function MessageTracking({ messageId, data, isLoading = false, error = nu
 
         {/* Timeline */}
         <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Linha do Tempo</h4>
-        <ol role="list" aria-label="Linha do tempo da mensagem" className="space-y-0">
+        <ol aria-label="Linha do tempo da mensagem" className="space-y-0">
           {data.events.map((event, idx) => (
             <TimelineNode
               key={`${event.event}-${event.timestamp}`}
@@ -219,7 +218,7 @@ export function MessageTracking({ messageId, data, isLoading = false, error = nu
 
           {/* Future / pending events */}
           {futureEvents.map((event) => (
-            <li key={event} className="flex items-start gap-3" role="listitem">
+            <li key={event} className="flex items-start gap-3">
               <div className="flex flex-col items-center">
                 <div className="w-5 h-5 rounded-full bg-gray-200 animate-pulse" aria-hidden="true" />
                 {event !== futureEvents[futureEvents.length - 1] && (

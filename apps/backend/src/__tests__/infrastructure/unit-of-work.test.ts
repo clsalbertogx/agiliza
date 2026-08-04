@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
 import { getTransaction, PrismaUnitOfWork } from '@/infrastructure/database/unit-of-work';
@@ -74,6 +73,7 @@ describe('PrismaUnitOfWork Integration', () => {
     const slug = `uow-test-commit-${Date.now()}`;
 
     const result = await uow.execute(async () => {
+      // biome-ignore lint/style/noNonNullAssertion: getTransaction() is guaranteed non-null inside uow.execute()
       const tx = getTransaction()!;
 
       // Create a tenant inside the transaction
@@ -89,7 +89,7 @@ describe('PrismaUnitOfWork Integration', () => {
       // Verify the tenant is accessible inside the transaction
       const found = await tx.tenant.findUnique({ where: { slug } });
       expect(found).not.toBeNull();
-      expect(found!.name).toBe('UoW Commit Test');
+      expect(found?.name).toBe('UoW Commit Test');
 
       return tenant;
     });
@@ -100,7 +100,7 @@ describe('PrismaUnitOfWork Integration', () => {
 
     const persisted = await prisma.tenant.findUnique({ where: { slug } });
     expect(persisted).not.toBeNull();
-    expect(persisted!.name).toBe('UoW Commit Test');
+    expect(persisted?.name).toBe('UoW Commit Test');
   });
 
   // ─── Rollback on error ─────────────────────────────────────────
@@ -113,6 +113,7 @@ describe('PrismaUnitOfWork Integration', () => {
     // Attempt to create a tenant and then throw
     await expect(
       uow.execute(async () => {
+        // biome-ignore lint/style/noNonNullAssertion: getTransaction() is guaranteed non-null inside uow.execute()
         const tx = getTransaction()!;
 
         await tx.tenant.create({
@@ -155,7 +156,7 @@ describe('PrismaUnitOfWork Integration', () => {
         expect(innerTx).toBe(outerTx);
 
         // Perform an operation from the nested call
-        await innerTx!.tenant.create({
+        await innerTx?.tenant.create({
           data: {
             id: crypto.randomUUID(),
             name: 'UoW Nested Test',
@@ -171,7 +172,7 @@ describe('PrismaUnitOfWork Integration', () => {
     // Verify commit
     const persisted = await prisma.tenant.findUnique({ where: { slug } });
     expect(persisted).not.toBeNull();
-    expect(persisted!.name).toBe('UoW Nested Test');
+    expect(persisted?.name).toBe('UoW Nested Test');
   });
 
   // ─── AsyncLocalStorage isolation ───────────────────────────────
@@ -184,6 +185,7 @@ describe('PrismaUnitOfWork Integration', () => {
 
     await Promise.all([
       uow.execute(async () => {
+        // biome-ignore lint/style/noNonNullAssertion: getTransaction() is guaranteed non-null inside uow.execute()
         const tx = getTransaction()!;
         await tx.tenant.create({
           data: {
@@ -195,6 +197,7 @@ describe('PrismaUnitOfWork Integration', () => {
         });
       }),
       uow.execute(async () => {
+        // biome-ignore lint/style/noNonNullAssertion: getTransaction() is guaranteed non-null inside uow.execute()
         const tx = getTransaction()!;
         await tx.tenant.create({
           data: {

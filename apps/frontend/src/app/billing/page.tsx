@@ -35,7 +35,10 @@ export default function BillingPage() {
             <p className="mt-2 text-sm text-gray-500">Data</p>
             <p className="font-medium">{new Date().toLocaleDateString('pt-BR')}</p>
           </div>
-          <button className="mt-6 w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500">
+          <button
+            type="button"
+            className="mt-6 w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500"
+          >
             Baixar Recibo
           </button>
         </div>
@@ -83,6 +86,7 @@ export default function BillingPage() {
                 <span className="text-xs text-gray-400">[QR Code PIX]</span>
               </div>
               <button
+                type="button"
                 onClick={handleCopy}
                 className="inline-flex items-center gap-2 text-sm text-success-600 font-medium hover:text-success-700 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-success-500"
               >
@@ -96,6 +100,7 @@ export default function BillingPage() {
             </div>
 
             <button
+              type="button"
               onClick={handlePay}
               className="w-full bg-success-600 text-white py-3 px-6 rounded-lg font-semibold text-lg hover:bg-success-700 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-success-500"
             >

@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { BillingCycle, type Subscription } from '@/domain/entities/subscription';
-import { createAutoRenewSubscriptionUseCase } from '@/presentation/factories/create-auto-renew-subscription.factory';
 import { createCancelSubscriptionUseCase } from '@/presentation/factories/create-cancel-subscription.factory';
 import { createExpireSubscriptionUseCase } from '@/presentation/factories/create-expire-subscription.factory';
 import { createPauseSubscriptionUseCase } from '@/presentation/factories/create-pause-subscription.factory';
@@ -23,7 +22,7 @@ const createSubscriptionSchema = z.object({
   clientId: z.string().uuid(),
   plan: z.string().min(1).max(255),
   amount: z.number().positive(),
-  billingCycle: z.enum(billingCycleValues as any),
+  billingCycle: z.enum(billingCycleValues),
   trialDays: z.number().int().nonnegative().max(365).optional(),
   gracePeriodDays: z.number().int().nonnegative().max(90).optional(),
   autoRenew: z.boolean().optional(),
@@ -38,13 +37,67 @@ const dataEnvelope = {
   additionalProperties: true,
 };
 
-const listEnvelope = {
+// Documented Subscription item shape. Nullable unions (`['string','null']`)
+// let runtime `null`s round-trip untouched and Date objects serialize to ISO
+// strings; `additionalProperties: true` preserves fields not listed here
+// (`endDate`, `cancelledAt`, `trialDays`, `gracePeriodDays`, ...).
+const subscriptionResponseSchema = {
   type: 'object',
+  required: ['id', 'tenantId', 'clientId', 'plan', 'amount', 'billingCycle', 'status', 'nextBilling', 'createdAt'],
   properties: {
-    data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+    id: { type: 'string', format: 'uuid' },
+    tenantId: { type: 'string', format: 'uuid' },
+    clientId: { type: 'string', format: 'uuid' },
+    plan: { type: 'string' },
+    amount: { type: 'number' },
+    billingCycle: { type: 'string', enum: ['MONTHLY', 'BIMONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL'] },
+    status: { type: 'string', enum: ['ACTIVE', 'CANCELLED', 'EXPIRED', 'PAUSED', 'GRACE_PERIOD', 'TRIAL'] },
+    nextBilling: { type: ['string', 'null'], format: 'date-time' },
+    startDate: { type: ['string', 'null'], format: 'date-time' },
+    createdAt: { type: ['string', 'null'], format: 'date-time' },
+    updatedAt: { type: ['string', 'null'], format: 'date-time' },
   },
   additionalProperties: true,
-};
+} as const;
+
+const subscriptionSingleEnvelope = {
+  type: 'object',
+  properties: {
+    data: subscriptionResponseSchema,
+  },
+  additionalProperties: true,
+} as const;
+
+const subscriptionListEnvelope = {
+  type: 'object',
+  properties: {
+    data: { type: 'array', items: subscriptionResponseSchema },
+  },
+  additionalProperties: true,
+} as const;
+
+// Documented subscription revenue analytics shape. `ltv` is nullable (null when
+// churn <= 0); all other metrics are always present.
+const subscriptionAnalyticsEnvelope = {
+  type: 'object',
+  properties: {
+    data: {
+      type: 'object',
+      required: ['mrr', 'arpu', 'churn', 'activeCount', 'cancelledCount', 'monthlyAmount'],
+      properties: {
+        mrr: { type: 'number' },
+        arpu: { type: 'number' },
+        churn: { type: 'number' },
+        ltv: { type: ['number', 'null'] },
+        activeCount: { type: 'integer' },
+        cancelledCount: { type: 'integer' },
+        monthlyAmount: { type: 'number' },
+      },
+      additionalProperties: true,
+    },
+  },
+  additionalProperties: true,
+} as const;
 
 const idParamsSchema = {
   type: 'object',
@@ -130,10 +183,17 @@ export async function subscriptionRoutes(app: FastifyInstance) {
       }
 
       const data = parsed.data;
+      const tenantId = request.tenantId;
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       const useCase = createCreateSubscriptionUseCase();
 
       const result = await useCase.execute({
-        tenantId: request.tenantId!,
+        tenantId,
         clientId: data.clientId,
         plan: data.plan,
         amount: data.amount,
@@ -169,14 +229,20 @@ export async function subscriptionRoutes(app: FastifyInstance) {
           },
         },
         response: {
-          200: listEnvelope,
+          200: subscriptionListEnvelope,
         },
       },
     },
-    async (request) => {
-      const query = request.query as any;
+    async (request, reply) => {
+      const query = request.query as Record<string, string | undefined>;
       const tenantId = request.tenantId || query.tenantId;
-      const clientId = query.clientId as string | undefined;
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
+      const clientId = query.clientId;
 
       const subscriptionRepo = createSubscriptionRepository();
 
@@ -206,7 +272,7 @@ export async function subscriptionRoutes(app: FastifyInstance) {
           },
         },
         response: {
-          200: dataEnvelope,
+          200: subscriptionAnalyticsEnvelope,
         },
       },
     },
@@ -244,7 +310,7 @@ export async function subscriptionRoutes(app: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         params: idParamsSchema,
         response: {
-          200: dataEnvelope,
+          200: subscriptionSingleEnvelope,
         },
       },
     },

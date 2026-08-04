@@ -11,22 +11,24 @@ const queues = new Map<QueueName, Queue>();
  * are kept indefinitely for manual review.
  */
 export function getQueue(name: QueueName): Queue {
-  if (!queues.has(name)) {
-    const defaultJobOptions = name === QueueNames.FAILED_WEBHOOKS ? DLQ_JOB_OPTIONS : DEFAULT_JOB_OPTIONS;
-
-    const queue = new Queue(name, {
-      connection: getRedis(),
-      defaultJobOptions,
-    });
-
-    queue.on('error', (err) => {
-      console.error(`[Queue:${name}] Error:`, err);
-    });
-
-    queues.set(name, queue);
+  const existing = queues.get(name);
+  if (existing) {
+    return existing;
   }
 
-  return queues.get(name)!;
+  const defaultJobOptions = name === QueueNames.FAILED_WEBHOOKS ? DLQ_JOB_OPTIONS : DEFAULT_JOB_OPTIONS;
+
+  const queue = new Queue(name, {
+    connection: getRedis(),
+    defaultJobOptions,
+  });
+
+  queue.on('error', (err) => {
+    console.error(`[Queue:${name}] Error:`, err);
+  });
+
+  queues.set(name, queue);
+  return queue;
 }
 
 /**

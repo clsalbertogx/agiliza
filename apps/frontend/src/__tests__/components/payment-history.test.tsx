@@ -92,10 +92,10 @@ describe('PaymentHistory', () => {
     it('deve renderizar valores formatados', () => {
       render(<PaymentHistory {...defaultProps} />);
 
-      const valor1500 = screen.getAllByText((content, node) => content.includes('1.500,00'));
+      const valor1500 = screen.getAllByText((content, _node) => content.includes('1.500,00'));
       expect(valor1500.length).toBeGreaterThanOrEqual(1);
 
-      const valor850 = screen.getAllByText((content, node) => content.includes('850,00'));
+      const valor850 = screen.getAllByText((content, _node) => content.includes('850,00'));
       expect(valor850.length).toBeGreaterThanOrEqual(1);
     });
 

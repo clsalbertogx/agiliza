@@ -143,7 +143,7 @@ export default function ReportsPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Projeção Mensal</h2>
         <div className="overflow-x-auto">
-          <table className="w-full" role="table">
+          <table className="w-full">
             <thead>
               <tr className="text-left text-sm text-gray-500 border-b border-gray-100">
                 <th scope="col" className="pb-3">

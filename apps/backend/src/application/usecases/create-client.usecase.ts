@@ -7,7 +7,6 @@ import { createDomainEvent } from '@/domain/events/domain-events';
 import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 import { Email } from '@/domain/value-objects/email';
 import { Phone } from '@/domain/value-objects/phone';
-import { RiskLevel, RiskScore } from '@/domain/value-objects/risk-score';
 
 export interface CreateClientInput {
   tenantId: string;

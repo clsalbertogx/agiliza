@@ -36,7 +36,7 @@ export function createDomainEvent(
   eventId?: string,
 ): DomainEvent {
   return {
-    eventId: eventId || 'pending-' + Date.now(),
+    eventId: eventId || `pending-${Date.now()}`,
     eventType,
     clientId: data.clientId,
     tenantId: data.tenantId,

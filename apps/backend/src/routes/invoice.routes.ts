@@ -28,18 +28,48 @@ const dataEnvelope = {
   additionalProperties: true,
 };
 
-const listEnvelope = {
+// Documented Invoice item shape. Nullable unions (`['string','null']`) let
+// runtime `null`s round-trip untouched, and `additionalProperties: true`
+// preserves fields not listed here (PIX fields, `externalPaymentId`,
+// `metadata`, nested `client`, ...).
+const invoiceResponseSchema = {
+  type: 'object',
+  required: ['id', 'tenantId', 'clientId', 'amount', 'dueDate', 'status'],
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    tenantId: { type: 'string', format: 'uuid' },
+    clientId: { type: 'string', format: 'uuid' },
+    amount: { type: 'number' },
+    dueDate: { type: ['string', 'null'], format: 'date-time' },
+    description: { type: ['string', 'null'] },
+    status: { type: 'string', enum: ['PENDING', 'PAID', 'OVERDUE', 'CANCELLED', 'REFUNDED'] },
+    paymentMethod: { type: ['string', 'null'], enum: ['PIX', 'BOLETO', 'CREDIT_CARD'] },
+    createdAt: { type: ['string', 'null'], format: 'date-time' },
+    updatedAt: { type: ['string', 'null'], format: 'date-time' },
+  },
+  additionalProperties: true,
+} as const;
+
+const invoiceSingleEnvelope = {
   type: 'object',
   properties: {
-    data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+    data: invoiceResponseSchema,
+  },
+  additionalProperties: true,
+} as const;
+
+const invoiceListEnvelope = {
+  type: 'object',
+  properties: {
+    data: { type: 'array', items: invoiceResponseSchema },
     meta: { type: 'object', additionalProperties: true },
   },
   additionalProperties: true,
-};
+} as const;
 
 export async function invoiceRoutes(app: FastifyInstance) {
   const invoiceRepo = createInvoiceRepository();
-  const clientRepo = createClientRepository();
+  const _clientRepo = createClientRepository();
   // POST /api/invoices — Create invoice (via use case)
   app.post(
     '/api/invoices',
@@ -72,10 +102,17 @@ export async function invoiceRoutes(app: FastifyInstance) {
       }
 
       const data = parsed.data;
+      const tenantId = request.tenantId;
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       const useCase = createCreateInvoiceUseCase();
 
       const result = await useCase.execute({
-        tenantId: request.tenantId!,
+        tenantId,
         clientId: data.clientId,
         amount: data.amount,
         dueDate: new Date(data.dueDate),
@@ -112,21 +149,26 @@ export async function invoiceRoutes(app: FastifyInstance) {
           },
         },
         response: {
-          200: listEnvelope,
+          200: invoiceListEnvelope,
         },
       },
     },
-    async (request) => {
-      const query = request.query as any;
+    async (request, reply) => {
+      const query = request.query as Record<string, string | undefined>;
       const tenantId = request.tenantId || query.tenantId;
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
 
       const useCase = createListInvoicesUseCase();
       const result = await useCase.execute({
         tenantId,
-        page: parseInt(query.page) || 1,
-        perPage: parseInt(query.perPage) || 10,
-        status: query.status as string | undefined,
-        clientId: query.clientId as string | undefined,
+        page: parseInt(query.page ?? '', 10) || 1,
+        perPage: parseInt(query.perPage ?? '', 10) || 10,
+        status: query.status,
+        clientId: query.clientId,
       });
 
       return result;
@@ -153,8 +195,13 @@ export async function invoiceRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const query = request.query as any;
+      const query = request.query as Record<string, string | undefined>;
       const tenantId = request.tenantId || query.tenantId;
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
 
       const useCase = createGetInvoiceStatsUseCase();
       const result = await useCase.execute({ tenantId });
@@ -182,7 +229,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
           properties: { id: { type: 'string' } },
         },
         response: {
-          200: dataEnvelope,
+          200: invoiceSingleEnvelope,
         },
       },
     },
@@ -190,8 +237,13 @@ export async function invoiceRoutes(app: FastifyInstance) {
       const { id } = request.params as { id: string };
       const tenantId = request.tenantId;
 
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       const useCase = createGetInvoiceUseCase();
-      const result = await useCase.execute({ id, tenantId: tenantId! });
+      const result = await useCase.execute({ id, tenantId });
 
       if (!result.success) {
         reply.code(result.value.statusCode);
@@ -223,8 +275,15 @@ export async function invoiceRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       const useCase = createProcessPaymentUseCase();
-      const result = await useCase.execute({ invoiceId: id, tenantId: request.tenantId! });
+      const result = await useCase.execute({ invoiceId: id, tenantId });
 
       if (!result.success) {
         reply.code(result.value.statusCode);
@@ -264,8 +323,13 @@ export async function invoiceRoutes(app: FastifyInstance) {
       const { id } = request.params as { id: string };
       const tenantId = request.tenantId;
 
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       const useCase = createListPaymentsForInvoiceUseCase();
-      const result = await useCase.execute({ invoiceId: id, tenantId: tenantId! });
+      const result = await useCase.execute({ invoiceId: id, tenantId });
 
       if (!result.success) {
         reply.code(result.value.statusCode);

@@ -87,7 +87,7 @@ export class EvolutionApiClient {
       overdue_d2: `⏰ {{name}, sua fatura de *{{value}}* está *atrasada*.\n\nNão deixe para depois! Pague agora com PIX:\n{{pixLink}}\n\nSe precisar de ajuda, é só responder essa mensagem.`,
     };
 
-    let template = templates[templateName] || templates['friendly_reminder_d3'];
+    let template = templates[templateName] || templates.friendly_reminder_d3;
 
     Object.entries(variables).forEach(([key, value]) => {
       template = template.replace(`{{${key}}}`, value);

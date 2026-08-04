@@ -32,19 +32,19 @@ export class TaxId {
 
     let sum = 0;
     for (let i = 0; i < 9; i++) {
-      sum += parseInt(cpf[i]) * (10 - i);
+      sum += parseInt(cpf[i], 10) * (10 - i);
     }
     let digit = 11 - (sum % 11);
     if (digit >= 10) digit = 0;
-    if (digit !== parseInt(cpf[9])) return false;
+    if (digit !== parseInt(cpf[9], 10)) return false;
 
     sum = 0;
     for (let i = 0; i < 10; i++) {
-      sum += parseInt(cpf[i]) * (11 - i);
+      sum += parseInt(cpf[i], 10) * (11 - i);
     }
     digit = 11 - (sum % 11);
     if (digit >= 10) digit = 0;
-    if (digit !== parseInt(cpf[10])) return false;
+    if (digit !== parseInt(cpf[10], 10)) return false;
 
     return true;
   }
@@ -57,19 +57,19 @@ export class TaxId {
 
     let sum = 0;
     for (let i = 0; i < 12; i++) {
-      sum += parseInt(cnpj[i]) * weights1[i];
+      sum += parseInt(cnpj[i], 10) * weights1[i];
     }
     let digit = sum % 11;
     digit = digit < 2 ? 0 : 11 - digit;
-    if (digit !== parseInt(cnpj[12])) return false;
+    if (digit !== parseInt(cnpj[12], 10)) return false;
 
     sum = 0;
     for (let i = 0; i < 13; i++) {
-      sum += parseInt(cnpj[i]) * weights2[i];
+      sum += parseInt(cnpj[i], 10) * weights2[i];
     }
     digit = sum % 11;
     digit = digit < 2 ? 0 : 11 - digit;
-    if (digit !== parseInt(cnpj[13])) return false;
+    if (digit !== parseInt(cnpj[13], 10)) return false;
 
     return true;
   }

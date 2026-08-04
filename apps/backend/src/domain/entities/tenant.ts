@@ -73,7 +73,7 @@ export function createTenant(input: CreateTenantInput & { id: string }): Either<
   if (!input.slug || input.slug.length > 100) {
     return failure(new DomainError('Slug must be 1-100 characters'));
   }
-  if (!input.email || !input.email.includes('@')) {
+  if (!input.email?.includes('@')) {
     return failure(new DomainError('Invalid email'));
   }
 

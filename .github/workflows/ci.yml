@@ -236,7 +236,7 @@ jobs:
         run: npx playwright test --config=e2e/playwright.config.ts
         env:
           API_URL: http://localhost:3333
-          BASE_URL: http://localhost:3000
+          BASE_URL: http://localhost:3333
 
       - name: Upload Playwright Report
         if: failure()

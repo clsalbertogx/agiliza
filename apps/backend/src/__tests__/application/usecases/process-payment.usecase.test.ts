@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApplicationError } from '@/application/errors/application.error';
 import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import type { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';

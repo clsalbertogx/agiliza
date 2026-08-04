@@ -1,14 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApplicationError } from '@/application/errors/application.error';
 import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { Either, isFailure, isSuccess } from '@/application/types/either';
+import { isFailure, isSuccess } from '@/application/types/either';
 import { type CreateClientInput, CreateClientUseCase } from '@/application/usecases/create-client.usecase';
-import { type Client, createClient, MessageChannel, RiskScore } from '@/domain/entities/client';
-import { createDomainEvent } from '@/domain/events/domain-events';
+import { type Client, MessageChannel, RiskScore } from '@/domain/entities/client';
 import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { Email } from '@/domain/value-objects/email';
-import { Phone } from '@/domain/value-objects/phone';
 
 describe('CreateClientUseCase', () => {
   let useCase: CreateClientUseCase;

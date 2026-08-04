@@ -108,11 +108,11 @@ export function createSubscription(
     return failure(new DomainError(`Invalid billing cycle: ${input.billingCycle}`));
   }
 
-  if (!(input.nextBilling instanceof Date) || isNaN(input.nextBilling.getTime())) {
+  if (!(input.nextBilling instanceof Date) || Number.isNaN(input.nextBilling.getTime())) {
     return failure(new DomainError('Invalid next billing date'));
   }
 
-  if (!(input.startDate instanceof Date) || isNaN(input.startDate.getTime())) {
+  if (!(input.startDate instanceof Date) || Number.isNaN(input.startDate.getTime())) {
     return failure(new DomainError('Invalid start date'));
   }
 

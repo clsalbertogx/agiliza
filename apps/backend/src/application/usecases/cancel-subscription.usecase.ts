@@ -33,7 +33,7 @@ export class CancelSubscriptionUseCase {
     }
 
     // 4. Cancel subscription domain logic
-    const cancelled = cancelSubscription(subscription);
+    const _cancelled = cancelSubscription(subscription);
 
     // 5. Persist
     let saved: Subscription;

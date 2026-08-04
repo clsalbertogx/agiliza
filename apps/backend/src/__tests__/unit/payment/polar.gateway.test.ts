@@ -177,7 +177,7 @@ describe('PolarGateway', () => {
     });
 
     it('should return true for a valid signature', async () => {
-      const crypto = require('crypto');
+      const crypto = require('node:crypto');
       const secret = 'test_webhook_secret';
       const body = '{"event":"checkout.paid","data":{"id":"chevt-123"}}';
       const signature = crypto.createHmac('sha256', secret).update(body).digest('hex');

@@ -56,10 +56,13 @@ export function ClientCard({ client, onSelect }: ClientCardProps) {
             <p className="text-sm text-gray-500 mt-1 truncate">{maskPhone(client.phone)}</p>
             <p className="text-sm text-gray-500 truncate">{client.email}</p>
           </div>
-          <div className="flex flex-col items-center gap-1 ml-3" aria-label={riskLabel[client.riskScore]}>
+          <fieldset
+            className="flex flex-col items-center gap-1 ml-3 m-0 p-0 border-0 min-w-0"
+            aria-label={riskLabel[client.riskScore]}
+          >
             <span className={`w-3 h-3 rounded-full ${riskDotColors[client.riskScore]}`} aria-hidden="true" />
             <span className="text-[10px] uppercase font-medium text-gray-400">{client.riskScore}</span>
-          </div>
+          </fieldset>
         </div>
       </CardContent>
     </Card>

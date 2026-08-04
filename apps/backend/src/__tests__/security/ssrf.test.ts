@@ -79,7 +79,7 @@ describe('SSRF Prevention — SEC-10', () => {
 
       // Check if hostname is in allowlist
       const isAllowed = ALLOWED_PROVIDER_DOMAINS.some(
-        (domain) => parsed.hostname === domain || parsed.hostname.endsWith('.' + domain),
+        (domain) => parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`),
       );
 
       if (!isAllowed) {

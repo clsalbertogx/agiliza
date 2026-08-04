@@ -219,6 +219,7 @@ export function OnboardingWizard({
                 </button>
                 <span
                   className="w-20 text-center text-2xl font-bold text-gray-900 tabular-nums"
+                  role="status"
                   aria-live="polite"
                   aria-label={`${leadDays} dias antes do vencimento`}
                 >

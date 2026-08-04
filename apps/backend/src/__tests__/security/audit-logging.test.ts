@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('PII Masking in Logs — SEC-11', () => {
   // PII masking implementation matching the security spec
-  const piiPatterns = [
+  const _piiPatterns = [
     { regex: /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, label: 'CPF' }, // CPF
     { regex: /\b\d{2}\.?\d{3}\.?\d{3}\/\d{4}-?\d{2}\b/g, label: 'CNPJ' }, // CNPJ
     { regex: /\b\d{10,11}\b/g, label: 'Phone' }, // Phone (10-11 digits)
@@ -10,8 +10,8 @@ describe('PII Masking in Logs — SEC-11', () => {
   ];
 
   // Patterns that should NEVER appear in logs
-  const CREDIT_CARD_PATTERN = /\b(?:\d{4}[-\s]?){3}\d{4}\b/g;
-  const API_KEY_PATTERNS = [/asaas_(live|test)_[a-zA-Z0-9]+/g, /sk_(live|test)_[a-zA-Z0-9]+/g, /AGILIZA_API_KEY/i];
+  const _CREDIT_CARD_PATTERN = /\b(?:\d{4}[-\s]?){3}\d{4}\b/g;
+  const _API_KEY_PATTERNS = [/asaas_(live|test)_[a-zA-Z0-9]+/g, /sk_(live|test)_[a-zA-Z0-9]+/g, /AGILIZA_API_KEY/i];
 
   function maskPII(message: string): string {
     let masked = message;

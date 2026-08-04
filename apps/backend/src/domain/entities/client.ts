@@ -186,7 +186,7 @@ export function clientToPersistence(client: Client): PersistenceClient {
 
 export function clientToViewModel(client: Client): ClientViewModel {
   const phoneVO = Phone.create(client.phone);
-  const emailVO = client.email ? Email.create(client.email) : undefined;
+  const _emailVO = client.email ? Email.create(client.email) : undefined;
   const documentVO = client.document ? TaxId.create(client.document) : undefined;
 
   return {

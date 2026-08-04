@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDomainEvent, type DomainEventType } from '@/domain/events/domain-events';
+import { createDomainEvent } from '@/domain/events/domain-events';
 
 describe('Event Collector', () => {
   describe('Event Schema Validation', () => {
@@ -235,9 +235,9 @@ describe('Event Collector', () => {
   describe('Event Bus', () => {
     it('should deliver event to all subscribed handlers', () => {
       const handlers: string[] = [];
-      const handler1 = (e: any) => handlers.push('handler1');
-      const handler2 = (e: any) => handlers.push('handler2');
-      const handler3 = (e: any) => handlers.push('handler3');
+      const handler1 = (_e: any) => handlers.push('handler1');
+      const handler2 = (_e: any) => handlers.push('handler2');
+      const handler3 = (_e: any) => handlers.push('handler3');
 
       // Simulate event bus delivery
       const event = createDomainEvent('payment.confirmed', {
@@ -252,11 +252,11 @@ describe('Event Collector', () => {
 
     it('should not fail if one handler throws (isolated)', () => {
       const results: string[] = [];
-      const safeHandler = (e: any) => results.push('safe');
-      const throwingHandler = (e: any) => {
+      const safeHandler = (_e: any) => results.push('safe');
+      const throwingHandler = (_e: any) => {
         throw new Error('Handler failed');
       };
-      const anotherHandler = (e: any) => results.push('another');
+      const anotherHandler = (_e: any) => results.push('another');
 
       const event = createDomainEvent('payment.confirmed', {
         clientId: 'cid',

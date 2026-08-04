@@ -32,14 +32,53 @@ const dataEnvelope = {
   additionalProperties: true,
 };
 
-const listEnvelope = {
+// Documented Client item shape. Optional fields are declared nullable
+// (`['string','null']`) so runtime `null`s round-trip untouched instead of
+// being coerced to `""` by the serializer, and `additionalProperties: true`
+// preserves any fields not listed here (e.g. `riskScoreReason`, `document`).
+//
+// `riskScore` accepts either a string (list output maps it to the level value)
+// or an object (single-get returns the RiskScore value object serialized via
+// its `toJSON()`), so a single schema can document both without corruption.
+const clientResponseSchema = {
+  type: 'object',
+  required: ['id', 'tenantId', 'name', 'phone'],
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    tenantId: { type: 'string', format: 'uuid' },
+    name: { type: 'string' },
+    phone: { type: 'string' },
+    email: { type: ['string', 'null'] },
+    document: { type: ['string', 'null'] },
+    preferredChannel: { type: 'string', enum: ['WHATSAPP', 'SMS', 'EMAIL'] },
+    preferredTime: { type: ['string', 'null'] },
+    preferredLeadDays: { type: 'integer' },
+    riskScore: { type: ['string', 'object'], additionalProperties: true },
+    totalInvoices: { type: 'integer' },
+    paidInvoices: { type: 'integer' },
+    avgPaymentDelay: { type: ['number', 'null'] },
+    createdAt: { type: ['string', 'null'], format: 'date-time' },
+    updatedAt: { type: ['string', 'null'], format: 'date-time' },
+  },
+  additionalProperties: true,
+} as const;
+
+const clientSingleEnvelope = {
   type: 'object',
   properties: {
-    data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+    data: clientResponseSchema,
+  },
+  additionalProperties: true,
+} as const;
+
+const clientListEnvelope = {
+  type: 'object',
+  properties: {
+    data: { type: 'array', items: clientResponseSchema },
     meta: { type: 'object', additionalProperties: true },
   },
   additionalProperties: true,
-};
+} as const;
 
 export async function clientRoutes(app: FastifyInstance) {
   const clientRepo = createClientRepository();
@@ -77,10 +116,17 @@ export async function clientRoutes(app: FastifyInstance) {
       }
 
       const data = parsed.data;
+      const tenantId = request.tenantId;
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       const useCase = createCreateClientUseCase();
 
       const result = await useCase.execute({
-        tenantId: request.tenantId!,
+        tenantId,
         name: data.name,
         phone: data.phone,
         email: data.email,
@@ -100,7 +146,7 @@ export async function clientRoutes(app: FastifyInstance) {
         try {
           const { createOnboardingService } = await import('@/presentation/factories/create-onboarding.factory');
           const onboardingService = createOnboardingService();
-          await onboardingService.startOnboarding(result.value.id, request.tenantId!);
+          await onboardingService.startOnboarding(result.value.id, tenantId);
         } catch (err) {
           console.warn('Failed to auto-trigger onboarding:', err);
         }
@@ -130,19 +176,24 @@ export async function clientRoutes(app: FastifyInstance) {
           },
         },
         response: {
-          200: listEnvelope,
+          200: clientListEnvelope,
         },
       },
     },
-    async (request) => {
-      const query = request.query as any;
+    async (request, reply) => {
+      const query = request.query as Record<string, string | undefined>;
       const tenantId = request.tenantId || query.tenantId;
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
 
       const useCase = createListClientsUseCase();
       const result = await useCase.execute({
         tenantId,
-        page: parseInt(query.page) || 1,
-        perPage: parseInt(query.perPage) || 10,
+        page: parseInt(query.page ?? '', 10) || 1,
+        perPage: parseInt(query.perPage ?? '', 10) || 10,
         search: query.search as string | undefined,
         riskScore: query.riskScore as string | undefined,
       });
@@ -165,7 +216,7 @@ export async function clientRoutes(app: FastifyInstance) {
           properties: { id: { type: 'string' } },
         },
         response: {
-          200: dataEnvelope,
+          200: clientSingleEnvelope,
         },
       },
     },
@@ -173,8 +224,13 @@ export async function clientRoutes(app: FastifyInstance) {
       const { id } = request.params as { id: string };
       const tenantId = request.tenantId;
 
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       const useCase = createGetClientUseCase();
-      const result = await useCase.execute({ id, tenantId: tenantId! });
+      const result = await useCase.execute({ id, tenantId });
 
       if (!result.success) {
         reply.code(result.value.statusCode);

@@ -39,7 +39,7 @@ describe('Next Action Decision', () => {
       const decision = service.decideNextAction(client, invoice, 'default');
 
       // D-3 from Aug 4 = Aug 1, at 19:00
-      const expectedDate = new Date('2026-08-01T19:00:00.000Z');
+      const _expectedDate = new Date('2026-08-01T19:00:00.000Z');
       expect(decision.scheduledAt.getHours()).toBe(19);
       expect(decision.scheduledAt.getMinutes()).toBe(0);
       expect(decision.action).toBe('send_reminder');

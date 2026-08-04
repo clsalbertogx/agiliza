@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
@@ -113,24 +112,14 @@ export function PaymentHistory({
   const renderMobileCard = (payment: PaymentRecord) => {
     const method = methodConfig[payment.method] ?? { icon: null, label: payment.method };
     return (
-      <div
+      <button
+        type="button"
         key={payment.id}
-        className={`bg-white rounded-xl border border-gray-100 p-4 shadow-sm ${
+        disabled={!onPaymentClick}
+        className={`w-full text-left bg-white rounded-xl border border-gray-100 p-4 shadow-sm ${
           onPaymentClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''
         }`}
         onClick={() => onPaymentClick?.(payment.id)}
-        role={onPaymentClick ? 'button' : undefined}
-        tabIndex={onPaymentClick ? 0 : undefined}
-        onKeyDown={
-          onPaymentClick
-            ? (e: React.KeyboardEvent) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onPaymentClick(payment.id);
-                }
-              }
-            : undefined
-        }
         aria-label={`Pagamento de ${payment.clientName} - ${formatBRL(payment.amount)}`}
       >
         <div className="flex items-center justify-between mb-2">
@@ -148,7 +137,7 @@ export function PaymentHistory({
           Vencimento: {formatDate(payment.dueDate)}
           {payment.paidAt && ` | Pago: ${formatDate(payment.paidAt)}`}
         </p>
-      </div>
+      </button>
     );
   };
 

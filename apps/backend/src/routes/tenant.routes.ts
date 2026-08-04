@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import type { PaymentProvider } from '@/domain/entities/tenant';
 import {
   createGetPaymentProviderConfigUseCase,
   createIdGenerator,
@@ -137,7 +138,7 @@ export async function tenantRoutes(app: FastifyInstance) {
       const tenant = await tenantRepo.create({
         id: createIdGenerator().generate(),
         ...parsed.data,
-        paymentProvider: 'asaas',
+        paymentProvider: 'asaas' as PaymentProvider,
         paymentProviderConfig: {},
         decisionConfig: {
           defaultChannel: 'WHATSAPP',
@@ -150,7 +151,7 @@ export async function tenantRoutes(app: FastifyInstance) {
         },
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as any);
+      });
 
       reply.code(201);
       return { data: tenant };
@@ -179,10 +180,10 @@ export async function tenantRoutes(app: FastifyInstance) {
       },
     },
     async (request) => {
-      const query = request.query as any;
-      const page = Math.max(1, parseInt(query.page) || 1);
-      const perPage = Math.min(100, Math.max(1, parseInt(query.perPage) || 10));
-      const skip = (page - 1) * perPage;
+      const query = request.query as Record<string, string | undefined>;
+      const page = Math.max(1, parseInt(query.page ?? '', 10) || 1);
+      const perPage = Math.min(100, Math.max(1, parseInt(query.perPage ?? '', 10) || 10));
+      const _skip = (page - 1) * perPage;
 
       const [data, total] = await Promise.all([
         tenantRepo.findMany({ page, limit: perPage, search: query.search }),
@@ -265,7 +266,7 @@ export async function tenantRoutes(app: FastifyInstance) {
       const updated = await tenantRepo.update({
         ...existing,
         ...parsed.data,
-      } as any);
+      });
       return { data: updated };
     },
   );

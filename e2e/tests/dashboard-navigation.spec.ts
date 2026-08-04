@@ -1,32 +1,44 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * Dashboard Navigation E2E Tests
+ * Dashboard Navigation E2E Tests (browser-level)
  *
- * These tests require a running frontend server at BASE_URL (default: http://localhost:3000).
- * In CI, the frontend is not started in the E2E job — these tests are skipped
- * when FRONTEND_BASE_URL is not set or matches the API URL.
+ * These tests require a live frontend server and are gated behind the
+ * E2E_FRONTEND_URL environment variable (e.g. http://localhost:3000).
  *
- * See ci.yml e2e job: the job tests the backend API only; frontend navigation
- * tests run separately when the frontend is deployed.
+ * CI's e2e job starts ONLY the backend, so E2E_FRONTEND_URL is unset there and
+ * every test in this file is skipped with an explicit reason — never a false
+ * failure. To run them locally, start the frontend and export E2E_FRONTEND_URL:
+ *
+ *   cd apps/frontend && npm run dev &
+ *   export E2E_FRONTEND_URL=http://localhost:3000
+ *   npx playwright test --config=e2e/playwright.config.ts e2e/tests/dashboard-navigation.spec.ts
+ *
+ * Assertions target page elements that render in every state (loading, error,
+ * empty, data), so no flaky `networkidle` waits are required.
  */
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-const API_URL = process.env.API_URL || 'http://localhost:3333';
-const IS_BACKEND_ONLY = BASE_URL === API_URL || BASE_URL.startsWith(API_URL);
+const FRONTEND_URL = process.env.E2E_FRONTEND_URL;
 
-test.describe('Dashboard Navigation', () => {
+const skipReason = 'E2E_FRONTEND_URL not set — frontend not running, skipping browser slice';
+
+test.describe('Dashboard Navigation (browser)', () => {
   test('should load the dashboard page', async ({ page }) => {
-    test.skip(IS_BACKEND_ONLY, 'Frontend not running in this CI job');
-    await page.goto(BASE_URL);
-    await expect(page).toHaveTitle(/Agiliza/);
+    test.skip(!FRONTEND_URL, skipReason);
+
+    // '/' redirects to '/dashboard'; the "Dashboard" heading is rendered in
+    // every page state, making this a deterministic load check.
+    await page.goto(FRONTEND_URL as string);
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   });
 
-  test('should navigate to client list', async ({ page }) => {
-    test.skip(IS_BACKEND_ONLY, 'Frontend not running in this CI job');
-    await page.goto(`${BASE_URL}/dashboard`);
-    await page.waitForLoadState('networkidle');
-    // Just verify the page loads without crashing
-    await expect(page.locator('body')).toBeVisible();
+  test('should navigate via sidebar to reports', async ({ page }) => {
+    test.skip(!FRONTEND_URL, skipReason);
+
+    await page.goto(`${FRONTEND_URL as string}/dashboard`);
+    await page.getByRole('link', { name: 'Relatórios' }).click();
+
+    await expect(page).toHaveURL(/\/dashboard\/reports/);
+    await expect(page.getByRole('heading', { name: 'Previsão de Fluxo de Caixa' })).toBeVisible();
   });
 });

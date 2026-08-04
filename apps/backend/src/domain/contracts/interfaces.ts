@@ -2,13 +2,7 @@
 // Frontend imports these via @agiliza/shared (which re-exports from here).
 // Backend mappers/presenters convert domain entities to these shapes.
 
-import {
-  type ClientRiskScore,
-  type InvoiceStatus,
-  type MessageChannel,
-  type PaymentMethod,
-  PaymentProvider,
-} from './enums';
+import type { ClientRiskScore, InvoiceStatus, MessageChannel, PaymentMethod } from './enums';
 
 /** Client profile as returned by the REST API. */
 export interface ClientProfile {

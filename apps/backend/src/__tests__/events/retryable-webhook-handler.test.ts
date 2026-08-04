@@ -11,10 +11,6 @@ import type { DomainEvent } from '@/domain/events/domain-events';
 class TestableHandler extends RetryableWebhookHandler {
   readonly handleCallCount: { value: number } = { value: 0 };
 
-  constructor(dlqPort?: DLQPort) {
-    super(dlqPort);
-  }
-
   getEventType(): string {
     return 'test.event';
   }

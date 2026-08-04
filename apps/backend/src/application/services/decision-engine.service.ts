@@ -1,4 +1,4 @@
-import { type Client, MessageChannel, RiskScore } from '@/domain/entities/client';
+import { type Client, MessageChannel } from '@/domain/entities/client';
 import type { Invoice } from '@/domain/entities/invoice';
 
 export interface Decision {

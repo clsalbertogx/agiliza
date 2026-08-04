@@ -103,7 +103,7 @@ export class PaymentProviderFactory {
     for (const provider of PROVIDER_FALLBACK_ORDER) {
       try {
         const row = await this.configRepo.findByTenantAndProvider(tenantId, provider);
-        if (!row || !row.apiKey) continue;
+        if (!row?.apiKey) continue;
         const apiKey = this.decrypt(row.apiKey);
         return PaymentProviderFactory.create({
           type: provider,
@@ -126,7 +126,7 @@ export class PaymentProviderFactory {
       return this.envFallbackFor(provider);
     }
     const row = await this.configRepo.findByTenantAndProvider(tenantId, provider);
-    if (!row || !row.apiKey) {
+    if (!row?.apiKey) {
       return this.envFallbackFor(provider);
     }
     const apiKey = this.decrypt(row.apiKey);

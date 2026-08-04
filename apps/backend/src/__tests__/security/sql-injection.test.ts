@@ -69,7 +69,7 @@ describe('SQL Injection Prevention — SEC-04', () => {
     // Then metadata is stored as a literal JSON object
     const parsedMetadata = JSON.parse(invoice.metadata);
     expect(parsedMetadata).toEqual({ $gt: '', $ne: null });
-    expect(parsedMetadata['$gt']).toBe('');
+    expect(parsedMetadata.$gt).toBe('');
 
     // And no injection occurs — the $gt operator was stored literally, not executed
   });
@@ -155,6 +155,6 @@ describe('SQL Injection Prevention — SEC-04', () => {
     // $gt injection as literal — Zod treats it as a plain string key
     const metadataInput = { metadata: { $gt: '' } };
     const metadataParsed = metadataSchema.parse(metadataInput);
-    expect(metadataParsed.metadata!['$gt']).toBe('');
+    expect(metadataParsed.metadata?.$gt).toBe('');
   });
 });

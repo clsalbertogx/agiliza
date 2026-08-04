@@ -130,7 +130,7 @@ export class UpgradeSubscriptionUseCase {
     }
   }
 
-  private calculateDaysUsed(nextBilling: Date, now: Date, billingCycle: Subscription['billingCycle']): number {
+  private calculateDaysUsed(nextBilling: Date, now: Date, _billingCycle: Subscription['billingCycle']): number {
     const cycleStart = new Date(nextBilling);
     // For monthly and similar, the cycle started after the previous nextBilling
     // Days used = days since the start of the current billing cycle

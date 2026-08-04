@@ -9,7 +9,7 @@ import type { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
-import { isFailure, isSuccess, success } from '@/application/types/either';
+import { isSuccess, success } from '@/application/types/either';
 import { type ProcessPaymentInput, ProcessPaymentUseCase } from '@/application/usecases/process-payment.usecase';
 import {
   type ProcessPaymentWebhookInput,

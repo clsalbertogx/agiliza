@@ -53,13 +53,20 @@ export async function onboardingRoutes(app: FastifyInstance) {
         return { error: 'Validation error', details: parsed.error.flatten() };
       }
 
+      const tenantId = request.tenantId;
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       try {
-        await onboardingService.startOnboarding(parsed.data.clientId, request.tenantId!);
+        await onboardingService.startOnboarding(parsed.data.clientId, tenantId);
         reply.code(200);
         return { data: { status: 'started', message: 'Primeira pergunta enviada!' } };
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
         reply.code(400);
-        return { error: error.message };
+        return { error: message };
       }
     },
   );
@@ -125,7 +132,7 @@ export async function onboardingRoutes(app: FastifyInstance) {
       },
       config: { rateLimit: authRateLimit },
     },
-    async (request, reply) => {
+    async (request, _reply) => {
       const { clientId } = request.params as { clientId: string };
       const status = await onboardingService.getOnboardingStatus(clientId);
       return { data: status };

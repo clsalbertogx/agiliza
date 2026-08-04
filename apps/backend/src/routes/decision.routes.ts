@@ -34,7 +34,7 @@ export async function decisionRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { clientId, invoiceId } = request.query as Record<string, string | undefined>;
-      const tenantId = (request as any).tenantId as string | undefined;
+      const tenantId = request.tenantId;
 
       if (!clientId || !invoiceId) {
         reply.code(400);

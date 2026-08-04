@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
 import { AutoPayHandler } from '@/application/events/handlers/auto-pay.handler';
 import type { DomainEvent } from '@/domain/events/domain-events';
-import { Either, failure, success } from '@/domain/types/either';
+import { failure, success } from '@/domain/types/either';
 
 function makeSubscriptionInvoiceCreatedEvent(overrides: Partial<DomainEvent> = {}): DomainEvent {
   return {

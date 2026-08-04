@@ -96,7 +96,7 @@ export function createInvoice(input: CreateInvoiceInput & { id: string }): Eithe
     return failure(new DomainError('Amount must be positive'));
   }
 
-  if (!(input.dueDate instanceof Date) || isNaN(input.dueDate.getTime())) {
+  if (!(input.dueDate instanceof Date) || Number.isNaN(input.dueDate.getTime())) {
     return failure(new DomainError('Invalid due date'));
   }
 

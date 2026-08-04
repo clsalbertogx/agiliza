@@ -1,16 +1,16 @@
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import { RiskScoreService } from '@/application/services/risk-score.service';
-import { Client, RiskScore } from '@/domain/entities/client';
+import { RiskScore } from '@/domain/entities/client';
 
 export class RiskCalculatorService {
   constructor(
     private readonly clientRepo: ClientRepositoryPort,
-    private readonly invoiceRepo: InvoiceRepositoryPort,
+    readonly _invoiceRepo: InvoiceRepositoryPort,
     private readonly riskScoreService: RiskScoreService = new RiskScoreService(),
   ) {}
 
-  async calculate(clientId: string, tenantId: string): Promise<RiskScore> {
+  async calculate(clientId: string, _tenantId: string): Promise<RiskScore> {
     const client = await this.clientRepo.findById(clientId);
     if (!client) return RiskScore.GREEN;
 

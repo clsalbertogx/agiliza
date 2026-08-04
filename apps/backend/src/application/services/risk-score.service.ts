@@ -9,7 +9,7 @@ interface RiskFactors {
 }
 
 export class RiskScoreService {
-  calculateRiskScore(client: Client, factors: RiskFactors): { score: RiskScore; reasons: string[] } {
+  calculateRiskScore(_client: Client, factors: RiskFactors): { score: RiskScore; reasons: string[] } {
     const reasons: string[] = [];
 
     // Cold Start: new clients start as GREEN

@@ -48,15 +48,21 @@ export async function reminderRoutes(app: FastifyInstance) {
 
       const { invoiceId } = parsed.data;
 
+      const tenantId = request.tenantId;
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       // Verify invoice exists before scheduling
       const invoiceRepo = createInvoiceRepository();
       const invoice = await invoiceRepo.getInvoiceWithClientRaw(invoiceId);
-      if (!invoice || !invoice.client) {
+      if (!invoice?.client) {
         reply.code(404);
         return { error: 'Invoice or client not found' };
       }
 
-      await reminderService.sendReminderNow(invoiceId, request.tenantId!);
+      await reminderService.sendReminderNow(invoiceId, tenantId);
 
       reply.code(200);
       return { data: { status: 'scheduled', invoiceId } };
@@ -96,13 +102,20 @@ export async function reminderRoutes(app: FastifyInstance) {
 
       const { invoiceId } = parsed.data;
 
+      const tenantId = request.tenantId;
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
       try {
-        const result = await reminderService.sendReminderNow(invoiceId, request.tenantId!);
+        const result = await reminderService.sendReminderNow(invoiceId, tenantId);
         reply.code(200);
         return { data: { status: 'sent', externalId: result.externalId } };
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
         reply.code(502);
-        return { error: 'Failed to send reminder', message: error.message };
+        return { error: 'Failed to send reminder', message };
       }
     },
   );
@@ -139,16 +152,22 @@ export async function reminderRoutes(app: FastifyInstance) {
         },
       },
     },
-    async (request) => {
-      const query = request.query as any;
+    async (request, reply) => {
+      const query = request.query as Record<string, string | undefined>;
       const tenantId = request.tenantId || query.tenantId;
-      const page = Math.max(1, parseInt(query.page) || 1);
-      const perPage = Math.min(100, Math.max(1, parseInt(query.perPage) || 10));
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Missing tenant context' };
+      }
+
+      const page = Math.max(1, parseInt(query.page ?? '', 10) || 1);
+      const perPage = Math.min(100, Math.max(1, parseInt(query.perPage ?? '', 10) || 10));
       const skip = (page - 1) * perPage;
 
       const eventRepo = createEventRepository();
 
-      const where: Record<string, any> = { tenantId };
+      const where: Record<string, unknown> = { tenantId };
       if (query.status) where.status = query.status;
       if (query.clientId) where.clientId = query.clientId;
       if (query.invoiceId) where.invoiceId = query.invoiceId;
@@ -208,9 +227,9 @@ export async function reminderRoutes(app: FastifyInstance) {
         where: {
           tenantId: event.tenantId,
           clientId: event.clientId,
-          eventType: { in: ['MESSAGE_SENT', 'MESSAGE_DELIVERED', 'MESSAGE_READ', 'LINK_CLICKED'] } as any,
+          eventType: { in: ['MESSAGE_SENT', 'MESSAGE_DELIVERED', 'MESSAGE_READ', 'LINK_CLICKED'] },
         },
-        orderBy: { createdAt: 'asc' } as any,
+        orderBy: { createdAt: 'asc' },
       });
 
       return {

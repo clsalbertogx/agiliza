@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApplicationError } from '@/application/errors/application.error';
 import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
 import { isFailure, isSuccess } from '@/application/types/either';

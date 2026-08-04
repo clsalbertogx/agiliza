@@ -180,7 +180,7 @@ describe('PagBankGateway', () => {
     });
 
     it('should return true for a valid signature', async () => {
-      const crypto = require('crypto');
+      const crypto = require('node:crypto');
       const secret = 'test_webhook_secret';
       const body = '{"data":{"id":"evt-123"}}';
       const ts = Math.floor(Date.now() / 1000).toString();

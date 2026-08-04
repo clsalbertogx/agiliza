@@ -21,7 +21,7 @@ function createLogger() {
           options: { colorize: true },
         },
       });
-    } catch (error) {
+    } catch (_error) {
       console.warn('[logger] pino-pretty not available, falling back to JSON logs');
       return pino(baseConfig);
     }

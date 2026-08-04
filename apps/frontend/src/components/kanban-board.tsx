@@ -2,12 +2,11 @@
 
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { ArrowRight, ChevronDown, ChevronRight, GripVertical, LayoutDashboard } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { RiskBadge } from '@/components/risk-badge';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export interface KanbanInvoice {
@@ -68,7 +67,7 @@ function KanbanCardSkeleton() {
 }
 
 function KanbanColumnSkeleton({ label, count }: { label: string; count: number }) {
-  const cards = ['Pendentes', 'Vencidas', 'Pagas'];
+  const _cards = ['Pendentes', 'Vencidas', 'Pagas'];
   return (
     <div className="bg-gray-50 rounded-xl p-4 min-w-[280px] flex-1">
       <div className="flex items-center gap-2 mb-4">
@@ -98,6 +97,7 @@ function InvoiceCard({
   const availableTargets = targetStatuses.filter((s) => s !== invoice.status);
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: outer element can't be <button> (contains a nested move-menu <button>; nesting is invalid) — kept as clickable div with role="button"
     <div
       className="bg-white rounded-lg border border-gray-100 p-3 shadow-sm hover:shadow-md transition-shadow"
       role="button"
@@ -273,10 +273,9 @@ export function KanbanBoard({
         const columnInvoices = getColumnInvoices(status);
 
         return (
-          <div
+          <section
             key={status}
             className="flex-1 min-w-[280px] bg-gray-50 rounded-xl p-4"
-            role="region"
             aria-label={`${labels[status]} - ${columnInvoices.length} faturas`}
           >
             <div className="flex items-center gap-2 mb-4">
@@ -298,7 +297,7 @@ export function KanbanBoard({
                 ))
               )}
             </ScrollArea>
-          </div>
+          </section>
         );
       })}
     </div>

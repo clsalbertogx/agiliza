@@ -56,7 +56,7 @@ function parseBRLtoNumber(input: string): number {
 function formatDateInput(dateString: string): string {
   if (!dateString) return '';
   const d = new Date(dateString);
-  if (isNaN(d.getTime())) return dateString;
+  if (Number.isNaN(d.getTime())) return dateString;
   return d.toISOString().split('T')[0];
 }
 
@@ -135,8 +135,9 @@ export function InvoiceForm({
     (e: React.FormEvent) => {
       e.preventDefault();
       const amount = parseBRLtoNumber(amountText);
+      if (!selectedClient) return;
       onSubmit({
-        clientId: selectedClient!.id,
+        clientId: selectedClient.id,
         amount,
         dueDate,
         paymentMethod,
@@ -207,28 +208,21 @@ export function InvoiceForm({
               )}
 
               {showDropdown && filteredClients.length > 0 && (
-                <ul
-                  className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
-                  role="listbox"
-                  aria-label="Clientes encontrados"
-                >
+                <ul role="listbox" className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
                   {filteredClients.map((client) => (
-                    <li
-                      key={client.id}
-                      role="option"
-                      aria-selected={selectedClient?.id === client.id}
-                      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => handleSelectClient(client)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSelectClient(client);
-                      }}
-                      tabIndex={0}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{client.name}</p>
-                        <p className="text-xs text-gray-500">{client.phone}</p>
-                      </div>
-                      <RiskBadge level={client.riskScore} />
+                    <li key={client.id}>
+                      <button
+                        type="button"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => handleSelectClient(client)}
+                        aria-pressed={selectedClient?.id === client.id}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{client.name}</p>
+                          <p className="text-xs text-gray-500">{client.phone}</p>
+                        </div>
+                        <RiskBadge level={client.riskScore} />
+                      </button>
                     </li>
                   ))}
                 </ul>

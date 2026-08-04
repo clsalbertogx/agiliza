@@ -5,7 +5,6 @@ import { BarChart3, Calendar, PieChart, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -89,9 +88,10 @@ function BarChart({ data, series, height }: { data: ChartDataPoint[]; series?: C
   const hasSeries = series && series.length > 0;
 
   // For simple bar chart
-  const maxValue = hasSeries
-    ? Math.max(...series!.flatMap((s) => s.data), 1)
-    : Math.max(...data.map((d) => d.value), 1);
+  const maxValue =
+    series && series.length > 0
+      ? Math.max(...series.flatMap((s) => s.data), 1)
+      : Math.max(...data.map((d) => d.value), 1);
 
   const yLabels = useMemo(() => {
     const labels: number[] = [];
@@ -110,7 +110,7 @@ function BarChart({ data, series, height }: { data: ChartDataPoint[]; series?: C
   // Build accessible table data
   const tableData =
     hasSeries && series
-      ? series!.map((s) => ({
+      ? series?.map((s) => ({
           name: s.name,
           values: data.map((d, i) => ({ label: d.label, value: s.data[i] ?? 0 })),
         }))
@@ -184,10 +184,9 @@ function BarChart({ data, series, height }: { data: ChartDataPoint[]; series?: C
         })}
 
         {/* Bars */}
-        {hasSeries && series ? (
-          // Multi-series grouped bars
-          <>
-            {series.map((s, si) => (
+        {hasSeries && series
+          ? // Multi-series grouped bars
+            series.map((s, si) => (
               <g key={s.name}>
                 {data.map((d, di) => {
                   const value = s.data[di] ?? 0;
@@ -211,12 +210,9 @@ function BarChart({ data, series, height }: { data: ChartDataPoint[]; series?: C
                   );
                 })}
               </g>
-            ))}
-          </>
-        ) : (
-          // Single series bars
-          <>
-            {data.map((d, i) => {
+            ))
+          : // Single series bars
+            data.map((d, i) => {
               const barHeight = (d.value / maxValue) * innerHeight;
               const x = padding.left + (i + 0.25) * (innerWidth / data.length);
               const y = padding.top + innerHeight - barHeight;
@@ -235,8 +231,6 @@ function BarChart({ data, series, height }: { data: ChartDataPoint[]; series?: C
                 </rect>
               );
             })}
-          </>
-        )}
 
         {/* Baseline */}
         <line
@@ -261,9 +255,10 @@ function LineChart({ data, series, height }: { data: ChartDataPoint[]; series?: 
   const innerHeight = chartHeight - padding.top - padding.bottom;
 
   const hasSeries = series && series.length > 0;
-  const maxValue = hasSeries
-    ? Math.max(...series!.flatMap((s) => s.data), 1)
-    : Math.max(...data.map((d) => d.value), 1);
+  const maxValue =
+    series && series.length > 0
+      ? Math.max(...series.flatMap((s) => s.data), 1)
+      : Math.max(...data.map((d) => d.value), 1);
 
   const yLabels = useMemo(() => {
     const labels: number[] = [];
@@ -281,7 +276,7 @@ function LineChart({ data, series, height }: { data: ChartDataPoint[]; series?: 
   // Accessible table
   const tableData =
     hasSeries && series
-      ? series!.map((s) => ({
+      ? series?.map((s) => ({
           name: s.name,
           values: data.map((d, i) => ({ label: d.label, value: s.data[i] ?? 0 })),
         }))
@@ -508,7 +503,7 @@ function ChartLegend({ data, series }: { data: ChartDataPoint[]; series?: ChartS
   if (items.length <= 1 && !series) return null;
 
   return (
-    <div className="flex flex-wrap justify-center gap-4 mt-4" aria-label="Legenda do gráfico">
+    <div className="flex flex-wrap justify-center gap-4 mt-4" role="group" aria-label="Legenda do gráfico">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} aria-hidden="true" />

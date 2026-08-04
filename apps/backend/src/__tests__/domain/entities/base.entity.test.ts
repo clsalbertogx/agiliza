@@ -8,7 +8,12 @@ class TestEntity extends Entity<{ name: string }> {
     createdAt?: Date,
     updatedAt?: Date,
   ) {
-    super(id!, createdAt, updatedAt);
+    super(
+      // biome-ignore lint/style/noNonNullAssertion: test helper forwards an optional id to the required base param
+      id!,
+      createdAt,
+      updatedAt,
+    );
   }
 
   toJSON(): Record<string, unknown> {

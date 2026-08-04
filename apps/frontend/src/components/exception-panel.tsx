@@ -3,24 +3,13 @@
 'use client';
 
 import { ScrollArea } from '@radix-ui/react-scroll-area';
-import {
-  AlertTriangle,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  Eye,
-  EyeOff,
-  Filter,
-  RefreshCw,
-  XCircle,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight, Eye, EyeOff, RefreshCw, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export type ExceptionSeverity = 'critical' | 'high' | 'medium' | 'low';
 
@@ -96,7 +85,7 @@ const statusLabel: Record<ExceptionStatus, string> = {
   ignored: 'Ignorado',
 };
 
-const typeIcon: Record<string, React.ReactNode> = {
+const _typeIcon: Record<string, React.ReactNode> = {
   payment_mismatch: <XCircle className="w-4 h-4" aria-hidden="true" />,
   webhook_failed: <AlertTriangle className="w-4 h-4" aria-hidden="true" />,
   message_failed: <AlertTriangle className="w-4 h-4" aria-hidden="true" />,

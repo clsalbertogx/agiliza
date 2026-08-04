@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Inbox } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 
 describe('EmptyState', () => {

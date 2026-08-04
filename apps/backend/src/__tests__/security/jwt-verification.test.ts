@@ -219,9 +219,9 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
 
       // Then should succeed
       expect(result).not.toBeNull();
-      expect(result!.tenantId).toBe('tenant-abc');
-      expect(result!.userId).toBe('user-xyz');
-      expect(result!.role).toBe('owner');
+      expect(result?.tenantId).toBe('tenant-abc');
+      expect(result?.userId).toBe('user-xyz');
+      expect(result?.role).toBe('owner');
     });
   });
 
@@ -243,9 +243,9 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
 
         // Then should succeed with correct values
         expect(result).not.toBeNull();
-        expect(result!.tenantId).toBe('tenant-rt-1');
-        expect(result!.userId).toBe('user-rt-1');
-        expect(result!.role).toBe(role);
+        expect(result?.tenantId).toBe('tenant-rt-1');
+        expect(result?.userId).toBe('user-rt-1');
+        expect(result?.role).toBe(role);
       }
     });
 
@@ -261,8 +261,8 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
       const result = verifyToken(token, TEST_SECRET);
 
       expect(result).not.toBeNull();
-      expect(result!.tenantId).toBe('tenant_special-123_ABC');
-      expect(result!.userId).toBe('user_abc-456');
+      expect(result?.tenantId).toBe('tenant_special-123_ABC');
+      expect(result?.userId).toBe('user_abc-456');
     });
 
     it('should round-trip with minimal-length identifiers', () => {
@@ -277,9 +277,9 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
       const result = verifyToken(token, TEST_SECRET);
 
       expect(result).not.toBeNull();
-      expect(result!.tenantId).toBe('a');
-      expect(result!.userId).toBe('b');
-      expect(result!.role).toBe('user');
+      expect(result?.tenantId).toBe('a');
+      expect(result?.userId).toBe('b');
+      expect(result?.role).toBe('user');
     });
 
     it('should round-trip with UUID-style identifiers', () => {
@@ -294,8 +294,8 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
       const result = verifyToken(token, TEST_SECRET);
 
       expect(result).not.toBeNull();
-      expect(result!.tenantId).toBe('550e8400-e29b-41d4-a716-446655440000');
-      expect(result!.userId).toBe('6ba7b810-9dad-11d1-80b4-00c04fd430c8');
+      expect(result?.tenantId).toBe('550e8400-e29b-41d4-a716-446655440000');
+      expect(result?.userId).toBe('6ba7b810-9dad-11d1-80b4-00c04fd430c8');
     });
 
     it('should ensure deterministic verification (same payload, same secret → same outcome)', () => {
@@ -312,9 +312,9 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
       for (let i = 0; i < 10; i++) {
         const result = verifyToken(token, TEST_SECRET);
         expect(result).not.toBeNull();
-        expect(result!.tenantId).toBe('tenant-deterministic');
-        expect(result!.userId).toBe('user-deterministic');
-        expect(result!.role).toBe('owner');
+        expect(result?.tenantId).toBe('tenant-deterministic');
+        expect(result?.userId).toBe('user-deterministic');
+        expect(result?.role).toBe('owner');
       }
     });
   });
@@ -413,7 +413,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
       // The current code accepts any role value — this is a design gap (A01)
       // The RBAC layer downstream would need to handle unknown roles
       expect(result).not.toBeNull();
-      expect(result!.role).toBe('admin');
+      expect(result?.role).toBe('admin');
     });
   });
 
