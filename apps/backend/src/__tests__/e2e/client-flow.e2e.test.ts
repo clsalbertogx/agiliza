@@ -102,7 +102,7 @@ describe('Client Flow E2E', () => {
       method: 'POST',
       url: '/api/clients',
       headers: { authorization: `Bearer ${VALID_TOKEN}` },
-      payload: { tenantId: TENANT_ID, name: 'E2E Test Client', phone: '5511999990000' },
+      payload: { name: 'E2E Test Client', phone: '5511999990000' },
     });
 
     expect(res.statusCode).toBe(201);

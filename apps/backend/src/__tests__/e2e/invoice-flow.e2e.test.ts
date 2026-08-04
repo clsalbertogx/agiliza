@@ -139,7 +139,7 @@ describe('Invoice Flow E2E', () => {
       method: 'POST',
       url: '/api/clients',
       headers: { authorization: `Bearer ${VALID_TOKEN}` },
-      payload: { tenantId: TENANT_ID, name: 'Invoice E2E', phone: '5511999990001' },
+      payload: { name: 'Invoice E2E', phone: '5511999990001' },
     });
 
     expect(res.statusCode).toBe(201);
@@ -157,7 +157,6 @@ describe('Invoice Flow E2E', () => {
       url: '/api/invoices',
       headers: { authorization: `Bearer ${VALID_TOKEN}` },
       payload: {
-        tenantId: TENANT_ID,
         clientId,
         amount: 150.0,
         dueDate: new Date(Date.now() + 30 * 86400000).toISOString(),

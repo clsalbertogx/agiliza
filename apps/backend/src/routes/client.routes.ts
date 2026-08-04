@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { createCreateClientUseCase, createListClientsUseCase, createGetClientUseCase, createClientRepository } from '@/presentation/factories';
 
 const createClientSchema = z.object({
-  tenantId: z.string().uuid(),
   name: z.string().min(1).max(255),
   phone: z.string().min(10).max(15),
   email: z.string().email().optional(),
@@ -44,9 +43,8 @@ export async function clientRoutes(app: FastifyInstance) {
       security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
-        required: ['tenantId', 'name', 'phone'],
+        required: ['name', 'phone'],
         properties: {
-          tenantId: { type: 'string', format: 'uuid' },
           name: { type: 'string', minLength: 1, maxLength: 255 },
           phone: { type: 'string', minLength: 10, maxLength: 15 },
           email: { type: 'string', format: 'email' },
@@ -71,7 +69,7 @@ export async function clientRoutes(app: FastifyInstance) {
     const useCase = createCreateClientUseCase();
 
     const result = await useCase.execute({
-      tenantId: data.tenantId,
+      tenantId: request.tenantId!,
       name: data.name,
       phone: data.phone,
       email: data.email,
@@ -91,7 +89,7 @@ export async function clientRoutes(app: FastifyInstance) {
       try {
         const { createOnboardingService } = await import('@/presentation/factories/create-onboarding.factory');
         const onboardingService = createOnboardingService();
-        await onboardingService.startOnboarding(result.value.id, data.tenantId);
+        await onboardingService.startOnboarding(result.value.id, request.tenantId!);
       } catch (err) {
         console.warn('Failed to auto-trigger onboarding:', err);
       }

@@ -113,7 +113,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'John Doe',
           phone: '5511999998888',
         },
@@ -130,7 +129,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           phone: '5511999998888',
         },
       });
@@ -143,7 +141,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'Test',
           phone: '11999',
         },
@@ -157,7 +154,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'Test',
           phone: '55(11)99999-8888',
         },
@@ -173,7 +169,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'John Doe',
           phone: '5511999998888',
         },
@@ -190,7 +185,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: '00000000-0000-0000-0000-000000000099',
           name: 'John Doe',
           phone: '5511999998888',
         },
@@ -203,7 +197,6 @@ describe('Client API Routes', () => {
         method: 'POST',
         url: '/api/clients',
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'Test',
           phone: '5511999998888',
         },
@@ -217,7 +210,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: 'Bearer expired-token' },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'Test',
           phone: '5511999998888',
         },
@@ -231,7 +223,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: 'Bearer eyJ.invalid.token' },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'Test',
           phone: '5511999998888',
         },
@@ -248,7 +239,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'John Doe',
           phone: '5511999998888',
         },
@@ -266,7 +256,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'John Doe',
           phone: '5511999998888',
           email: 'john@example.com',
@@ -282,7 +271,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'John Doe',
           phone: '5511999998888',
           email: 'invalid-email',
@@ -301,7 +289,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'New Client',
           phone: '5511999990000',
         },
@@ -325,7 +312,6 @@ describe('Client API Routes', () => {
         url: '/api/clients',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           name: 'Pref Client',
           phone: '5511999991111',
           preferredChannel: 'EMAIL',

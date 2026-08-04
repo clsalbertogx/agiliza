@@ -4,13 +4,11 @@ import { createReminderService, createEventRepository, createInvoiceRepository }
 
 const scheduleReminderSchema = z.object({
   invoiceId: z.string().uuid(),
-  tenantId: z.string().uuid(),
   scheduledAt: z.string().datetime().optional(),
 });
 
 const sendNowSchema = z.object({
   invoiceId: z.string().uuid(),
-  tenantId: z.string().uuid(),
 });
 
 export async function reminderRoutes(app: FastifyInstance) {
@@ -24,10 +22,9 @@ export async function reminderRoutes(app: FastifyInstance) {
       security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
-        required: ['invoiceId', 'tenantId'],
+        required: ['invoiceId'],
         properties: {
           invoiceId: { type: 'string', format: 'uuid' },
-          tenantId: { type: 'string', format: 'uuid' },
           scheduledAt: { type: 'string', format: 'date-time' },
         },
       },
@@ -46,7 +43,7 @@ export async function reminderRoutes(app: FastifyInstance) {
       return { error: 'Validation error', details: parsed.error.flatten() };
     }
 
-    const { invoiceId, tenantId } = parsed.data;
+    const { invoiceId } = parsed.data;
 
     // Verify invoice exists before scheduling
     const invoiceRepo = createInvoiceRepository();
@@ -56,7 +53,7 @@ export async function reminderRoutes(app: FastifyInstance) {
       return { error: 'Invoice or client not found' };
     }
 
-    await reminderService.sendReminderNow(invoiceId, tenantId);
+    await reminderService.sendReminderNow(invoiceId, request.tenantId!);
 
     reply.code(200);
     return { data: { status: 'scheduled', invoiceId } };
@@ -70,10 +67,9 @@ export async function reminderRoutes(app: FastifyInstance) {
       security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
-        required: ['invoiceId', 'tenantId'],
+        required: ['invoiceId'],
         properties: {
           invoiceId: { type: 'string', format: 'uuid' },
-          tenantId: { type: 'string', format: 'uuid' },
         },
       },
       response: {
@@ -91,10 +87,10 @@ export async function reminderRoutes(app: FastifyInstance) {
       return { error: 'Validation error', details: parsed.error.flatten() };
     }
 
-    const { invoiceId, tenantId } = parsed.data;
+    const { invoiceId } = parsed.data;
 
     try {
-      const result = await reminderService.sendReminderNow(invoiceId, tenantId);
+      const result = await reminderService.sendReminderNow(invoiceId, request.tenantId!);
       reply.code(200);
       return { data: { status: 'sent', externalId: result.externalId } };
     } catch (error: any) {
@@ -226,8 +222,7 @@ export async function reminderRoutes(app: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
-    const body = request.body as any;
-    const tenantId = request.tenantId || body.tenantId;
+    const tenantId = request.tenantId;
 
     if (!tenantId) {
       reply.code(400);

@@ -74,7 +74,6 @@ describe('Reminder API Routes', () => {
         headers: { authorization: validToken },
         payload: {
           invoiceId: '00000000-0000-0000-0000-000000000010',
-          tenantId: TEST_TENANT_ID,
         },
       });
       expect(res.statusCode).toBe(200);
@@ -89,7 +88,6 @@ describe('Reminder API Routes', () => {
         headers: { authorization: validToken },
         payload: {
           invoiceId: '00000000-0000-0000-0000-000000009999',
-          tenantId: TEST_TENANT_ID,
         },
       });
       expect(res.statusCode).toBe(404);
@@ -100,7 +98,7 @@ describe('Reminder API Routes', () => {
         method: 'POST',
         url: '/api/reminders/schedule',
         headers: { authorization: validToken },
-        payload: { tenantId: TEST_TENANT_ID },
+        payload: {},
       });
       expect(res.statusCode).toBe(400);
     });

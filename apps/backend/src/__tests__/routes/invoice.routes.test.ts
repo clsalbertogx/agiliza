@@ -130,7 +130,6 @@ describe('Invoice API Routes', () => {
         url: '/api/invoices',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           amount: 150.00,
           dueDate: new Date('2026-08-01T00:00:00Z').toISOString(),
@@ -146,7 +145,6 @@ describe('Invoice API Routes', () => {
         url: '/api/invoices',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           amount: 0,
           dueDate: new Date().toISOString(),
@@ -161,7 +159,6 @@ describe('Invoice API Routes', () => {
         url: '/api/invoices',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           amount: -50,
           dueDate: new Date().toISOString(),
@@ -176,7 +173,6 @@ describe('Invoice API Routes', () => {
         url: '/api/invoices',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           amount: 150.00,
           dueDate: new Date().toISOString(),
         },
@@ -190,7 +186,6 @@ describe('Invoice API Routes', () => {
         url: '/api/invoices',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           amount: 150.00,
           dueDate: 'not-a-date',
@@ -205,7 +200,6 @@ describe('Invoice API Routes', () => {
         url: '/api/invoices',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: 'not-a-uuid',
           amount: 150.00,
           dueDate: new Date().toISOString(),
@@ -222,7 +216,6 @@ describe('Invoice API Routes', () => {
         url: '/api/invoices',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           amount: 150.00,
           dueDate: new Date().toISOString(),
@@ -236,7 +229,6 @@ describe('Invoice API Routes', () => {
         method: 'POST',
         url: '/api/invoices',
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           amount: 150.00,
           dueDate: new Date().toISOString(),
@@ -359,7 +351,6 @@ describe('Invoice API Routes', () => {
         {
           id: 'pay-001',
           invoiceId: TEST_INVOICE_ID,
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           amount: 150.00,
           method: 'PIX',

@@ -16,7 +16,6 @@ import { BillingCycle, type Subscription } from '@/domain/entities/subscription'
 const billingCycleValues = Object.values(BillingCycle) as [string, ...string[]];
 
 const createSubscriptionSchema = z.object({
-  tenantId: z.string().uuid(),
   clientId: z.string().uuid(),
   plan: z.string().min(1).max(255),
   amount: z.number().positive(),
@@ -51,9 +50,8 @@ const idParamsSchema = {
 
 const subscriptionBodySchema = {
   type: 'object',
-  required: ['tenantId', 'clientId', 'plan', 'amount', 'billingCycle'],
+  required: ['clientId', 'plan', 'amount', 'billingCycle'],
   properties: {
-    tenantId: { type: 'string', format: 'uuid' },
     clientId: { type: 'string', format: 'uuid' },
     plan: { type: 'string', minLength: 1, maxLength: 255 },
     amount: { type: 'number', exclusiveMinimum: 0 },
@@ -69,36 +67,32 @@ const subscriptionBodySchema = {
 
 const startTrialBodySchema = {
   type: 'object',
-  required: ['tenantId', 'trialDays'],
+  required: ['trialDays'],
   properties: {
-    tenantId: { type: 'string', format: 'uuid' },
     trialDays: { type: 'number', minimum: 1, maximum: 365 },
   },
 } as const;
 
 const gracePeriodBodySchema = {
   type: 'object',
-  required: ['tenantId', 'days'],
+  required: ['days'],
   properties: {
-    tenantId: { type: 'string', format: 'uuid' },
     days: { type: 'number', minimum: 1, maximum: 90 },
   },
 } as const;
 
 const autoRenewBodySchema = {
   type: 'object',
-  required: ['tenantId', 'autoRenew'],
+  required: ['autoRenew'],
   properties: {
-    tenantId: { type: 'string', format: 'uuid' },
     autoRenew: { type: 'boolean' },
   },
 } as const;
 
 const upgradeBodySchema = {
   type: 'object',
-  required: ['tenantId', 'newPlan', 'newAmount'],
+  required: ['newPlan', 'newAmount'],
   properties: {
-    tenantId: { type: 'string', format: 'uuid' },
     newPlan: { type: 'string', minLength: 1, maxLength: 255 },
     newAmount: { type: 'number', exclusiveMinimum: 0 },
     billingCycle: {
@@ -132,7 +126,7 @@ export async function subscriptionRoutes(app: FastifyInstance) {
     const useCase = createCreateSubscriptionUseCase();
 
     const result = await useCase.execute({
-      tenantId: data.tenantId,
+      tenantId: request.tenantId!,
       clientId: data.clientId,
       plan: data.plan,
       amount: data.amount,
@@ -367,7 +361,6 @@ export async function subscriptionRoutes(app: FastifyInstance) {
 
    // PATCH /api/subscriptions/:id/trial — Start trial period
    const startTrialSchema = z.object({
-     tenantId: z.string().uuid(),
      trialDays: z.number().int().positive().max(365),
    });
 
@@ -414,7 +407,6 @@ export async function subscriptionRoutes(app: FastifyInstance) {
 
    // PATCH /api/subscriptions/:id/grace-period — Manually set grace period
    const gracePeriodSchema = z.object({
-     tenantId: z.string().uuid(),
      days: z.number().int().positive().max(90),
    });
 
@@ -461,7 +453,6 @@ export async function subscriptionRoutes(app: FastifyInstance) {
 
    // PATCH /api/subscriptions/:id/auto-renew — Toggle auto-renew
    const autoRenewSchema = z.object({
-     tenantId: z.string().uuid(),
      autoRenew: z.boolean(),
    });
 
@@ -508,7 +499,6 @@ export async function subscriptionRoutes(app: FastifyInstance) {
 
    // PATCH /api/subscriptions/:id/upgrade — Upgrade subscription with proration
    const upgradeSchema = z.object({
-     tenantId: z.string().uuid(),
      newPlan: z.string().min(1).max(255),
      newAmount: z.number().positive(),
      billingCycle: z.enum(['MONTHLY', 'BIMONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL']).optional(),

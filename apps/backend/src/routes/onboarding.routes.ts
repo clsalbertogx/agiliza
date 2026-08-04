@@ -4,7 +4,6 @@ import { createOnboardingService } from '@/presentation/factories';
 
 const startOnboardingSchema = z.object({
   clientId: z.string().uuid(),
-  tenantId: z.string().uuid(),
 });
 
 const processAnswerSchema = z.object({
@@ -30,10 +29,9 @@ export async function onboardingRoutes(app: FastifyInstance) {
       description: 'Sends the first onboarding question via the configured message channel.',
       body: {
         type: 'object',
-        required: ['clientId', 'tenantId'],
+        required: ['clientId'],
         properties: {
           clientId: { type: 'string', format: 'uuid' },
-          tenantId: { type: 'string', format: 'uuid' },
         },
       },
       response: {
@@ -53,7 +51,7 @@ export async function onboardingRoutes(app: FastifyInstance) {
     }
 
     try {
-      await onboardingService.startOnboarding(parsed.data.clientId, parsed.data.tenantId);
+      await onboardingService.startOnboarding(parsed.data.clientId, request.tenantId!);
       reply.code(200);
       return { data: { status: 'started', message: 'Primeira pergunta enviada!' } };
     } catch (error: any) {

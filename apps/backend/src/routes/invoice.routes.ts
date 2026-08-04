@@ -12,7 +12,6 @@ import {
 } from '@/presentation/factories';
 
 const createInvoiceSchema = z.object({
-  tenantId: z.string().uuid(),
   clientId: z.string().uuid(),
   amount: z.number().positive('Amount must be positive'),
   dueDate: z.string().datetime(),
@@ -49,9 +48,8 @@ export async function invoiceRoutes(app: FastifyInstance) {
       security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
-        required: ['tenantId', 'clientId', 'amount', 'dueDate'],
+        required: ['clientId', 'amount', 'dueDate'],
         properties: {
-          tenantId: { type: 'string', format: 'uuid' },
           clientId: { type: 'string', format: 'uuid' },
           amount: { type: 'number', exclusiveMinimum: 0 },
           dueDate: { type: 'string', format: 'date-time' },
@@ -74,7 +72,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
     const useCase = createCreateInvoiceUseCase();
 
     const result = await useCase.execute({
-      tenantId: data.tenantId,
+      tenantId: request.tenantId!,
       clientId: data.clientId,
       amount: data.amount,
       dueDate: new Date(data.dueDate),

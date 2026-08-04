@@ -107,7 +107,6 @@ describe('Subscription API Routes', () => {
         url: '/api/subscriptions',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           plan: 'Premium Plan',
           amount: 99.90,
@@ -127,7 +126,6 @@ describe('Subscription API Routes', () => {
         url: '/api/subscriptions',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           amount: 99.90,
           billingCycle: 'MONTHLY',
@@ -143,7 +141,6 @@ describe('Subscription API Routes', () => {
         url: '/api/subscriptions',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           plan: 'Premium',
           amount: -10,
@@ -160,7 +157,6 @@ describe('Subscription API Routes', () => {
         url: '/api/subscriptions',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           plan: 'Premium',
           amount: 99.90,
@@ -176,7 +172,6 @@ describe('Subscription API Routes', () => {
         method: 'POST',
         url: '/api/subscriptions',
         payload: {
-          tenantId: TEST_TENANT_ID,
           clientId: TEST_CLIENT_ID,
           plan: 'Premium Plan',
           amount: 99.90,
@@ -309,7 +304,6 @@ describe('Subscription API Routes', () => {
         url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/trial`,
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           trialDays: 14,
         },
       });
@@ -327,7 +321,6 @@ describe('Subscription API Routes', () => {
         url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/trial`,
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           trialDays: 0,
         },
       });
@@ -343,7 +336,6 @@ describe('Subscription API Routes', () => {
         url: '/api/subscriptions/non-existent-id/trial',
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           trialDays: 7,
         },
       });
@@ -368,7 +360,6 @@ describe('Subscription API Routes', () => {
         url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/grace-period`,
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           days: 7,
         },
       });
@@ -386,7 +377,6 @@ describe('Subscription API Routes', () => {
         url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/grace-period`,
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           days: 0,
         },
       });
@@ -409,7 +399,6 @@ describe('Subscription API Routes', () => {
         url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/auto-renew`,
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
           autoRenew: false,
         },
       });
@@ -426,7 +415,6 @@ describe('Subscription API Routes', () => {
         url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/auto-renew`,
         headers: { authorization: validToken },
         payload: {
-          tenantId: TEST_TENANT_ID,
         },
       });
 
