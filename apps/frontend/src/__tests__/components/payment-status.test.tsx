@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { PaymentStatus } from '@/components/payment-status';
-import { describe, it, expect } from 'vitest';
 
 describe('PaymentStatus', () => {
   it('deve exibir "Aguardando pagamento" quando status é pending', () => {

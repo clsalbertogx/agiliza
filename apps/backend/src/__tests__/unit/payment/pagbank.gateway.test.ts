@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PagBankGateway, PagBankClient } from '@/infrastructure/payment/pagbank.gateway';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type PagBankClient, PagBankGateway } from '@/infrastructure/payment/pagbank.gateway';
 
 function buildMockClient(): PagBankClient {
   return {
@@ -26,9 +26,7 @@ describe('PagBankGateway', () => {
 
   describe('constructor', () => {
     it('should throw if accessToken is missing', () => {
-      expect(() => new PagBankGateway({ accessToken: '' })).toThrow(
-        'PagBank accessToken is required',
-      );
+      expect(() => new PagBankGateway({ accessToken: '' })).toThrow('PagBank accessToken is required');
     });
   });
 
@@ -49,7 +47,7 @@ describe('PagBankGateway', () => {
       });
 
       const result = await gateway.createPixCharge({
-        amount: 100.50,
+        amount: 100.5,
         description: 'Test PIX charge',
         externalReference: 'inv-001',
       });
@@ -70,9 +68,9 @@ describe('PagBankGateway', () => {
     it('should throw when PagBank API call fails', async () => {
       mockClient.createCharge = vi.fn().mockRejectedValue(new Error('Invalid access token'));
 
-      await expect(
-        gateway.createPixCharge({ amount: 50, description: 'Failing charge' }),
-      ).rejects.toThrow('PagBank error: Invalid access token');
+      await expect(gateway.createPixCharge({ amount: 50, description: 'Failing charge' })).rejects.toThrow(
+        'PagBank error: Invalid access token',
+      );
     });
   });
 

@@ -1,4 +1,4 @@
-import { RiskScore, Client } from '@/domain/entities/client';
+import { type Client, RiskScore } from '@/domain/entities/client';
 
 interface RiskFactors {
   overdueInvoiceCount: number;
@@ -18,7 +18,7 @@ export class RiskScoreService {
     }
 
     // RED: 3+ overdue invoices OR avg delay > 15 days
-    if (factors.overdueInvoiceCount >= 3 || (factors.avgPaymentDelayDays > 15)) {
+    if (factors.overdueInvoiceCount >= 3 || factors.avgPaymentDelayDays > 15) {
       reasons.push(`${factors.overdueInvoiceCount} faturas em atraso`);
       if (factors.avgPaymentDelayDays > 15) {
         reasons.push(`Atraso médio de ${Math.round(factors.avgPaymentDelayDays)} dias`);
@@ -27,7 +27,7 @@ export class RiskScoreService {
     }
 
     // YELLOW: 1-2 overdue invoices OR avg delay 5-15 days
-    if (factors.overdueInvoiceCount >= 1 || (factors.avgPaymentDelayDays > 5)) {
+    if (factors.overdueInvoiceCount >= 1 || factors.avgPaymentDelayDays > 5) {
       if (factors.overdueInvoiceCount >= 1) {
         reasons.push(`${factors.overdueInvoiceCount} faturas em atraso`);
       }

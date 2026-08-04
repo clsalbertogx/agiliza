@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { PaymentMapper, type PersistencePayment } from '@/infrastructure/database/mappers/payment.mapper';
+import { describe, expect, it } from 'vitest';
 import type { Payment } from '@/domain/entities/payment';
+import { PaymentMapper, type PersistencePayment } from '@/infrastructure/database/mappers/payment.mapper';
 
 describe('PaymentMapper', () => {
   const mapper = new PaymentMapper();
@@ -10,13 +10,13 @@ describe('PaymentMapper', () => {
     invoiceId: '00000000-0000-0000-0000-000000000002',
     tenantId: '00000000-0000-0000-0000-000000000003',
     clientId: '00000000-0000-0000-0000-000000000004',
-    amount: 150.50,
+    amount: 150.5,
     method: 'PIX',
     provider: 'asaas',
     providerPaymentId: 'pay_123',
     status: 'confirmed',
-    fee: 3.50,
-    netAmount: 147.00,
+    fee: 3.5,
+    netAmount: 147.0,
     webhookReceivedAt: new Date('2026-07-28T10:00:00Z'),
     webhookRetryCount: 0,
     createdAt: new Date('2026-07-28T09:00:00Z'),
@@ -28,13 +28,13 @@ describe('PaymentMapper', () => {
     invoiceId: '00000000-0000-0000-0000-000000000002',
     tenantId: '00000000-0000-0000-0000-000000000003',
     clientId: '00000000-0000-0000-0000-000000000004',
-    amount: 150.50,
+    amount: 150.5,
     method: 'PIX' as Payment['method'],
     provider: 'asaas',
     providerPaymentId: 'pay_123',
     status: 'confirmed' as Payment['status'],
-    fee: 3.50,
-    netAmount: 147.00,
+    fee: 3.5,
+    netAmount: 147.0,
     webhookReceivedAt: new Date('2026-07-28T10:00:00Z'),
     webhookRetryCount: 0,
     createdAt: new Date('2026-07-28T09:00:00Z'),

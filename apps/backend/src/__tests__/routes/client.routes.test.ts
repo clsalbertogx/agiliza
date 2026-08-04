@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
   findById: vi.fn(),
@@ -46,11 +46,11 @@ describe('Client API Routes', () => {
 
   beforeAll(async () => {
     app = Fastify({ logger: false });
-    
+
     app.decorateRequest('tenantId', undefined);
     app.decorateRequest('userId', undefined);
     app.decorateRequest('authPayload', undefined);
-    
+
     // Auth hook that validates tokens properly
     app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
       const authHeader = request.headers.authorization;
@@ -58,17 +58,17 @@ describe('Client API Routes', () => {
         reply.code(401).send({ error: 'Missing authorization header' });
         return;
       }
-      
+
       if (authHeader === `Bearer ${VALID_TOKEN}`) {
         (request as any).tenantId = TEST_TENANT_ID;
         (request as any).userId = TEST_TENANT_ID;
         return;
       }
-      
+
       // Invalid token
       reply.code(401).send({ error: 'Invalid or expired token' });
     });
-    
+
     await app.register(clientRoutes);
     await app.ready();
   });
@@ -87,7 +87,7 @@ describe('Client API Routes', () => {
     name: 'John Doe',
     phone: '5511999998888',
     email: 'john@example.com',
-        riskScore: 'LOW',
+    riskScore: 'LOW',
     riskScoreReason: null,
     riskScoreUpdatedAt: null,
     preferredChannel: 'WHATSAPP',
@@ -296,10 +296,7 @@ describe('Client API Routes', () => {
 
       expect(res.statusCode).toBe(201);
       // Auto-trigger should call startOnboarding for clients without preferences
-      expect(mockStartOnboarding).toHaveBeenCalledWith(
-        mockClient.id,
-        TEST_TENANT_ID,
-      );
+      expect(mockStartOnboarding).toHaveBeenCalledWith(mockClient.id, TEST_TENANT_ID);
     });
 
     it('should NOT auto-trigger onboarding when both preferredChannel and preferredTime are provided', async () => {
@@ -491,7 +488,7 @@ describe('Client API Routes', () => {
     it('should return risk score with top features and reason', async () => {
       mockState.findById.mockResolvedValue({
         ...mockClient,
-    riskScore: 'LOW',
+        riskScore: 'LOW',
         riskScoreReason: { reasons: ['Pagamentos em dia'] },
         riskScoreUpdatedAt: new Date(),
       });

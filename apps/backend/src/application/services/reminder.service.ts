@@ -1,12 +1,12 @@
-import { DecisionEngineService, type Decision } from './decision-engine.service';
-import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import type { QueuePort } from '@/application/ports/queue/queue.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { EventRepositoryPort } from '@/application/ports/repositories/event.repository.port';
-import type { QueuePort } from '@/application/ports/queue/queue.port';
-import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
-import type { Invoice } from '@/domain/entities/invoice';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { Client } from '@/domain/entities/client';
+import type { Invoice } from '@/domain/entities/invoice';
 import { generateUUID } from '@/infrastructure/uuid/uuid.service';
+import { type Decision, DecisionEngineService } from './decision-engine.service';
 
 export class ReminderService {
   private readonly decisionEngine: DecisionEngineService;
@@ -47,11 +47,7 @@ export class ReminderService {
       if (!client) continue;
 
       // Get decision from engine
-      const decision = this.decisionEngine.decideNextAction(
-        client,
-        invoice as unknown as Invoice,
-        'default',
-      );
+      const decision = this.decisionEngine.decideNextAction(client, invoice as unknown as Invoice, 'default');
       decisions.push(decision);
 
       // Schedule the reminder via Queue
@@ -64,26 +60,23 @@ export class ReminderService {
   private async scheduleReminder(invoice: Invoice, client: Client, decision: Decision): Promise<void> {
     const invoiceAmount = Number(invoice.amount).toFixed(2);
 
-    await this.queue.addJob(
-      'send-message',
-      {
-        invoiceId: invoice.id,
-        clientId: client.id,
-        tenantId: client.tenantId,
-        to: client.phone,
-        channel: decision.channel,
-        templateName: decision.templateName,
-        variables: {
-          name: client.name.split(' ')[0],
-          value: `R$ ${invoiceAmount}`,
-          dueDate: decision.scheduledAt.toLocaleDateString('pt-BR'),
-          pixLink: '{{pix_link_placeholder}}',
-        },
-        scheduledAt: decision.scheduledAt.toISOString(),
-        confidence: decision.confidence,
-        reasoning: decision.reasoning,
-      } as Record<string, unknown>,
-    );
+    await this.queue.addJob('send-message', {
+      invoiceId: invoice.id,
+      clientId: client.id,
+      tenantId: client.tenantId,
+      to: client.phone,
+      channel: decision.channel,
+      templateName: decision.templateName,
+      variables: {
+        name: client.name.split(' ')[0],
+        value: `R$ ${invoiceAmount}`,
+        dueDate: decision.scheduledAt.toLocaleDateString('pt-BR'),
+        pixLink: '{{pix_link_placeholder}}',
+      },
+      scheduledAt: decision.scheduledAt.toISOString(),
+      confidence: decision.confidence,
+      reasoning: decision.reasoning,
+    } as Record<string, unknown>);
 
     // Log decision
     await this.eventRepo.save({

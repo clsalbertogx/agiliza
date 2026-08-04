@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGet = vi.hoisted(() => vi.fn());
 
@@ -215,6 +215,10 @@ describe('DashboardPage', () => {
       // Demo data values
       expect(screen.getByText('R$ 12.450,00')).toBeInTheDocument(); // totalCollected
       expect(screen.getByText('32/45')).toBeInTheDocument(); // paidInvoices / totalInvoices
+
+      // Wired components: StatCard KPI row + ReportChart status pie
+      expect(screen.getByText('Distribuição de Faturas por Status')).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'Gráfico de pizza' })).toBeInTheDocument();
 
       // Demo mode should NOT call the API
       expect(mockGet).not.toHaveBeenCalled();

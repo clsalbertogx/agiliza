@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { Check, Clock, Copy, Loader2, QrCode, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ErrorState } from '@/components/error-state';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { PaymentStatus } from '@/components/payment-status';
-import { Copy, Check, Clock, X, Loader2, QrCode } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export interface PixData {
   qrCodeBase64: string;
@@ -135,12 +135,7 @@ export function PixPaymentFlow({
   }
 
   if (error) {
-    return (
-      <ErrorState
-        message={error}
-        {...(onCancel ? { onRetry: undefined } : {})}
-      />
-    );
+    return <ErrorState message={error} {...(onCancel ? { onRetry: undefined } : {})} />;
   }
 
   // Paid state
@@ -148,22 +143,14 @@ export function PixPaymentFlow({
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <div
-            className="flex flex-col items-center gap-4"
-            role="alert"
-            aria-live="assertive"
-          >
+          <div className="flex flex-col items-center gap-4" role="alert" aria-live="assertive">
             <div className="w-20 h-20 rounded-full bg-success-100 flex items-center justify-center">
               <Check className="w-10 h-10 text-success-600" aria-hidden="true" />
             </div>
             <h3 className="text-xl font-bold text-gray-900">Pagamento Confirmado!</h3>
             <div className="bg-success-50 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-success-700">
-                {formatBRL(pixData.amount)}
-              </p>
-              <p className="text-sm text-success-600 mt-1">
-                Pago em {formatDateTime(new Date().toISOString())}
-              </p>
+              <p className="text-2xl font-bold text-success-700">{formatBRL(pixData.amount)}</p>
+              <p className="text-sm text-success-600 mt-1">Pago em {formatDateTime(new Date().toISOString())}</p>
             </div>
             <Button variant="primary" onClick={onPaid}>
               Voltar para faturas
@@ -184,9 +171,7 @@ export function PixPaymentFlow({
               <Clock className="w-8 h-8 text-warning-600" aria-hidden="true" />
             </div>
             <h3 className="text-lg font-bold text-gray-900">QR Code Expirado</h3>
-            <p className="text-sm text-gray-500">
-              O código PIX expirou em {formatDateTime(pixData.expiresAt)}
-            </p>
+            <p className="text-sm text-gray-500">O código PIX expirou em {formatDateTime(pixData.expiresAt)}</p>
             <div className="flex gap-3 mt-2">
               <Button variant="primary" onClick={() => onExpired?.()}>
                 Gerar novo QR Code

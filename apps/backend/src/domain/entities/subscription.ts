@@ -1,5 +1,5 @@
+import { type Either, failure, success } from '@/domain/types/either';
 import { DomainError } from '../errors/domain-error';
-import { Either, success, failure } from '@/domain/types/either';
 
 export enum SubscriptionStatus {
   ACTIVE = 'ACTIVE',
@@ -129,9 +129,7 @@ export function createSubscription(
   }
 
   // Compute trial end date from startDate + trialDays
-  const trialEndsAt = trialDays > 0
-    ? new Date(input.startDate.getTime() + trialDays * 86400000)
-    : undefined;
+  const trialEndsAt = trialDays > 0 ? new Date(input.startDate.getTime() + trialDays * 86400000) : undefined;
 
   // Initial status: TRIAL if trialDays > 0, otherwise ACTIVE
   const initialStatus = trialDays > 0 ? SubscriptionStatus.TRIAL : SubscriptionStatus.ACTIVE;
@@ -230,10 +228,7 @@ export function subscriptionToViewModel(subscription: Subscription): Subscriptio
   };
 }
 
-export function updateSubscription(
-  subscription: Subscription,
-  updates: Partial<Subscription>,
-): Subscription {
+export function updateSubscription(subscription: Subscription, updates: Partial<Subscription>): Subscription {
   return {
     ...subscription,
     ...updates,
@@ -298,11 +293,7 @@ export function expireSubscription(subscription: Subscription): Subscription {
   };
 }
 
-export function renewSubscription(
-  subscription: Subscription,
-  nextBilling: Date,
-  endDate?: Date,
-): Subscription {
+export function renewSubscription(subscription: Subscription, nextBilling: Date, endDate?: Date): Subscription {
   return {
     ...subscription,
     status: SubscriptionStatus.ACTIVE,

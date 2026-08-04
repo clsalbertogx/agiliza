@@ -1,6 +1,6 @@
-import type { DomainMapper } from './mapper.interface';
-import type { Tenant, PersistenceTenant } from '@/domain/entities/tenant';
+import type { PersistenceTenant, Tenant } from '@/domain/entities/tenant';
 import { createTenantFromPersistence, tenantToPersistence } from '@/domain/entities/tenant';
+import type { DomainMapper } from './mapper.interface';
 
 export type { PersistenceTenant } from '@/domain/entities/tenant';
 

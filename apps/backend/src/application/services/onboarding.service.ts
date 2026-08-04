@@ -1,6 +1,6 @@
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { EventRepositoryPort } from '@/application/ports/repositories/event.repository.port';
-import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
 import { MessageChannel } from '@/domain/entities/client';
 import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 
@@ -22,11 +22,7 @@ export class OnboardingService {
   private readonly messageProvider: MessageProviderPort;
   private onboardingStates = new Map<string, OnboardingState>();
 
-  constructor(
-    clientRepo: ClientRepositoryPort,
-    eventRepo: EventRepositoryPort,
-    messageProvider: MessageProviderPort,
-  ) {
+  constructor(clientRepo: ClientRepositoryPort, eventRepo: EventRepositoryPort, messageProvider: MessageProviderPort) {
     this.clientRepo = clientRepo;
     this.eventRepo = eventRepo;
     this.messageProvider = messageProvider;
@@ -95,14 +91,15 @@ export class OnboardingService {
     const questionIndex = state.currentQuestion;
 
     switch (questionIndex) {
-      case 0: // Channel preference
+      case 0: {
+        // Channel preference
         const channelMap: Record<string, MessageChannel> = {
           '1': MessageChannel.WHATSAPP,
           '2': MessageChannel.EMAIL,
           '3': MessageChannel.SMS,
-          'whatsapp': MessageChannel.WHATSAPP,
-          'email': MessageChannel.EMAIL,
-          'sms': MessageChannel.SMS,
+          whatsapp: MessageChannel.WHATSAPP,
+          email: MessageChannel.EMAIL,
+          sms: MessageChannel.SMS,
         };
         const channel = channelMap[answer.toLowerCase()];
         if (!channel) {
@@ -111,15 +108,17 @@ export class OnboardingService {
         }
         state.answers.channel = channel;
         break;
+      }
 
-      case 1: // Time preference
+      case 1: {
+        // Time preference
         const timeMap: Record<string, string> = {
           '1': '09:00',
           '2': '15:00',
           '3': '19:00',
-          'manhã': '09:00',
-          'tarde': '15:00',
-          'noite': '19:00',
+          manhã: '09:00',
+          tarde: '15:00',
+          noite: '19:00',
         };
         const time = timeMap[answer.toLowerCase()];
         if (!time) {
@@ -128,8 +127,10 @@ export class OnboardingService {
         }
         state.answers.time = time;
         break;
+      }
 
-      case 2: // Lead days preference
+      case 2: {
+        // Lead days preference
         const daysMap: Record<string, number> = {
           '1': 1,
           '2': 3,
@@ -143,6 +144,7 @@ export class OnboardingService {
         }
         state.answers.leadDays = days;
         break;
+      }
 
       default:
         return { completed: false, message: 'Onboarding já foi concluído.' };

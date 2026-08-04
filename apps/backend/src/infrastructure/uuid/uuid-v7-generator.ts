@@ -1,5 +1,5 @@
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 import { v7 as uuidv7 } from 'uuid';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 export class UuidV7Generator implements IdGeneratorPort {
   generate(): string {

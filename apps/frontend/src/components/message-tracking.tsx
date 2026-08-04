@@ -1,21 +1,12 @@
-// @deprecated — not wired yet
+// Available for wire-up — not yet connected to a page.
+// Exported from the barrel; natural home: message delivery/detail view.
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { StatusBadge } from '@/components/status-badge';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { AlertCircle, Check, ChevronRight, Clock, Download, Eye, MousePointerClick, Send, X } from 'lucide-react';
 import { ErrorState } from '@/components/error-state';
-import {
-  Clock,
-  Send,
-  Download,
-  Eye,
-  MousePointerClick,
-  AlertCircle,
-  Check,
-  X,
-  ChevronRight,
-} from 'lucide-react';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { StatusBadge } from '@/components/status-badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface MessageTrackingEvent {
   event: 'queued' | 'sent' | 'delivered' | 'read' | 'clicked' | 'failed';
@@ -48,10 +39,7 @@ export interface MessageTrackingProps {
   onRetry?: () => void;
 }
 
-const eventConfig: Record<
-  string,
-  { icon: React.ReactNode; label: string; color: string; bgColor: string }
-> = {
+const eventConfig: Record<string, { icon: React.ReactNode; label: string; color: string; bgColor: string }> = {
   queued: {
     icon: <Clock className="w-5 h-5" aria-hidden="true" />,
     label: 'Na fila para envio',
@@ -170,33 +158,18 @@ function TimelineNode({
         </div>
         {!isLast && <div className="w-0.5 flex-1 bg-gray-200 mt-1" aria-hidden="true" />}
       </div>
-      <div
-        className={`pb-6`}
-        {...(event.event === 'failed' ? { role: 'alert' as const } : {})}
-      >
-        <p className={`text-sm font-medium ${config.color}`}>
-          {config.label}
-        </p>
-        <p className="text-xs text-gray-400 mt-0.5">
-          {formatDateTime(timestamp)}
-        </p>
+      <div className={`pb-6`} {...(event.event === 'failed' ? { role: 'alert' as const } : {})}>
+        <p className={`text-sm font-medium ${config.color}`}>{config.label}</p>
+        <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(timestamp)}</p>
         {event.event === 'failed' && event.metadata?.error != null && (
-          <p className="text-xs text-danger-500 mt-1">
-            Erro: {String(event.metadata.error)}
-          </p>
+          <p className="text-xs text-danger-500 mt-1">Erro: {String(event.metadata.error)}</p>
         )}
       </div>
     </li>
   );
 }
 
-export function MessageTracking({
-  messageId,
-  data,
-  isLoading = false,
-  error = null,
-  onRetry,
-}: MessageTrackingProps) {
+export function MessageTracking({ messageId, data, isLoading = false, error = null, onRetry }: MessageTrackingProps) {
   if (isLoading) return <MessageTrackingSkeleton />;
   if (error) return <ErrorState message={error} onRetry={onRetry} />;
 
@@ -232,13 +205,11 @@ export function MessageTracking({
         </div>
 
         {/* Timeline */}
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
-          Linha do Tempo
-        </h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">Linha do Tempo</h4>
         <ol role="list" aria-label="Linha do tempo da mensagem" className="space-y-0">
           {data.events.map((event, idx) => (
             <TimelineNode
-              key={`${event.event}-${idx}`}
+              key={`${event.event}-${event.timestamp}`}
               event={event}
               timestamp={event.timestamp}
               isLast={idx === data.events.length - 1 && futureEvents.length === 0}
@@ -257,9 +228,7 @@ export function MessageTracking({
               </div>
               <div className="pb-6">
                 <p className="text-sm text-gray-400 italic">Em andamento...</p>
-                <p className="text-xs text-gray-300 mt-0.5">
-                  {eventConfig[event]?.label ?? event}
-                </p>
+                <p className="text-xs text-gray-300 mt-0.5">{eventConfig[event]?.label ?? event}</p>
               </div>
             </li>
           ))}
@@ -284,9 +253,7 @@ export function MessageTracking({
         {/* Message preview */}
         {data.content && (
           <div className="mt-6">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-              Conteúdo da Mensagem
-            </h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Conteúdo da Mensagem</h4>
             <blockquote className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-sm text-gray-700 whitespace-pre-wrap">
               {data.content}
             </blockquote>

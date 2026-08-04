@@ -1,13 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure } from '@/application/types/either';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { CreateSubscriptionUseCase, CreateSubscriptionInput } from '@/application/usecases/create-subscription.usecase';
-import { Client, MessageChannel, RiskScore } from '@/domain/entities/client';
-import { Subscription, SubscriptionStatus, BillingCycle } from '@/domain/entities/subscription';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { isFailure, isSuccess } from '@/application/types/either';
+import {
+  type CreateSubscriptionInput,
+  CreateSubscriptionUseCase,
+} from '@/application/usecases/create-subscription.usecase';
+import { type Client, MessageChannel, RiskScore } from '@/domain/entities/client';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 describe('CreateSubscriptionUseCase', () => {
   let useCase: CreateSubscriptionUseCase;
@@ -20,7 +23,7 @@ describe('CreateSubscriptionUseCase', () => {
     tenantId: '00000000-0000-0000-0000-000000000001',
     clientId: '00000000-0000-0000-0000-000000000002',
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
   };
 
@@ -73,27 +76,20 @@ describe('CreateSubscriptionUseCase', () => {
       validate: vi.fn().mockReturnValue(true),
     };
 
-    useCase = new CreateSubscriptionUseCase(
-      mockSubscriptionRepo,
-      mockClientRepo,
-      mockEventBus,
-      mockIdGenerator,
-    );
+    useCase = new CreateSubscriptionUseCase(mockSubscriptionRepo, mockClientRepo, mockEventBus, mockIdGenerator);
   });
 
   describe('Happy Path', () => {
     it('should create a subscription successfully', async () => {
       vi.mocked(mockClientRepo.findById).mockResolvedValue(mockClient);
-      vi.mocked(mockSubscriptionRepo.create).mockImplementation(
-        async (subscription: Subscription) => subscription,
-      );
+      vi.mocked(mockSubscriptionRepo.create).mockImplementation(async (subscription: Subscription) => subscription);
 
       const result = await useCase.execute(validInput);
 
       expect(isSuccess(result)).toBe(true);
       if (result.success) {
         expect(result.value.plan).toBe('Premium Plan');
-        expect(result.value.amount).toBe(99.90);
+        expect(result.value.amount).toBe(99.9);
         expect(result.value.billingCycle).toBe(BillingCycle.MONTHLY);
         expect(result.value.status).toBe(SubscriptionStatus.ACTIVE);
         expect(result.value.tenantId).toBe('00000000-0000-0000-0000-000000000001');
@@ -112,9 +108,7 @@ describe('CreateSubscriptionUseCase', () => {
 
     it('should calculate next billing date for monthly cycle', async () => {
       vi.mocked(mockClientRepo.findById).mockResolvedValue(mockClient);
-      vi.mocked(mockSubscriptionRepo.create).mockImplementation(
-        async (subscription: Subscription) => subscription,
-      );
+      vi.mocked(mockSubscriptionRepo.create).mockImplementation(async (subscription: Subscription) => subscription);
 
       const before = new Date();
       const result = await useCase.execute(validInput);
@@ -133,9 +127,7 @@ describe('CreateSubscriptionUseCase', () => {
 
     it('should calculate next billing date for annual cycle', async () => {
       vi.mocked(mockClientRepo.findById).mockResolvedValue(mockClient);
-      vi.mocked(mockSubscriptionRepo.create).mockImplementation(
-        async (subscription: Subscription) => subscription,
-      );
+      vi.mocked(mockSubscriptionRepo.create).mockImplementation(async (subscription: Subscription) => subscription);
 
       const result = await useCase.execute({ ...validInput, billingCycle: BillingCycle.ANNUAL });
 
@@ -148,9 +140,7 @@ describe('CreateSubscriptionUseCase', () => {
 
     it('should publish subscription.created event on success', async () => {
       vi.mocked(mockClientRepo.findById).mockResolvedValue(mockClient);
-      vi.mocked(mockSubscriptionRepo.create).mockImplementation(
-        async (subscription: Subscription) => subscription,
-      );
+      vi.mocked(mockSubscriptionRepo.create).mockImplementation(async (subscription: Subscription) => subscription);
 
       await useCase.execute(validInput);
 

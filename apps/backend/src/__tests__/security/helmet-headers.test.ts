@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import helmet from '@fastify/helmet';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 describe('Helmet Security Headers — SEC-01 / Issue #22', () => {
   let app: ReturnType<typeof Fastify>;

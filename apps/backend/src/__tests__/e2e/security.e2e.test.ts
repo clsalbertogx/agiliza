@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import Fastify from 'fastify';
 import helmet from '@fastify/helmet';
+import Fastify from 'fastify';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import authPlugin from '@/infrastructure/plugins/auth.plugin';
-import { healthRoutes } from '@/routes/health.routes';
 import { clientRoutes } from '@/routes/client.routes';
+import { healthRoutes } from '@/routes/health.routes';
 
 const mockState = vi.hoisted(() => ({
   findById: vi.fn(),

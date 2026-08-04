@@ -1,8 +1,8 @@
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { DecisionEngineService } from '@/application/services/decision-engine.service';
 import { ApplicationError } from '@/application/errors/application.error';
-import { Either, success, failure } from '@/application/types/either';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { DecisionEngineService } from '@/application/services/decision-engine.service';
+import { type Either, failure, success } from '@/application/types/either';
 
 export interface GetNextDecisionInput {
   clientId: string;

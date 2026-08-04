@@ -1,6 +1,6 @@
-import type { DomainMapper } from './mapper.interface';
 import type { Invoice, PersistenceInvoice } from '@/domain/entities/invoice';
 import { createInvoiceFromPersistence, invoiceToPersistence } from '@/domain/entities/invoice';
+import type { DomainMapper } from './mapper.interface';
 
 export type { PersistenceInvoice } from '@/domain/entities/invoice';
 

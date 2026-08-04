@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { RiskScore, MessageChannel, clientSchema } from '@/domain/entities/client';
+import { describe, expect, it } from 'vitest';
+import { clientSchema, MessageChannel, RiskScore } from '@/domain/entities/client';
 
 describe('Client Entity', () => {
   describe('Risk Score Calculation', () => {
@@ -115,61 +115,69 @@ describe('Client Entity', () => {
     it('should validate preferredTime is in HH:MM format', () => {
       // "25:00" matches /^\d{2}:\d{2}$/ regex, so Zod accepts it
       // The schema validates format only, not range
-      expect(() => clientSchema.parse({
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000002',
-        name: 'Test Client',
-        phone: '5511999998888',
-        preferredLeadDays: 3,
-        riskScore: RiskScore.GREEN,
-        totalInvoices: 0,
-        paidInvoices: 0,
-        avgPaymentDelay: null,
-        preferredTime: 'abc',
-      })).toThrow();
+      expect(() =>
+        clientSchema.parse({
+          id: '00000000-0000-0000-0000-000000000001',
+          tenantId: '00000000-0000-0000-0000-000000000002',
+          name: 'Test Client',
+          phone: '5511999998888',
+          preferredLeadDays: 3,
+          riskScore: RiskScore.GREEN,
+          totalInvoices: 0,
+          paidInvoices: 0,
+          avgPaymentDelay: null,
+          preferredTime: 'abc',
+        }),
+      ).toThrow();
 
       // Valid HH:MM format should not throw when all required fields are present
-      expect(() => clientSchema.parse({
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000002',
-        name: 'Test Client',
-        phone: '5511999998888',
-        preferredChannel: 'WHATSAPP',
-        preferredLeadDays: 3,
-        riskScore: RiskScore.GREEN,
-        totalInvoices: 0,
-        paidInvoices: 0,
-        avgPaymentDelay: null,
-        preferredTime: '10:60',
-      })).not.toThrow(); // 10:60 matches the regex
+      expect(() =>
+        clientSchema.parse({
+          id: '00000000-0000-0000-0000-000000000001',
+          tenantId: '00000000-0000-0000-0000-000000000002',
+          name: 'Test Client',
+          phone: '5511999998888',
+          preferredChannel: 'WHATSAPP',
+          preferredLeadDays: 3,
+          riskScore: RiskScore.GREEN,
+          totalInvoices: 0,
+          paidInvoices: 0,
+          avgPaymentDelay: null,
+          preferredTime: '10:60',
+        }),
+      ).not.toThrow(); // 10:60 matches the regex
     });
 
     it('should enforce preferredLeadDays between 1 and 15', () => {
-      expect(() => clientSchema.parse({
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000002',
-        name: 'Test Client',
-        phone: '5511999998888',
-        preferredChannel: 'WHATSAPP',
-        riskScore: RiskScore.GREEN,
-        totalInvoices: 0,
-        paidInvoices: 0,
-        avgPaymentDelay: null,
-        preferredLeadDays: 0,
-      })).toThrow();
+      expect(() =>
+        clientSchema.parse({
+          id: '00000000-0000-0000-0000-000000000001',
+          tenantId: '00000000-0000-0000-0000-000000000002',
+          name: 'Test Client',
+          phone: '5511999998888',
+          preferredChannel: 'WHATSAPP',
+          riskScore: RiskScore.GREEN,
+          totalInvoices: 0,
+          paidInvoices: 0,
+          avgPaymentDelay: null,
+          preferredLeadDays: 0,
+        }),
+      ).toThrow();
 
-      expect(() => clientSchema.parse({
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000002',
-        name: 'Test Client',
-        phone: '5511999998888',
-        preferredChannel: 'WHATSAPP',
-        riskScore: RiskScore.GREEN,
-        totalInvoices: 0,
-        paidInvoices: 0,
-        avgPaymentDelay: null,
-        preferredLeadDays: 15,
-      })).toThrow(); // Max is 14 in schema
+      expect(() =>
+        clientSchema.parse({
+          id: '00000000-0000-0000-0000-000000000001',
+          tenantId: '00000000-0000-0000-0000-000000000002',
+          name: 'Test Client',
+          phone: '5511999998888',
+          preferredChannel: 'WHATSAPP',
+          riskScore: RiskScore.GREEN,
+          totalInvoices: 0,
+          paidInvoices: 0,
+          avgPaymentDelay: null,
+          preferredLeadDays: 15,
+        }),
+      ).toThrow(); // Max is 14 in schema
     });
 
     it('should allow preferredLeadDays at boundary values (1 and 14)', () => {
@@ -221,33 +229,37 @@ describe('Client Entity', () => {
     });
 
     it('should reject phone with less than 10 digits', () => {
-      expect(() => clientSchema.parse({
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000002',
-        name: 'Test Client',
-        phone: '11999',
-        preferredChannel: 'WHATSAPP',
-        preferredLeadDays: 3,
-        riskScore: RiskScore.GREEN,
-        totalInvoices: 0,
-        paidInvoices: 0,
-        avgPaymentDelay: null,
-      })).toThrow();
+      expect(() =>
+        clientSchema.parse({
+          id: '00000000-0000-0000-0000-000000000001',
+          tenantId: '00000000-0000-0000-0000-000000000002',
+          name: 'Test Client',
+          phone: '11999',
+          preferredChannel: 'WHATSAPP',
+          preferredLeadDays: 3,
+          riskScore: RiskScore.GREEN,
+          totalInvoices: 0,
+          paidInvoices: 0,
+          avgPaymentDelay: null,
+        }),
+      ).toThrow();
     });
 
     it('should reject phone with non-numeric characters', () => {
-      expect(() => clientSchema.parse({
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000002',
-        name: 'Test Client',
-        phone: '55(11)99999-8888',
-        preferredChannel: 'WHATSAPP',
-        preferredLeadDays: 3,
-        riskScore: RiskScore.GREEN,
-        totalInvoices: 0,
-        paidInvoices: 0,
-        avgPaymentDelay: null,
-      })).toThrow();
+      expect(() =>
+        clientSchema.parse({
+          id: '00000000-0000-0000-0000-000000000001',
+          tenantId: '00000000-0000-0000-0000-000000000002',
+          name: 'Test Client',
+          phone: '55(11)99999-8888',
+          preferredChannel: 'WHATSAPP',
+          preferredLeadDays: 3,
+          riskScore: RiskScore.GREEN,
+          totalInvoices: 0,
+          paidInvoices: 0,
+          avgPaymentDelay: null,
+        }),
+      ).toThrow();
     });
 
     it('should format phone for display (11) 99999-8888', () => {

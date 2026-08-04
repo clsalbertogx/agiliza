@@ -1,18 +1,18 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  BillingCycle,
+  cancelSubscription,
   createSubscription,
   createSubscriptionFromPersistence,
-  subscriptionToPersistence,
-  subscriptionToViewModel,
-  updateSubscription,
-  cancelSubscription,
-  startTrial,
   enterGracePeriod,
   hasActiveTrial,
   isInGracePeriod,
-  SubscriptionStatus,
-  BillingCycle,
   type Subscription,
+  SubscriptionStatus,
+  startTrial,
+  subscriptionToPersistence,
+  subscriptionToViewModel,
+  updateSubscription,
 } from '@/domain/entities/subscription';
 
 describe('Subscription Domain Entity', () => {
@@ -21,7 +21,7 @@ describe('Subscription Domain Entity', () => {
     tenantId: '00000000-0000-0000-0000-000000000010',
     clientId: '00000000-0000-0000-0000-000000000020',
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
     nextBilling: new Date('2026-09-01'),
     startDate: new Date('2026-08-01'),
@@ -37,7 +37,7 @@ describe('Subscription Domain Entity', () => {
         expect(result.value.tenantId).toBe(validInput.tenantId);
         expect(result.value.clientId).toBe(validInput.clientId);
         expect(result.value.plan).toBe('Premium Plan');
-        expect(result.value.amount).toBe(99.90);
+        expect(result.value.amount).toBe(99.9);
         expect(result.value.billingCycle).toBe(BillingCycle.MONTHLY);
         expect(result.value.status).toBe(SubscriptionStatus.ACTIVE);
         expect(result.value.nextBilling).toEqual(validInput.nextBilling);
@@ -125,26 +125,26 @@ describe('Subscription Domain Entity', () => {
   describe('createSubscriptionFromPersistence', () => {
     it('should restore a subscription from persistence data', () => {
       const now = new Date();
-       const persistence = {
-         id: '00000000-0000-0000-0000-000000000001',
-         tenantId: '00000000-0000-0000-0000-000000000010',
-         clientId: '00000000-0000-0000-0000-000000000020',
-         plan: 'Premium Plan',
-         amount: 99.90,
-         billingCycle: 'MONTHLY',
-         status: 'ACTIVE',
-         startDate: now,
-         endDate: null,
-         nextBilling: new Date('2026-09-01'),
-         cancelledAt: null,
-         trialDays: null,
-         gracePeriodDays: null,
-         trialEndsAt: null,
-         gracePeriodEndsAt: null,
-         autoRenew: null,
-         createdAt: now,
-         updatedAt: now,
-       };
+      const persistence = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Premium Plan',
+        amount: 99.9,
+        billingCycle: 'MONTHLY',
+        status: 'ACTIVE',
+        startDate: now,
+        endDate: null,
+        nextBilling: new Date('2026-09-01'),
+        cancelledAt: null,
+        trialDays: null,
+        gracePeriodDays: null,
+        trialEndsAt: null,
+        gracePeriodEndsAt: null,
+        autoRenew: null,
+        createdAt: now,
+        updatedAt: now,
+      };
 
       const subscription = createSubscriptionFromPersistence(persistence);
 
@@ -158,26 +158,26 @@ describe('Subscription Domain Entity', () => {
 
     it('should handle nullable fields as undefined', () => {
       const now = new Date();
-const persistence = {
-         id: '00000000-0000-0000-0000-000000000001',
-         tenantId: '00000000-0000-0000-0000-000000000010',
-         clientId: '00000000-0000-0000-0000-000000000020',
-         plan: 'Basic',
-         amount: 49.90,
-         billingCycle: 'ANNUAL',
-         status: 'CANCELLED',
-         startDate: now,
-         endDate: new Date('2027-08-01'),
-         nextBilling: new Date('2026-09-01'),
-         cancelledAt: new Date('2026-08-15'),
-         trialDays: 14,
-         gracePeriodDays: null,
-         trialEndsAt: new Date('2026-08-15'),
-         gracePeriodEndsAt: null,
-         autoRenew: null,
-         createdAt: now,
-         updatedAt: now,
-       };
+      const persistence = {
+        id: '00000000-0000-0000-0000-000000000001',
+        tenantId: '00000000-0000-0000-0000-000000000010',
+        clientId: '00000000-0000-0000-0000-000000000020',
+        plan: 'Basic',
+        amount: 49.9,
+        billingCycle: 'ANNUAL',
+        status: 'CANCELLED',
+        startDate: now,
+        endDate: new Date('2027-08-01'),
+        nextBilling: new Date('2026-09-01'),
+        cancelledAt: new Date('2026-08-15'),
+        trialDays: 14,
+        gracePeriodDays: null,
+        trialEndsAt: new Date('2026-08-15'),
+        gracePeriodEndsAt: null,
+        autoRenew: null,
+        createdAt: now,
+        updatedAt: now,
+      };
 
       const subscription = createSubscriptionFromPersistence(persistence);
 
@@ -195,7 +195,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
         nextBilling: new Date('2026-09-01'),
@@ -219,7 +219,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Basic',
-        amount: 49.90,
+        amount: 49.9,
         billingCycle: BillingCycle.ANNUAL,
         status: SubscriptionStatus.CANCELLED,
         nextBilling: new Date('2026-09-01'),
@@ -245,7 +245,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
         nextBilling: new Date('2026-09-01'),
@@ -258,7 +258,7 @@ const persistence = {
 
       expect(viewModel.id).toBe(subscription.id);
       expect(viewModel.plan).toBe('Premium Plan');
-      expect(viewModel.amount).toBe(99.90);
+      expect(viewModel.amount).toBe(99.9);
       expect(viewModel.billingCycle).toBe('MONTHLY');
       expect(viewModel.status).toBe('ACTIVE');
       expect(viewModel.nextBilling).toBe('2026-09-01T00:00:00.000Z');
@@ -275,7 +275,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
         nextBilling: new Date('2026-09-01'),
@@ -284,9 +284,9 @@ const persistence = {
         updatedAt: now,
       };
 
-      const updated = updateSubscription(subscription, { amount: 149.90 });
+      const updated = updateSubscription(subscription, { amount: 149.9 });
 
-      expect(updated.amount).toBe(149.90);
+      expect(updated.amount).toBe(149.9);
       expect(updated.plan).toBe('Premium Plan');
       expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(now.getTime());
     });
@@ -300,7 +300,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
         nextBilling: new Date('2026-09-01'),
@@ -348,9 +348,7 @@ const persistence = {
         expect(result.value.autoRenew).toBe(false);
         expect(result.value.trialEndsAt).toBeInstanceOf(Date);
         // trialEndsAt = startDate + 7 days
-        expect(result.value.trialEndsAt?.getTime()).toBe(
-          validInput.startDate.getTime() + 7 * 86400000,
-        );
+        expect(result.value.trialEndsAt?.getTime()).toBe(validInput.startDate.getTime() + 7 * 86400000);
       }
     });
 
@@ -381,7 +379,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
         nextBilling: new Date('2026-09-01'),
@@ -405,7 +403,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
         nextBilling: new Date('2026-09-01'),
@@ -426,7 +424,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.EXPIRED,
         nextBilling: new Date('2026-09-01'),
@@ -449,7 +447,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.EXPIRED,
         nextBilling: new Date('2026-09-01'),
@@ -470,7 +468,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.TRIAL,
         nextBilling: new Date('2026-09-01'),
@@ -490,7 +488,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.TRIAL,
         nextBilling: new Date('2026-09-01'),
@@ -510,7 +508,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
         nextBilling: new Date('2026-09-01'),
@@ -531,7 +529,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.GRACE_PERIOD,
         nextBilling: new Date('2026-09-01'),
@@ -551,7 +549,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.GRACE_PERIOD,
         nextBilling: new Date('2026-09-01'),
@@ -571,7 +569,7 @@ const persistence = {
         tenantId: '00000000-0000-0000-0000-000000000010',
         clientId: '00000000-0000-0000-0000-000000000020',
         plan: 'Premium Plan',
-        amount: 99.90,
+        amount: 99.9,
         billingCycle: BillingCycle.MONTHLY,
         status: SubscriptionStatus.ACTIVE,
         nextBilling: new Date('2026-09-01'),

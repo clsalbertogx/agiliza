@@ -10,26 +10,14 @@ describe('KpiCard', () => {
   });
 
   it('deve renderizar subtítulo quando fornecido', () => {
-    render(
-      <KpiCard
-        title="Inadimplência"
-        value="5.2%"
-        subtitle="2.3% abaixo da meta"
-      />,
-    );
+    render(<KpiCard title="Inadimplência" value="5.2%" subtitle="2.3% abaixo da meta" />);
 
     expect(screen.getByText('2.3% abaixo da meta')).toBeInTheDocument();
   });
 
   describe('trend (indicador de tendência)', () => {
     it('deve exibir seta para cima e cor verde quando trend é positivo', () => {
-      render(
-        <KpiCard
-          title="Receita"
-          value="R$ 200.000"
-          trend={{ value: 12.5, isPositive: true }}
-        />,
-      );
+      render(<KpiCard title="Receita" value="R$ 200.000" trend={{ value: 12.5, isPositive: true }} />);
 
       const trendElement = screen.getByText('12.5%');
       expect(trendElement).toBeInTheDocument();
@@ -40,13 +28,7 @@ describe('KpiCard', () => {
     });
 
     it('deve exibir seta para baixo e cor vermelha quando trend é negativo', () => {
-      render(
-        <KpiCard
-          title="Inadimplência"
-          value="8.1%"
-          trend={{ value: 3.2, isPositive: false }}
-        />,
-      );
+      render(<KpiCard title="Inadimplência" value="8.1%" trend={{ value: 3.2, isPositive: false }} />);
 
       const trendElement = screen.getByText('3.2%');
       expect(trendElement).toBeInTheDocument();
@@ -57,13 +39,7 @@ describe('KpiCard', () => {
     });
 
     it('deve exibir valor absoluto do trend (sem sinal de negativo)', () => {
-      render(
-        <KpiCard
-          title="Taxa"
-          value="10%"
-          trend={{ value: -5, isPositive: false }}
-        />,
-      );
+      render(<KpiCard title="Taxa" value="10%" trend={{ value: -5, isPositive: false }} />);
 
       // O componente usa Math.abs, então deve exibir 5
       expect(screen.getByText('5%')).toBeInTheDocument();
@@ -77,13 +53,7 @@ describe('KpiCard', () => {
   });
 
   it('deve renderizar ícone quando fornecido', () => {
-    render(
-      <KpiCard
-        title="Com Ícone"
-        value="99"
-        icon={<span data-testid="test-icon">💰</span>}
-      />,
-    );
+    render(<KpiCard title="Com Ícone" value="99" icon={<span data-testid="test-icon">💰</span>} />);
 
     expect(screen.getByTestId('test-icon')).toBeInTheDocument();
   });

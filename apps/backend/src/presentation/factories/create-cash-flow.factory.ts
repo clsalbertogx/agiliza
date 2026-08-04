@@ -1,6 +1,6 @@
 import { CashFlowService } from '@/application/services/cash-flow.service';
-import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
 import { PrismaClientRepository } from '@/infrastructure/database/repositories/client.repository';
+import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
 
 export function createCashFlowService(): CashFlowService {
   const invoiceRepo = new PrismaInvoiceRepository();

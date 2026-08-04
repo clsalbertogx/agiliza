@@ -1,13 +1,13 @@
-import { Either, success, failure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { Client, createClient, MessageChannel } from '@/domain/entities/client';
-import { RiskScore, RiskLevel } from '@/domain/value-objects/risk-score';
-import { Phone } from '@/domain/value-objects/phone';
-import { Email } from '@/domain/value-objects/email';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
+import { type Client, createClient, MessageChannel } from '@/domain/entities/client';
 import { createDomainEvent } from '@/domain/events/domain-events';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { Email } from '@/domain/value-objects/email';
+import { Phone } from '@/domain/value-objects/phone';
+import { RiskLevel, RiskScore } from '@/domain/value-objects/risk-score';
 
 export interface CreateClientInput {
   tenantId: string;
@@ -80,11 +80,15 @@ export class CreateClientUseCase {
     }
 
     // 6. Publish event
-    const event = createDomainEvent('client.created', {
-      clientId: saved.id,
-      tenantId: input.tenantId,
-      metadata: { name: saved.name, phone: saved.phone },
-    }, this.idGenerator.generate());
+    const event = createDomainEvent(
+      'client.created',
+      {
+        clientId: saved.id,
+        tenantId: input.tenantId,
+        metadata: { name: saved.name, phone: saved.phone },
+      },
+      this.idGenerator.generate(),
+    );
     this.eventBus.publish(event);
 
     return success(saved);

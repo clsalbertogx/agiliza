@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { EventMapper, type PersistenceEvent, type DomainEventLog } from '@/infrastructure/database/mappers/event.mapper';
+import { describe, expect, it } from 'vitest';
+import {
+  type DomainEventLog,
+  EventMapper,
+  type PersistenceEvent,
+} from '@/infrastructure/database/mappers/event.mapper';
 
 describe('EventMapper', () => {
   const mapper = new EventMapper();
@@ -9,7 +13,7 @@ describe('EventMapper', () => {
     tenantId: '00000000-0000-0000-0000-000000000002',
     clientId: '00000000-0000-0000-0000-000000000003',
     eventType: 'PAYMENT_CONFIRMED',
-    payload: { amount: 150.50, method: 'PIX' },
+    payload: { amount: 150.5, method: 'PIX' },
     source: 'webhook',
     createdAt: new Date('2026-07-28T10:00:00Z'),
   };
@@ -19,7 +23,7 @@ describe('EventMapper', () => {
     tenantId: '00000000-0000-0000-0000-000000000002',
     clientId: '00000000-0000-0000-0000-000000000003',
     eventType: 'PAYMENT_CONFIRMED',
-    payload: { amount: 150.50, method: 'PIX' },
+    payload: { amount: 150.5, method: 'PIX' },
     source: 'webhook',
     createdAt: new Date('2026-07-28T10:00:00Z'),
   };

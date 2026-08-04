@@ -1,6 +1,6 @@
-import type { DomainMapper } from './mapper.interface';
-import type { Subscription, PersistenceSubscription } from '@/domain/entities/subscription';
+import type { PersistenceSubscription, Subscription } from '@/domain/entities/subscription';
 import { createSubscriptionFromPersistence, subscriptionToPersistence } from '@/domain/entities/subscription';
+import type { DomainMapper } from './mapper.interface';
 
 export type { PersistenceSubscription } from '@/domain/entities/subscription';
 

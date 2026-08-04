@@ -1,5 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { InvoiceStatus, Invoice, invoiceSchema, createInvoice, canTransitionTo, isOverdue } from '@/domain/entities/invoice';
+import { describe, expect, it } from 'vitest';
+import {
+  canTransitionTo,
+  createInvoice,
+  type Invoice,
+  InvoiceStatus,
+  invoiceSchema,
+  isOverdue,
+} from '@/domain/entities/invoice';
 
 describe('Invoice Entity', () => {
   describe('Invoice Status Transitions', () => {
@@ -35,29 +42,33 @@ describe('Invoice Entity', () => {
 
   describe('Amount Validation', () => {
     it('should reject invoice with zero amount', () => {
-      expect(() => invoiceSchema.parse({
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000002',
-        clientId: '00000000-0000-0000-0000-000000000003',
-        amount: 0,
-        dueDate: new Date('2026-08-01'),
-        status: 'PENDING',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })).toThrow();
+      expect(() =>
+        invoiceSchema.parse({
+          id: '00000000-0000-0000-0000-000000000001',
+          tenantId: '00000000-0000-0000-0000-000000000002',
+          clientId: '00000000-0000-0000-0000-000000000003',
+          amount: 0,
+          dueDate: new Date('2026-08-01'),
+          status: 'PENDING',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      ).toThrow();
     });
 
     it('should reject invoice with negative amount', () => {
-      expect(() => invoiceSchema.parse({
-        id: '00000000-0000-0000-0000-000000000001',
-        tenantId: '00000000-0000-0000-0000-000000000002',
-        clientId: '00000000-0000-0000-0000-000000000003',
-        amount: -100,
-        dueDate: new Date('2026-08-01'),
-        status: 'PENDING',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })).toThrow();
+      expect(() =>
+        invoiceSchema.parse({
+          id: '00000000-0000-0000-0000-000000000001',
+          tenantId: '00000000-0000-0000-0000-000000000002',
+          clientId: '00000000-0000-0000-0000-000000000003',
+          amount: -100,
+          dueDate: new Date('2026-08-01'),
+          status: 'PENDING',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      ).toThrow();
     });
 
     it('should accept invoice with valid positive amount', () => {
@@ -65,13 +76,13 @@ describe('Invoice Entity', () => {
         id: '00000000-0000-0000-0000-000000000001',
         tenantId: '00000000-0000-0000-0000-000000000002',
         clientId: '00000000-0000-0000-0000-000000000003',
-        amount: 150.00,
+        amount: 150.0,
         dueDate: new Date('2026-08-01'),
         status: 'PENDING',
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      expect(invoice.amount).toBe(150.00);
+      expect(invoice.amount).toBe(150.0);
       expect(invoice.status).toBe(InvoiceStatus.PENDING);
     });
 
@@ -97,7 +108,7 @@ describe('Invoice Entity', () => {
         id: '00000000-0000-0000-0000-000000000001',
         tenantId: '00000000-0000-0000-0000-000000000002',
         clientId: '00000000-0000-0000-0000-000000000003',
-        amount: 150.00,
+        amount: 150.0,
         dueDate: new Date('2026-08-01'),
       });
       expect(result.success).toBe(true);
@@ -114,7 +125,7 @@ describe('Invoice Entity', () => {
         id: '00000000-0000-0000-0000-000000000001',
         tenantId: '00000000-0000-0000-0000-000000000002',
         clientId: '00000000-0000-0000-0000-000000000003',
-        amount: 150.00,
+        amount: 150.0,
         dueDate: new Date('2026-08-01'),
       });
       expect(result.success).toBe(true);
@@ -130,7 +141,7 @@ describe('Invoice Entity', () => {
         id: '00000000-0000-0000-0000-000000000001',
         tenantId: '00000000-0000-0000-0000-000000000002',
         clientId: '00000000-0000-0000-0000-000000000003',
-        amount: 150.00,
+        amount: 150.0,
         dueDate: new Date('2024-01-01'), // Past date
         status: InvoiceStatus.PENDING,
         createdAt: new Date(),
@@ -145,7 +156,7 @@ describe('Invoice Entity', () => {
         id: '00000000-0000-0000-0000-000000000001',
         tenantId: '00000000-0000-0000-0000-000000000002',
         clientId: '00000000-0000-0000-0000-000000000003',
-        amount: 150.00,
+        amount: 150.0,
         dueDate: new Date('2024-01-01'),
         status: InvoiceStatus.PAID,
         paidAt: new Date('2024-01-02'),
@@ -162,7 +173,7 @@ describe('Invoice Entity', () => {
         id: '00000000-0000-0000-0000-000000000001',
         tenantId: '00000000-0000-0000-0000-000000000002',
         clientId: '00000000-0000-0000-0000-000000000003',
-        amount: 150.00,
+        amount: 150.0,
         dueDate: new Date('2026-08-01'),
         status: 'PENDING',
         externalPaymentId: 'pay_123',

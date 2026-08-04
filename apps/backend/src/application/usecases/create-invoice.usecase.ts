@@ -1,12 +1,12 @@
-import { Either, success, failure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { Invoice, createInvoice } from '@/domain/entities/invoice';
-import { Money } from '@/domain/value-objects/money';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
+import { createInvoice, type Invoice } from '@/domain/entities/invoice';
 import { createDomainEvent } from '@/domain/events/domain-events';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { Money } from '@/domain/value-objects/money';
 
 export interface CreateInvoiceInput {
   tenantId: string;
@@ -68,12 +68,16 @@ export class CreateInvoiceUseCase {
     }
 
     // 5. Publish event
-    const event = createDomainEvent('invoice.created', {
-      clientId: input.clientId,
-      tenantId: input.tenantId,
-      invoiceId: saved.id,
-      metadata: { amount: saved.amount, dueDate: saved.dueDate.toISOString() },
-    }, this.idGenerator.generate());
+    const event = createDomainEvent(
+      'invoice.created',
+      {
+        clientId: input.clientId,
+        tenantId: input.tenantId,
+        invoiceId: saved.id,
+        metadata: { amount: saved.amount, dueDate: saved.dueDate.toISOString() },
+      },
+      this.idGenerator.generate(),
+    );
     this.eventBus.publish(event);
 
     return success(saved);

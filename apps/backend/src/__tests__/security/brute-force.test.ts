@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('Brute Force Protection — SEC-09', () => {
   it('should rate-limit login endpoint at 20 req/min per IP', () => {
@@ -12,7 +12,7 @@ describe('Brute Force Protection — SEC-09', () => {
     function checkRateLimit(ip: string): boolean {
       const now = Date.now();
       const timestamps = ipRequestTimestamps.get(ip) || [];
-      const recent = timestamps.filter(t => now - t < WINDOW_MS);
+      const recent = timestamps.filter((t) => now - t < WINDOW_MS);
 
       if (recent.length >= AUTH_RATE_LIMIT) {
         return false; // Rate limited
@@ -57,7 +57,11 @@ describe('Brute Force Protection — SEC-09', () => {
 
     const accounts = new Map<string, AccountLockState>();
 
-    function attemptLogin(email: string, password: string, correctPassword: string): { success: boolean; locked: boolean; status: number } {
+    function attemptLogin(
+      email: string,
+      password: string,
+      correctPassword: string,
+    ): { success: boolean; locked: boolean; status: number } {
       const now = Date.now();
       const state = accounts.get(email) || { failedAttempts: 0, lockedUntil: null };
 
@@ -95,7 +99,7 @@ describe('Brute Force Protection — SEC-09', () => {
     const correctPassword = 'correct-password';
 
     // When 4 consecutive login attempts fail (4 < 5, still not locked)
-    let result;
+    let result: { success: boolean; locked: boolean; status: number };
     for (let i = 0; i < 4; i++) {
       result = attemptLogin(email, 'wrong-password', correctPassword);
     }
@@ -124,7 +128,12 @@ describe('Brute Force Protection — SEC-09', () => {
     // Global lockout state keyed by account (email), NOT by IP
     const accountLockState = new Map<string, { failedAttempts: number; lockedUntil: number | null }>();
 
-    function attemptLogin(email: string, password: string, correctPassword: string, ip: string): { success: boolean; status: number } {
+    function attemptLogin(
+      email: string,
+      password: string,
+      correctPassword: string,
+      ip: string,
+    ): { success: boolean; status: number } {
       const now = Date.now();
       const state = accountLockState.get(email) || { failedAttempts: 0, lockedUntil: null };
 
@@ -179,7 +188,11 @@ describe('Brute Force Protection — SEC-09', () => {
 
     const accounts = new Map<string, AccountState>();
 
-    function attemptLogin(email: string, password: string, correctPassword: string): { success: boolean; status: number } {
+    function attemptLogin(
+      email: string,
+      password: string,
+      correctPassword: string,
+    ): { success: boolean; status: number } {
       const now = Date.now();
       const state = accounts.get(email) || { failedAttempts: 0, lockedUntil: null };
 

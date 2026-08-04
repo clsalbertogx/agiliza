@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { RiskScore, RiskLevel } from '@/domain/value-objects/risk-score';
+import { describe, expect, it } from 'vitest';
 import { DomainError } from '@/domain/errors/domain-error';
+import { RiskLevel, RiskScore } from '@/domain/value-objects/risk-score';
 
 describe('RiskScore Value Object', () => {
   describe('creation', () => {
@@ -36,27 +36,19 @@ describe('RiskScore Value Object', () => {
 
   describe('validation', () => {
     it('should throw DomainError for probability > 1', () => {
-      expect(() =>
-        RiskScore.create({ level: RiskLevel.HIGH, probability: 1.5 })
-      ).toThrow(DomainError);
+      expect(() => RiskScore.create({ level: RiskLevel.HIGH, probability: 1.5 })).toThrow(DomainError);
     });
 
     it('should throw DomainError for probability < 0', () => {
-      expect(() =>
-        RiskScore.create({ level: RiskLevel.LOW, probability: -0.1 })
-      ).toThrow(DomainError);
+      expect(() => RiskScore.create({ level: RiskLevel.LOW, probability: -0.1 })).toThrow(DomainError);
     });
 
     it('should throw DomainError for NaN probability', () => {
-      expect(() =>
-        RiskScore.create({ level: RiskLevel.LOW, probability: NaN })
-      ).toThrow(DomainError);
+      expect(() => RiskScore.create({ level: RiskLevel.LOW, probability: NaN })).toThrow(DomainError);
     });
 
     it('should throw DomainError for Infinity probability', () => {
-      expect(() =>
-        RiskScore.create({ level: RiskLevel.LOW, probability: Infinity })
-      ).toThrow(DomainError);
+      expect(() => RiskScore.create({ level: RiskLevel.LOW, probability: Infinity })).toThrow(DomainError);
     });
 
     it('should throw DomainError for invalid RiskLevel', () => {
@@ -64,7 +56,7 @@ describe('RiskScore Value Object', () => {
         RiskScore.create({
           level: 'INVALID' as RiskLevel,
           probability: 0.5,
-        })
+        }),
       ).toThrow(DomainError);
     });
   });

@@ -1,11 +1,17 @@
-import { Either, success, failure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { Subscription, SubscriptionStatus, renewSubscription, isInGracePeriod, hasActiveTrial } from '@/domain/entities/subscription';
-import { calculateNextBilling } from '@/domain/services/billing-cycle.service';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
+import {
+  hasActiveTrial,
+  isInGracePeriod,
+  renewSubscription,
+  type Subscription,
+  SubscriptionStatus,
+} from '@/domain/entities/subscription';
 import { createDomainEvent } from '@/domain/events/domain-events';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { calculateNextBilling } from '@/domain/services/billing-cycle.service';
 
 export interface RenewSubscriptionInput {
   subscriptionId: string;
@@ -29,11 +35,7 @@ export class RenewSubscriptionUseCase {
     // 2. Check if still in trial — cannot renew while in trial
     if (hasActiveTrial(subscription)) {
       return failure(
-        new ApplicationError(
-          'Subscription is still in trial period and cannot be renewed',
-          'INVALID_STATUS',
-          409,
-        ),
+        new ApplicationError('Subscription is still in trial period and cannot be renewed', 'INVALID_STATUS', 409),
       );
     }
 
@@ -66,10 +68,7 @@ export class RenewSubscriptionUseCase {
     }
 
     // 5. Calculate next billing date
-    const nextBilling = calculateNextBilling(
-      subscription.nextBilling,
-      subscription.billingCycle,
-    );
+    const nextBilling = calculateNextBilling(subscription.nextBilling, subscription.billingCycle);
 
     // 6. Apply domain logic — reset ACTIVE and update billing
     const updated = renewSubscription(

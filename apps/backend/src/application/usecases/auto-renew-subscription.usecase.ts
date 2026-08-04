@@ -1,14 +1,14 @@
-import { Either, success, failure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
-import { GracePeriodService } from '@/domain/services/grace-period.service';
-import { calculateNextBilling } from '@/domain/services/billing-cycle.service';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
 import { createInvoice, type Invoice } from '@/domain/entities/invoice';
+import { type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
 import { createDomainEvent } from '@/domain/events/domain-events';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { calculateNextBilling } from '@/domain/services/billing-cycle.service';
+import { GracePeriodService } from '@/domain/services/grace-period.service';
 
 export interface AutoRenewSubscriptionInput {
   subscriptionId: string;
@@ -32,26 +32,19 @@ export class AutoRenewSubscriptionUseCase {
 
     // 2. Check if auto-renew is enabled
     if (subscription.autoRenew === false) {
-      return failure(
-        new ApplicationError('Auto-renew is disabled for this subscription', 'AUTO_RENEW_DISABLED', 409),
-      );
+      return failure(new ApplicationError('Auto-renew is disabled for this subscription', 'AUTO_RENEW_DISABLED', 409));
     }
 
     // 3. Check if still in trial — do not charge during trial
     if (GracePeriodService.hasActiveTrial(subscription)) {
-      return failure(
-        new ApplicationError('Subscription is still in trial period', 'TRIAL_ACTIVE', 409),
-      );
+      return failure(new ApplicationError('Subscription is still in trial period', 'TRIAL_ACTIVE', 409));
     }
 
     // 4. Check if in grace period — allow renewal without service interruption
     const inGracePeriod = GracePeriodService.isInGracePeriod(subscription);
 
     // 5. Verify subscription is in a renewable state
-    if (
-      subscription.status !== SubscriptionStatus.ACTIVE &&
-      subscription.status !== SubscriptionStatus.GRACE_PERIOD
-    ) {
+    if (subscription.status !== SubscriptionStatus.ACTIVE && subscription.status !== SubscriptionStatus.GRACE_PERIOD) {
       return failure(
         new ApplicationError(
           `Cannot auto-renew subscription with status ${subscription.status}`,
@@ -62,10 +55,7 @@ export class AutoRenewSubscriptionUseCase {
     }
 
     // 6. Calculate next billing date
-    const nextBilling = calculateNextBilling(
-      subscription.nextBilling,
-      subscription.billingCycle,
-    );
+    const nextBilling = calculateNextBilling(subscription.nextBilling, subscription.billingCycle);
 
     // 7. Create renewal invoice
     const invoiceResult = await this.createRenewalInvoice(subscription, inGracePeriod);
@@ -74,20 +64,21 @@ export class AutoRenewSubscriptionUseCase {
     }
 
     // 8. Update subscription — if was in grace period, clear grace period data
-    const updated = subscription.status === SubscriptionStatus.GRACE_PERIOD
-      ? {
-          ...subscription,
-          status: SubscriptionStatus.ACTIVE,
-          nextBilling,
-          gracePeriodEndsAt: undefined,
-          gracePeriodDays: undefined,
-          updatedAt: new Date(),
-        }
-      : {
-          ...subscription,
-          nextBilling,
-          updatedAt: new Date(),
-        };
+    const updated =
+      subscription.status === SubscriptionStatus.GRACE_PERIOD
+        ? {
+            ...subscription,
+            status: SubscriptionStatus.ACTIVE,
+            nextBilling,
+            gracePeriodEndsAt: undefined,
+            gracePeriodDays: undefined,
+            updatedAt: new Date(),
+          }
+        : {
+            ...subscription,
+            nextBilling,
+            updatedAt: new Date(),
+          };
 
     let saved: Subscription;
     try {

@@ -1,10 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {
-  MessageTracking,
-  type MessageDetails,
-  type MessageTrackingEvent,
-} from '@/components/message-tracking';
+import { type MessageDetails, MessageTracking, type MessageTrackingEvent } from '@/components/message-tracking';
 
 function makeEvent(
   event: MessageTrackingEvent['event'],
@@ -58,20 +54,10 @@ describe('MessageTracking', () => {
     });
 
     it('deve renderizar os canais "Email" e "SMS"', () => {
-      const { rerender } = render(
-        <MessageTracking
-          messageId="msg-email"
-          data={makeData({ channel: 'email' })}
-        />,
-      );
+      const { rerender } = render(<MessageTracking messageId="msg-email" data={makeData({ channel: 'email' })} />);
       expect(screen.getByText('Email')).toBeInTheDocument();
 
-      rerender(
-        <MessageTracking
-          messageId="msg-sms"
-          data={makeData({ channel: 'sms' })}
-        />,
-      );
+      rerender(<MessageTracking messageId="msg-sms" data={makeData({ channel: 'sms' })} />);
       expect(screen.getByText('SMS')).toBeInTheDocument();
     });
 
@@ -97,9 +83,7 @@ describe('MessageTracking', () => {
     it('deve renderizar a lista com aria-label "Linha do tempo da mensagem"', () => {
       render(<MessageTracking {...defaultProps} />);
 
-      expect(
-        screen.getByRole('list', { name: 'Linha do tempo da mensagem' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('list', { name: 'Linha do tempo da mensagem' })).toBeInTheDocument();
     });
 
     it('deve renderizar o label de cada evento realizado', () => {
@@ -182,9 +166,7 @@ describe('MessageTracking', () => {
     it('deve marcar o nó do evento failed com role="alert"', () => {
       const data = makeData({
         status: 'failed',
-        events: [
-          makeEvent('failed', { metadata: { error: 'HTTP 500' } }),
-        ],
+        events: [makeEvent('failed', { metadata: { error: 'HTTP 500' } })],
       });
 
       render(<MessageTracking messageId="msg-failed" data={data} />);
@@ -195,9 +177,7 @@ describe('MessageTracking', () => {
     it('deve exibir a mensagem de erro do metadata no nó failed', () => {
       const data = makeData({
         status: 'failed',
-        events: [
-          makeEvent('failed', { metadata: { error: 'Endpoint indisponível' } }),
-        ],
+        events: [makeEvent('failed', { metadata: { error: 'Endpoint indisponível' } })],
       });
 
       render(<MessageTracking messageId="msg-failed" data={data} />);
@@ -236,17 +216,13 @@ describe('MessageTracking', () => {
       render(<MessageTracking {...defaultProps} data={data} />);
 
       expect(screen.getByText('Conteúdo da Mensagem')).toBeInTheDocument();
-      expect(
-        screen.getByText(/Olá, sua fatura vence amanhã/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Olá, sua fatura vence amanhã/)).toBeInTheDocument();
     });
 
     it('não deve renderizar a seção de conteúdo quando content não é fornecido', () => {
       render(<MessageTracking {...defaultProps} />);
 
-      expect(
-        screen.queryByText('Conteúdo da Mensagem'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Conteúdo da Mensagem')).not.toBeInTheDocument();
     });
   });
 
@@ -294,33 +270,18 @@ describe('MessageTracking', () => {
 
   describe('error state', () => {
     it('deve exibir mensagem de erro quando error é fornecido', () => {
-      render(
-        <MessageTracking
-          {...defaultProps}
-          error="Erro ao carregar rastreamento"
-        />,
-      );
+      render(<MessageTracking {...defaultProps} error="Erro ao carregar rastreamento" />);
 
       expect(screen.getByRole('alert')).toBeInTheDocument();
-      expect(
-        screen.getByText('Erro ao carregar rastreamento'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar rastreamento')).toBeInTheDocument();
     });
 
     it('deve chamar onRetry ao clicar em "Tentar novamente"', async () => {
       const onRetry = vi.fn();
       const user = userEvent.setup();
-      render(
-        <MessageTracking
-          {...defaultProps}
-          error="Falha na conexão"
-          onRetry={onRetry}
-        />,
-      );
+      render(<MessageTracking {...defaultProps} error="Falha na conexão" onRetry={onRetry} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /tentar novamente/i }),
-      );
+      await user.click(screen.getByRole('button', { name: /tentar novamente/i }));
 
       expect(onRetry).toHaveBeenCalledOnce();
     });

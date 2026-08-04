@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Either, isSuccess, isFailure } from '@/application/types/either';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { Invoice, createInvoice, InvoiceStatus } from '@/domain/entities/invoice';
-import { Client, createClient, MessageChannel, RiskScore } from '@/domain/entities/client';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import { Either, isFailure, isSuccess } from '@/application/types/either';
+import { type CreateInvoiceInput, CreateInvoiceUseCase } from '@/application/usecases/create-invoice.usecase';
+import { type Client, createClient, MessageChannel, RiskScore } from '@/domain/entities/client';
+import { createInvoice, type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 import { Money } from '@/domain/value-objects/money';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { CreateInvoiceUseCase, CreateInvoiceInput } from '@/application/usecases/create-invoice.usecase';
 
 const mockInvoiceRepo: InvoiceRepositoryPort = {
   findById: vi.fn(),
@@ -51,7 +51,7 @@ describe('CreateInvoiceUseCase', () => {
   const validInput: CreateInvoiceInput = {
     tenantId: TENANT_ID,
     clientId: CLIENT_ID,
-    amount: 150.00,
+    amount: 150.0,
     dueDate: new Date('2026-08-15'),
     description: 'Test invoice',
   };
@@ -83,7 +83,7 @@ describe('CreateInvoiceUseCase', () => {
 
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
-        expect(result.value.amount).toBe(150.00);
+        expect(result.value.amount).toBe(150.0);
         expect(result.value.dueDate).toEqual(new Date('2026-08-15'));
         expect(result.value.description).toBe('Test invoice');
         expect(result.value.status).toBe(InvoiceStatus.PENDING);
@@ -96,7 +96,7 @@ describe('CreateInvoiceUseCase', () => {
       const minimalInput: CreateInvoiceInput = {
         tenantId: TENANT_ID,
         clientId: CLIENT_ID,
-        amount: 100.00,
+        amount: 100.0,
         dueDate: new Date('2026-08-15'),
       };
 
@@ -107,7 +107,7 @@ describe('CreateInvoiceUseCase', () => {
 
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
-        expect(result.value.amount).toBe(100.00);
+        expect(result.value.amount).toBe(100.0);
         expect(result.value.description).toBeUndefined();
       }
     });
@@ -125,7 +125,7 @@ describe('CreateInvoiceUseCase', () => {
       expect(publishedEvent.tenantId).toBe(TENANT_ID);
       expect(publishedEvent.invoiceId).toBeDefined();
       expect(publishedEvent.metadata).toEqual({
-        amount: 150.00,
+        amount: 150.0,
         dueDate: new Date('2026-08-15').toISOString(),
       });
     });

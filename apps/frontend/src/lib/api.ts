@@ -29,7 +29,9 @@ export async function apiClient<T = any>(endpoint: string, options: FetchOptions
 
 export const api = {
   get: <T = any>(endpoint: string, params?: Record<string, string>) => apiClient<T>(endpoint, { params }),
-  post: <T = any>(endpoint: string, body?: any) => apiClient<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  post: <T = any>(endpoint: string, body?: any) =>
+    apiClient<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
   put: <T = any>(endpoint: string, body?: any) => apiClient<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
-  patch: <T = any>(endpoint: string, body?: any) => apiClient<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),
+  patch: <T = any>(endpoint: string, body?: any) =>
+    apiClient<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),
 };

@@ -1,8 +1,8 @@
-import { getPrismaClient } from '@/infrastructure/database/prisma.service';
-import { getTransaction } from '@/infrastructure/database/unit-of-work';
 import type { TenantRepositoryPort } from '@/application/ports/repositories/tenant.repository.port';
 import type { Tenant } from '@/domain/entities/tenant';
-import { TenantMapper, type PersistenceTenant } from '@/infrastructure/database/mappers/tenant.mapper';
+import { type PersistenceTenant, TenantMapper } from '@/infrastructure/database/mappers/tenant.mapper';
+import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import { getTransaction } from '@/infrastructure/database/unit-of-work';
 
 /**
  * Port-compliant Prisma tenant repository.

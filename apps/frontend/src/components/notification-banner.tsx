@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { AlertTriangle, CheckCircle, Info, Loader2, X, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, AlertTriangle, Info, X, Loader2 } from 'lucide-react';
 
 export type BannerType = 'success' | 'error' | 'warning' | 'info';
 
@@ -112,29 +112,14 @@ export function NotificationBanner({
     >
       <div className="flex items-start gap-3 p-4">
         <div className={`flex-shrink-0 mt-0.5 ${config.iconColor}`}>
-          {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-          ) : (
-            config.icon
-          )}
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : config.icon}
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-semibold ${config.textColor}`}>
-            {isLoading ? 'Processando...' : title}
-          </p>
-          {message && (
-            <p className={`text-sm mt-1 ${config.textColor} opacity-90`}>
-              {message}
-            </p>
-          )}
+          <p className={`text-sm font-semibold ${config.textColor}`}>{isLoading ? 'Processando...' : title}</p>
+          {message && <p className={`text-sm mt-1 ${config.textColor} opacity-90`}>{message}</p>}
           {action && !isLoading && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={action.onClick}
-              className="mt-2"
-            >
+            <Button variant="outline" size="sm" onClick={action.onClick} className="mt-2">
               {action.label}
             </Button>
           )}

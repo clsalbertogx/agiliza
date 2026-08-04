@@ -1,19 +1,19 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ApplicationError } from '@/application/errors/application.error';
+import { AutoPayHandler } from '@/application/events/handlers/auto-pay.handler';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { CreateInvoiceForSubscriptionUseCase } from '@/application/usecases/create-invoice-for-subscription.usecase';
 import type { RecurringInvoiceResult } from '@/application/usecases/create-invoice-for-subscription.usecase';
+import { CreateInvoiceForSubscriptionUseCase } from '@/application/usecases/create-invoice-for-subscription.usecase';
 import { ExpireSubscriptionUseCase } from '@/application/usecases/expire-subscription.usecase';
-import { AutoPayHandler } from '@/application/events/handlers/auto-pay.handler';
-import { Subscription, SubscriptionStatus, BillingCycle } from '@/domain/entities/subscription';
+import { type Client, MessageChannel, RiskScore } from '@/domain/entities/client';
 import { InvoiceStatus } from '@/domain/entities/invoice';
-import { Client, MessageChannel, RiskScore } from '@/domain/entities/client';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
 import type { DomainEvent } from '@/domain/events/domain-events';
-import { success, failure, isSuccess } from '@/domain/types/either';
-import { ApplicationError } from '@/application/errors/application.error';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { failure, isSuccess, success } from '@/domain/types/either';
+import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -29,7 +29,7 @@ function makeActiveSubscription(nextBilling?: Date): Subscription {
     tenantId: TENANT_ID,
     clientId: CLIENT_ID,
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
     status: SubscriptionStatus.ACTIVE,
     nextBilling: nextBilling ?? new Date(),
@@ -96,9 +96,7 @@ function makeEmptyClientRepo(): ClientRepositoryPort {
   };
 }
 
-function makeSubscriptionInvoiceCreatedEvent(
-  overrides: Partial<DomainEvent> = {},
-): DomainEvent {
+function makeSubscriptionInvoiceCreatedEvent(overrides: Partial<DomainEvent> = {}): DomainEvent {
   return {
     eventId: 'evt-auto-123',
     eventType: 'subscription.invoice.created',
@@ -159,12 +157,7 @@ describe('Recurring Billing Flow — Integration', () => {
       const eventSpy = vi.fn();
       eventBus.subscribe('subscription.invoice.created', eventSpy);
 
-      const useCase = new CreateInvoiceForSubscriptionUseCase(
-        subscriptionRepo,
-        invoiceRepo,
-        clientRepo,
-        eventBus,
-      );
+      const useCase = new CreateInvoiceForSubscriptionUseCase(subscriptionRepo, invoiceRepo, clientRepo, eventBus);
 
       const result: RecurringInvoiceResult = await useCase.execute();
 
@@ -179,7 +172,7 @@ describe('Recurring Billing Flow — Integration', () => {
           tenantId: TENANT_ID,
           clientId: CLIENT_ID,
           subscriptionId: SUBSCRIPTION_ID,
-          amount: 99.90,
+          amount: 99.9,
           dueDate: subscription.nextBilling,
           status: InvoiceStatus.PENDING,
         }),
@@ -206,7 +199,7 @@ describe('Recurring Billing Flow — Integration', () => {
             invoiceId: 'generated-invoice-id',
             metadata: expect.objectContaining({
               subscriptionId: SUBSCRIPTION_ID,
-              amount: 99.90,
+              amount: 99.9,
             }),
           }),
         );
@@ -240,11 +233,7 @@ describe('Recurring Billing Flow — Integration', () => {
       const eventSpy = vi.fn();
       eventBus.subscribe('subscription.expired', eventSpy);
 
-      const useCase = new ExpireSubscriptionUseCase(
-        subscriptionRepo,
-        eventBus,
-        idGenerator,
-      );
+      const useCase = new ExpireSubscriptionUseCase(subscriptionRepo, eventBus, idGenerator);
 
       const result = await useCase.execute({
         subscriptionId: SUBSCRIPTION_ID,
@@ -317,9 +306,7 @@ describe('Recurring Billing Flow — Integration', () => {
         tenantId: TENANT_ID,
       });
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.stringContaining('auto-paid successfully'),
-      );
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('auto-paid successfully'));
 
       consoleLogSpy.mockRestore();
     });
@@ -331,9 +318,9 @@ describe('Recurring Billing Flow — Integration', () => {
   describe('AutoPayHandler — payment failure', () => {
     it('should log warning and NOT call renew when payment fails', async () => {
       const processPayment = {
-        execute: vi.fn().mockResolvedValue(
-          failure(new ApplicationError('Payment provider declined', 'PAYMENT_DECLINED', 402)),
-        ),
+        execute: vi
+          .fn()
+          .mockResolvedValue(failure(new ApplicationError('Payment provider declined', 'PAYMENT_DECLINED', 402))),
       };
 
       const renewSubscription = {
@@ -352,9 +339,7 @@ describe('Recurring Billing Flow — Integration', () => {
       expect(renewSubscription.execute).not.toHaveBeenCalled();
 
       // Assert warning was logged (not thrown)
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('auto-pay failed'),
-      );
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('auto-pay failed'));
 
       consoleWarnSpy.mockRestore();
     });
@@ -370,9 +355,7 @@ describe('Recurring Billing Flow — Integration', () => {
 
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
 
-      await expect(
-        handler.handle(makeSubscriptionInvoiceCreatedEvent()),
-      ).rejects.toThrow('Database connection lost');
+      await expect(handler.handle(makeSubscriptionInvoiceCreatedEvent())).rejects.toThrow('Database connection lost');
     });
   });
 
@@ -390,7 +373,7 @@ describe('Recurring Billing Flow — Integration', () => {
           tenantId: TENANT_ID,
           clientId: CLIENT_ID,
           subscriptionId: SUBSCRIPTION_ID,
-          amount: 99.90,
+          amount: 99.9,
           dueDate: subscription.nextBilling,
           description: 'Premium Plan - 2026-07',
           status: InvoiceStatus.PENDING,
@@ -407,12 +390,7 @@ describe('Recurring Billing Flow — Integration', () => {
       const clientRepo = makeEmptyClientRepo();
       const eventBus = new InMemoryEventBus();
 
-      const useCase = new CreateInvoiceForSubscriptionUseCase(
-        subscriptionRepo,
-        invoiceRepo,
-        clientRepo,
-        eventBus,
-      );
+      const useCase = new CreateInvoiceForSubscriptionUseCase(subscriptionRepo, invoiceRepo, clientRepo, eventBus);
 
       const result = await useCase.execute();
 
@@ -440,12 +418,7 @@ describe('Recurring Billing Flow — Integration', () => {
       const clientRepo = makeEmptyClientRepo();
       const eventBus = new InMemoryEventBus();
 
-      const useCase = new CreateInvoiceForSubscriptionUseCase(
-        subscriptionRepo,
-        invoiceRepo,
-        clientRepo,
-        eventBus,
-      );
+      const useCase = new CreateInvoiceForSubscriptionUseCase(subscriptionRepo, invoiceRepo, clientRepo, eventBus);
 
       const result = await useCase.execute();
 

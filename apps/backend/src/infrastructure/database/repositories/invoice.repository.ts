@@ -1,8 +1,8 @@
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { Invoice } from '@/domain/entities/invoice';
+import { InvoiceMapper, type PersistenceInvoice } from '@/infrastructure/database/mappers/invoice.mapper';
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
 import { getTransaction } from '@/infrastructure/database/unit-of-work';
-import { InvoiceMapper, type PersistenceInvoice } from '@/infrastructure/database/mappers/invoice.mapper';
 
 /**
  * Port-compliant Prisma invoice repository.
@@ -115,13 +115,13 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
     const invoices = await this.txClient.invoice.findMany({ where: { tenantId } });
     return {
       total: invoices.length,
-      paid: invoices.filter(i => i.status === 'PAID').length,
-      pending: invoices.filter(i => i.status === 'PENDING').length,
-      overdue: invoices.filter(i => i.status === 'OVERDUE').length,
+      paid: invoices.filter((i) => i.status === 'PAID').length,
+      pending: invoices.filter((i) => i.status === 'PENDING').length,
+      overdue: invoices.filter((i) => i.status === 'OVERDUE').length,
       totalAmount: invoices.reduce((sum, inv) => sum + Number(inv.amount), 0),
-      paidAmount: invoices.filter(i => i.status === 'PAID').reduce((sum, inv) => sum + Number(inv.amount), 0),
-      pendingAmount: invoices.filter(i => i.status === 'PENDING').reduce((sum, inv) => sum + Number(inv.amount), 0),
-      overdueAmount: invoices.filter(i => i.status === 'OVERDUE').reduce((sum, inv) => sum + Number(inv.amount), 0),
+      paidAmount: invoices.filter((i) => i.status === 'PAID').reduce((sum, inv) => sum + Number(inv.amount), 0),
+      pendingAmount: invoices.filter((i) => i.status === 'PENDING').reduce((sum, inv) => sum + Number(inv.amount), 0),
+      overdueAmount: invoices.filter((i) => i.status === 'OVERDUE').reduce((sum, inv) => sum + Number(inv.amount), 0),
     };
   }
 
@@ -182,11 +182,15 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
     }) as Promise<Record<string, unknown>[]>;
   }
 
-  async markAsPaidRaw(id: string, paymentData: {
-    paymentMethod: string;
-    externalPaymentId: string;
-    paidAt: Date;
-  }, tenantId?: string): Promise<Record<string, unknown>> {
+  async markAsPaidRaw(
+    id: string,
+    paymentData: {
+      paymentMethod: string;
+      externalPaymentId: string;
+      paidAt: Date;
+    },
+    tenantId?: string,
+  ): Promise<Record<string, unknown>> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
     return this.txClient.invoice.update({
@@ -211,16 +215,19 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
     const invoices = await this.txClient.invoice.findMany({ where: { tenantId } });
     return {
       total: invoices.length,
-      paid: invoices.filter(i => i.status === 'PAID').length,
-      pending: invoices.filter(i => i.status === 'PENDING').length,
-      overdue: invoices.filter(i => i.status === 'OVERDUE').length,
-      cancelled: invoices.filter(i => i.status === 'CANCELLED').length,
+      paid: invoices.filter((i) => i.status === 'PAID').length,
+      pending: invoices.filter((i) => i.status === 'PENDING').length,
+      overdue: invoices.filter((i) => i.status === 'OVERDUE').length,
+      cancelled: invoices.filter((i) => i.status === 'CANCELLED').length,
       totalInvoiced: invoices.reduce((sum, inv) => sum + Number(inv.amount), 0),
-      totalCollected: invoices.filter(i => i.status === 'PAID').reduce((sum, inv) => sum + Number(inv.amount), 0),
-      totalOutstanding: invoices.filter(i => i.status === 'PENDING' || i.status === 'OVERDUE').reduce((sum, inv) => sum + Number(inv.amount), 0),
-      overdueRate: invoices.length > 0
-        ? Math.round((invoices.filter(i => i.status === 'OVERDUE').length / invoices.length) * 100)
-        : 0,
+      totalCollected: invoices.filter((i) => i.status === 'PAID').reduce((sum, inv) => sum + Number(inv.amount), 0),
+      totalOutstanding: invoices
+        .filter((i) => i.status === 'PENDING' || i.status === 'OVERDUE')
+        .reduce((sum, inv) => sum + Number(inv.amount), 0),
+      overdueRate:
+        invoices.length > 0
+          ? Math.round((invoices.filter((i) => i.status === 'OVERDUE').length / invoices.length) * 100)
+          : 0,
     };
   }
 }

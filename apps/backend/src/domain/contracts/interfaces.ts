@@ -3,11 +3,11 @@
 // Backend mappers/presenters convert domain entities to these shapes.
 
 import {
+  type ClientRiskScore,
+  type InvoiceStatus,
+  type MessageChannel,
+  type PaymentMethod,
   PaymentProvider,
-  PaymentMethod,
-  InvoiceStatus,
-  ClientRiskScore,
-  MessageChannel,
 } from './enums';
 
 /** Client profile as returned by the REST API. */
@@ -54,12 +54,7 @@ export interface Invoice {
 /** Payment-related event visible to the frontend activity feed. */
 export interface PaymentEvent {
   id: string;
-  type:
-    | 'message_sent'
-    | 'message_read'
-    | 'link_clicked'
-    | 'payment_confirmed'
-    | 'payment_failed';
+  type: 'message_sent' | 'message_read' | 'link_clicked' | 'payment_confirmed' | 'payment_failed';
   clientId: string;
   invoiceId?: string;
   timestamp: Date;
@@ -69,9 +64,9 @@ export interface PaymentEvent {
 
 // Re-export enums for convenience when importing interfaces
 export type {
-  PaymentProvider,
-  PaymentMethod,
-  InvoiceStatus,
   ClientRiskScore,
+  InvoiceStatus,
   MessageChannel,
+  PaymentMethod,
+  PaymentProvider,
 } from './enums';

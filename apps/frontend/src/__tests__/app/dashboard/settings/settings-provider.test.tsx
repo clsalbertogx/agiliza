@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGet = vi.hoisted(() => vi.fn());
 const mockPut = vi.hoisted(() => vi.fn());
@@ -34,9 +34,7 @@ describe('SettingsPage — Multi-Provider', () => {
       const select = screen.getByLabelText('Provedor') as HTMLSelectElement;
       const optionValues = Array.from(select.options).map((o) => o.value);
 
-      expect(optionValues).toEqual(
-        expect.arrayContaining(['asaas', 'mercadopago', 'stripe', 'pagbank', 'polar']),
-      );
+      expect(optionValues).toEqual(expect.arrayContaining(['asaas', 'mercadopago', 'stripe', 'pagbank', 'polar']));
       expect(optionValues).toHaveLength(5);
     });
 
@@ -52,9 +50,7 @@ describe('SettingsPage — Multi-Provider', () => {
       const select = screen.getByLabelText('Provedor') as HTMLSelectElement;
       const labels = Array.from(select.options).map((o) => o.text);
 
-      expect(labels).toEqual(
-        expect.arrayContaining(['Asaas', 'Mercado Pago', 'Stripe', 'PagBank', 'Polar']),
-      );
+      expect(labels).toEqual(expect.arrayContaining(['Asaas', 'Mercado Pago', 'Stripe', 'PagBank', 'Polar']));
     });
   });
 

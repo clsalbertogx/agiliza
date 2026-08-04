@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GetNextDecisionUseCase, type GetNextDecisionInput } from '@/application/usecases/get-next-decision.usecase';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { DecisionEngineService, type Decision } from '@/application/services/decision-engine.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
-import { isSuccess, isFailure } from '@/application/types/either';
-import { Client, MessageChannel, RiskScore } from '@/domain/entities/client';
-import { Invoice, InvoiceStatus } from '@/domain/entities/invoice';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { Decision, DecisionEngineService } from '@/application/services/decision-engine.service';
+import { isFailure, isSuccess } from '@/application/types/either';
+import { type GetNextDecisionInput, GetNextDecisionUseCase } from '@/application/usecases/get-next-decision.usecase';
+import { type Client, MessageChannel, RiskScore } from '@/domain/entities/client';
+import { type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
 
 const TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const CLIENT_ID = '00000000-0000-0000-0000-000000000002';

@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ErrorStateProps {
   message: string;
@@ -17,13 +17,9 @@ export function ErrorState({ message, onRetry, details }: ErrorStateProps) {
       aria-live="assertive"
     >
       <AlertTriangle className="w-16 h-16 text-danger-400 mb-4" aria-hidden="true" />
-      <h3 className="text-lg font-semibold text-gray-800 mb-1">
-        Não foi possível carregar os dados
-      </h3>
+      <h3 className="text-lg font-semibold text-gray-800 mb-1">Não foi possível carregar os dados</h3>
       <p className="text-sm text-danger-600 mb-2">{message}</p>
-      {details && (
-        <p className="text-xs text-gray-400 mb-6 max-w-xs">{details}</p>
-      )}
+      {details && <p className="text-xs text-gray-400 mb-6 max-w-xs">{details}</p>}
       {!details && <div className="mb-6" />}
       {onRetry && (
         <Button variant="primary" onClick={onRetry}>

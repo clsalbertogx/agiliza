@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { ProrationService } from '@/domain/services/proration.service';
 
 describe('ProrationService', () => {
@@ -31,15 +31,11 @@ describe('ProrationService', () => {
     });
 
     it('should throw when totalDaysInCycle is 0', () => {
-      expect(() => ProrationService.calculateProratedAmount(100, 5, 0)).toThrow(
-        'totalDaysInCycle must be positive',
-      );
+      expect(() => ProrationService.calculateProratedAmount(100, 5, 0)).toThrow('totalDaysInCycle must be positive');
     });
 
     it('should throw when daysUsed is negative', () => {
-      expect(() => ProrationService.calculateProratedAmount(100, -1, 30)).toThrow(
-        'daysUsed must be non-negative',
-      );
+      expect(() => ProrationService.calculateProratedAmount(100, -1, 30)).toThrow('daysUsed must be non-negative');
     });
 
     it('should handle monthly billing cycle correctly', () => {

@@ -14,6 +14,8 @@ export interface MessageStatusResponse {
 
 export interface MessageProviderPort {
   sendText(params: SendMessageParams): Promise<MessageStatusResponse>;
-  sendTemplate(params: SendMessageParams & { templateName: string; variables: Record<string, string> }): Promise<MessageStatusResponse>;
+  sendTemplate(
+    params: SendMessageParams & { templateName: string; variables: Record<string, string> },
+  ): Promise<MessageStatusResponse>;
   getStatus(externalMessageId: string): Promise<MessageStatusResponse>;
 }

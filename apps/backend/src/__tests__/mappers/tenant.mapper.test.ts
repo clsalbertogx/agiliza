@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { TenantMapper, type PersistenceTenant } from '@/infrastructure/database/mappers/tenant.mapper';
-import type { Tenant, PaymentProvider } from '@/domain/entities/tenant';
+import { describe, expect, it } from 'vitest';
+import type { PaymentProvider, Tenant } from '@/domain/entities/tenant';
+import { type PersistenceTenant, TenantMapper } from '@/infrastructure/database/mappers/tenant.mapper';
 
 describe('TenantMapper', () => {
   const mapper = new TenantMapper();

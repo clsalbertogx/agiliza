@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { SendReceiptHandler } from '@/application/events/handlers/send-receipt.handler';
 import type { DomainEvent } from '@/domain/events/domain-events';
 
@@ -170,9 +170,7 @@ describe('SendReceiptHandler', () => {
 
       invoiceRepo.findById.mockRejectedValue(new Error('Database connection lost'));
 
-      await expect(handler.handle(makePaymentConfirmedEvent())).rejects.toThrow(
-        'Database connection lost',
-      );
+      await expect(handler.handle(makePaymentConfirmedEvent())).rejects.toThrow('Database connection lost');
     });
   });
 });

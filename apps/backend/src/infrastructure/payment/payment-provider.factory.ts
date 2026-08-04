@@ -1,12 +1,12 @@
-import { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
+import type { EncryptionPort } from '@/application/ports/gateways/encryption.port';
+import type { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
+import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
+import { env } from '@/config/env';
 import { AsaasPaymentProvider } from './asaas.provider';
 import { MercadoPagoGateway } from './mercadopago.gateway';
-import { StripeGateway } from './stripe.gateway';
 import { PagBankGateway } from './pagbank.gateway';
 import { PolarGateway } from './polar.gateway';
-import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
-import type { EncryptionPort } from '@/application/ports/gateways/encryption.port';
-import { env } from '@/config/env';
+import { StripeGateway } from './stripe.gateway';
 
 export type ProviderType = 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar';
 
@@ -24,13 +24,7 @@ export interface ProviderConfig {
  * Order in which providers are tried when resolving a tenant's active gateway.
  * Asaas is the default fallback because it was the first provider shipped.
  */
-const PROVIDER_FALLBACK_ORDER: ProviderType[] = [
-  'asaas',
-  'mercadopago',
-  'stripe',
-  'pagbank',
-  'polar',
-];
+const PROVIDER_FALLBACK_ORDER: ProviderType[] = ['asaas', 'mercadopago', 'stripe', 'pagbank', 'polar'];
 
 /**
  * Payment Provider Factory — Strategy selector for the payment gateway adapter.
@@ -115,14 +109,9 @@ export class PaymentProviderFactory {
           type: provider,
           apiKey,
           environment: (row.environment as 'sandbox' | 'production') || 'sandbox',
-          webhookSecret: (row as any).webhookSecret
-            ? this.decrypt((row as any).webhookSecret)
-            : undefined,
+          webhookSecret: (row as any).webhookSecret ? this.decrypt((row as any).webhookSecret) : undefined,
         });
-      } catch {
-        // try next provider
-        continue;
-      }
+      } catch {}
     }
 
     return this.envFallback();
@@ -132,10 +121,7 @@ export class PaymentProviderFactory {
    * Create a gateway for a specific provider+tenant combination. Used during
    * onboarding / configuration updates when the user has just chosen a provider.
    */
-  async createForTenantAndProvider(
-    tenantId: string,
-    provider: ProviderType,
-  ): Promise<PaymentGatewayPort | null> {
+  async createForTenantAndProvider(tenantId: string, provider: ProviderType): Promise<PaymentGatewayPort | null> {
     if (!this.configRepo) {
       return this.envFallbackFor(provider);
     }

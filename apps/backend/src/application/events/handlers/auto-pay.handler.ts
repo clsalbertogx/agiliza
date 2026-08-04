@@ -1,8 +1,8 @@
-import { DomainEvent } from '@/domain/events/domain-events';
 import { RetryableWebhookHandler } from '@/application/events/handlers/retryable-webhook-handler';
-import { ProcessPaymentUseCase } from '@/application/usecases/process-payment.usecase';
-import { RenewSubscriptionUseCase } from '@/application/usecases/renew-subscription.usecase';
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
+import type { ProcessPaymentUseCase } from '@/application/usecases/process-payment.usecase';
+import type { RenewSubscriptionUseCase } from '@/application/usecases/renew-subscription.usecase';
+import type { DomainEvent } from '@/domain/events/domain-events';
 
 export class AutoPayHandler extends RetryableWebhookHandler {
   constructor(

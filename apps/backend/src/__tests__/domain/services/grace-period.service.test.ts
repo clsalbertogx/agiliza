@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
 import { GracePeriodService } from '@/domain/services/grace-period.service';
-import { Subscription, SubscriptionStatus, BillingCycle } from '@/domain/entities/subscription';
 
 describe('GracePeriodService', () => {
   const baseSubscription: Subscription = {
@@ -8,7 +8,7 @@ describe('GracePeriodService', () => {
     tenantId: '00000000-0000-0000-0000-000000000010',
     clientId: '00000000-0000-0000-0000-000000000020',
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
     status: SubscriptionStatus.ACTIVE,
     nextBilling: new Date('2026-09-01'),
@@ -121,12 +121,8 @@ describe('GracePeriodService', () => {
 
       expect(result.gracePeriodEndsAt).toBeInstanceOf(Date);
       if (result.gracePeriodEndsAt) {
-        expect(result.gracePeriodEndsAt.getTime()).toBeGreaterThanOrEqual(
-          before.getTime() + 6 * 86400000,
-        );
-        expect(result.gracePeriodEndsAt.getTime()).toBeLessThanOrEqual(
-          after.getTime() + 8 * 86400000,
-        );
+        expect(result.gracePeriodEndsAt.getTime()).toBeGreaterThanOrEqual(before.getTime() + 6 * 86400000);
+        expect(result.gracePeriodEndsAt.getTime()).toBeLessThanOrEqual(after.getTime() + 8 * 86400000);
       }
     });
   });

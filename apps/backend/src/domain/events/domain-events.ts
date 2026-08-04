@@ -1,4 +1,4 @@
-export type DomainEventType = 
+export type DomainEventType =
   | 'payment.confirmed'
   | 'payment.failed'
   | 'invoice.created'
@@ -33,7 +33,7 @@ export interface DomainEvent {
 export function createDomainEvent(
   eventType: DomainEventType,
   data: { clientId: string; tenantId: string; invoiceId?: string; metadata?: Record<string, unknown> },
-  eventId?: string
+  eventId?: string,
 ): DomainEvent {
   return {
     eventId: eventId || 'pending-' + Date.now(),

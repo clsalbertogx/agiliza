@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { StripeGateway, StripeSdk } from '@/infrastructure/payment/stripe.gateway';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { StripeGateway, type StripeSdk } from '@/infrastructure/payment/stripe.gateway';
 
 function buildMockStripe(): StripeSdk {
   return {
@@ -43,7 +43,7 @@ describe('StripeGateway', () => {
       });
 
       const result = await gateway.createPixCharge({
-        amount: 150.00,
+        amount: 150.0,
         description: 'Test PIX',
         externalReference: 'inv-001',
       });
@@ -65,9 +65,9 @@ describe('StripeGateway', () => {
     it('should throw on Stripe API error', async () => {
       stripeMock.paymentIntents.create = vi.fn().mockRejectedValue(new Error('Invalid API key'));
 
-      await expect(
-        gateway.createPixCharge({ amount: 50, description: 'Fail' }),
-      ).rejects.toThrow('Stripe error: Invalid API key');
+      await expect(gateway.createPixCharge({ amount: 50, description: 'Fail' })).rejects.toThrow(
+        'Stripe error: Invalid API key',
+      );
     });
   });
 
@@ -80,7 +80,7 @@ describe('StripeGateway', () => {
       });
 
       const result = await gateway.createCreditCardCharge({
-        amount: 200.00,
+        amount: 200.0,
         description: 'Card test',
         token: 'pm_card_visa',
         installments: 1,
@@ -115,7 +115,7 @@ describe('StripeGateway', () => {
       });
 
       const result = await gateway.createBoletoCharge({
-        amount: 350.00,
+        amount: 350.0,
         description: 'Boleto test',
         payerCpfCnpj: '12345678901',
         payerName: 'Maria Santos',
@@ -168,7 +168,9 @@ describe('StripeGateway', () => {
       stripeMock.webhooks.constructEvent = vi.fn().mockReturnValue({ id: 'evt_123', type: 'payment_intent.succeeded' });
       const result = await gateway.verifyWebhook('stripe', '{"raw":"body"}', 'stripe-signature-value');
       expect(stripeMock.webhooks.constructEvent).toHaveBeenCalledWith(
-        '{"raw":"body"}', 'stripe-signature-value', 'whsec_test',
+        '{"raw":"body"}',
+        'stripe-signature-value',
+        'whsec_test',
       );
       expect(result).toBe(true);
     });
@@ -209,9 +211,7 @@ describe('StripeGateway', () => {
 
   describe('constructor', () => {
     it('should throw if secretKey is empty', () => {
-      expect(() => new StripeGateway({ secretKey: '' })).toThrow(
-        'Stripe secretKey is required',
-      );
+      expect(() => new StripeGateway({ secretKey: '' })).toThrow('Stripe secretKey is required');
     });
   });
 });

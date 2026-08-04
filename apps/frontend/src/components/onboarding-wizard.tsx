@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { Check, ChevronLeft, ChevronRight, Loader2, Mail, MessageCircle, MessageSquare } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
 import { ErrorState } from '@/components/error-state';
-import { MessageCircle, Mail, MessageSquare, Check, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export interface OnboardingWizardData {
   clientId: string;
@@ -64,9 +64,7 @@ export function OnboardingWizard({
   error = null,
 }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [channel, setChannel] = useState<'whatsapp' | 'email' | 'sms'>(
-    initialData?.preferredChannel ?? 'whatsapp'
-  );
+  const [channel, setChannel] = useState<'whatsapp' | 'email' | 'sms'>(initialData?.preferredChannel ?? 'whatsapp');
   const [time, setTime] = useState(initialData?.preferredTime ?? '18:00');
   const [leadDays, setLeadDays] = useState(initialData?.preferredLeadDays ?? 5);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -110,12 +108,7 @@ export function OnboardingWizard({
   }
 
   if (error) {
-    return (
-      <ErrorState
-        message={error || 'Não foi possível carregar dados do cliente'}
-        onRetry={onClose}
-      />
-    );
+    return <ErrorState message={error || 'Não foi possível carregar dados do cliente'} onRetry={onClose} />;
   }
 
   const progressPercent = ((currentStep + 1) / 3) * 100;
@@ -138,9 +131,7 @@ export function OnboardingWizard({
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <span className="text-sm text-gray-500 font-medium whitespace-nowrap">
-            Etapa {currentStep + 1} de 3
-          </span>
+          <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Etapa {currentStep + 1} de 3</span>
         </div>
 
         {/* Step content */}
@@ -150,11 +141,7 @@ export function OnboardingWizard({
           {/* Step 1: Channel */}
           {currentStep === 0 && (
             <div className="space-y-4">
-              <h3
-                ref={stepTitleRef}
-                tabIndex={-1}
-                className="text-lg font-semibold text-gray-900 mb-4 outline-none"
-              >
+              <h3 ref={stepTitleRef} tabIndex={-1} className="text-lg font-semibold text-gray-900 mb-4 outline-none">
                 Qual o canal preferido?
               </h3>
               <div className="space-y-3">
@@ -177,11 +164,7 @@ export function OnboardingWizard({
                       }}
                       className="sr-only"
                     />
-                    <div
-                      className={`flex-shrink-0 ${
-                        channel === option.value ? 'text-primary-600' : 'text-gray-400'
-                      }`}
-                    >
+                    <div className={`flex-shrink-0 ${channel === option.value ? 'text-primary-600' : 'text-gray-400'}`}>
                       {option.icon}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -202,16 +185,10 @@ export function OnboardingWizard({
           {/* Step 2: Time */}
           {currentStep === 1 && (
             <div className="space-y-4">
-              <h3
-                ref={stepTitleRef}
-                tabIndex={-1}
-                className="text-lg font-semibold text-gray-900 mb-4 outline-none"
-              >
+              <h3 ref={stepTitleRef} tabIndex={-1} className="text-lg font-semibold text-gray-900 mb-4 outline-none">
                 Qual o melhor horário?
               </h3>
-              <p className="text-sm text-gray-500 mb-2">
-                Horário que o cliente prefere receber mensagens.
-              </p>
+              <p className="text-sm text-gray-500 mb-2">Horário que o cliente prefere receber mensagens.</p>
               <div className="max-w-xs">
                 <input
                   type="time"
@@ -227,16 +204,10 @@ export function OnboardingWizard({
           {/* Step 3: Lead Days */}
           {currentStep === 2 && (
             <div className="space-y-4">
-              <h3
-                ref={stepTitleRef}
-                tabIndex={-1}
-                className="text-lg font-semibold text-gray-900 mb-4 outline-none"
-              >
+              <h3 ref={stepTitleRef} tabIndex={-1} className="text-lg font-semibold text-gray-900 mb-4 outline-none">
                 Quantos dias antes?
               </h3>
-              <p className="text-sm text-gray-500 mb-2">
-                Quantos dias antes do vencimento iniciar a cobrança?
-              </p>
+              <p className="text-sm text-gray-500 mb-2">Quantos dias antes do vencimento iniciar a cobrança?</p>
               <div className="flex items-center gap-4">
                 <button
                   type="button"
@@ -263,9 +234,7 @@ export function OnboardingWizard({
                 </button>
                 <span className="text-sm text-gray-500">dias</span>
               </div>
-              <p className="text-xs text-gray-400">
-                Mínimo: 1 dia | Máximo: 15 dias
-              </p>
+              <p className="text-xs text-gray-400">Mínimo: 1 dia | Máximo: 15 dias</p>
             </div>
           )}
         </fieldset>
@@ -294,11 +263,7 @@ export function OnboardingWizard({
                 <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </Button>
             ) : (
-              <Button
-                variant="primary"
-                onClick={handleComplete}
-                disabled={isCompleting}
-              >
+              <Button variant="primary" onClick={handleComplete} disabled={isCompleting}>
                 {isCompleting ? (
                   <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                 ) : (

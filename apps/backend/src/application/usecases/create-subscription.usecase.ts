@@ -1,11 +1,11 @@
-import { Either, success, failure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { Subscription, createSubscription, BillingCycle } from '@/domain/entities/subscription';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
+import { BillingCycle, createSubscription, type Subscription } from '@/domain/entities/subscription';
 import { createDomainEvent } from '@/domain/events/domain-events';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 export interface CreateSubscriptionInput {
   tenantId: string;
@@ -65,16 +65,20 @@ export class CreateSubscriptionUseCase {
     }
 
     // 5. Publish event
-    const event = createDomainEvent('subscription.created', {
-      clientId: input.clientId,
-      tenantId: input.tenantId,
-      metadata: {
-        subscriptionId: saved.id,
-        plan: saved.plan,
-        amount: saved.amount,
-        billingCycle: saved.billingCycle,
+    const event = createDomainEvent(
+      'subscription.created',
+      {
+        clientId: input.clientId,
+        tenantId: input.tenantId,
+        metadata: {
+          subscriptionId: saved.id,
+          plan: saved.plan,
+          amount: saved.amount,
+          billingCycle: saved.billingCycle,
+        },
       },
-    }, this.idGenerator.generate());
+      this.idGenerator.generate(),
+    );
     this.eventBus.publish(event);
 
     return success(saved);

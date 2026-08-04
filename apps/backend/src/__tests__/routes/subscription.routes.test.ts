@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
   findById: vi.fn(),
@@ -85,7 +85,7 @@ describe('Subscription API Routes', () => {
     tenantId: TEST_TENANT_ID,
     clientId: TEST_CLIENT_ID,
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: 'MONTHLY',
     status: 'ACTIVE',
     nextBilling: new Date('2026-09-01'),
@@ -109,7 +109,7 @@ describe('Subscription API Routes', () => {
         payload: {
           clientId: TEST_CLIENT_ID,
           plan: 'Premium Plan',
-          amount: 99.90,
+          amount: 99.9,
           billingCycle: 'MONTHLY',
         },
       });
@@ -127,7 +127,7 @@ describe('Subscription API Routes', () => {
         headers: { authorization: validToken },
         payload: {
           clientId: TEST_CLIENT_ID,
-          amount: 99.90,
+          amount: 99.9,
           billingCycle: 'MONTHLY',
         },
       });
@@ -159,7 +159,7 @@ describe('Subscription API Routes', () => {
         payload: {
           clientId: TEST_CLIENT_ID,
           plan: 'Premium',
-          amount: 99.90,
+          amount: 99.9,
           billingCycle: 'INVALID',
         },
       });
@@ -174,7 +174,7 @@ describe('Subscription API Routes', () => {
         payload: {
           clientId: TEST_CLIENT_ID,
           plan: 'Premium Plan',
-          amount: 99.90,
+          amount: 99.9,
           billingCycle: 'MONTHLY',
         },
       });
@@ -449,8 +449,7 @@ describe('Subscription API Routes', () => {
         method: 'PATCH',
         url: `/api/subscriptions/${TEST_SUBSCRIPTION_ID}/auto-renew`,
         headers: { authorization: validToken },
-        payload: {
-        },
+        payload: {},
       });
 
       expect(res.statusCode).toBe(400);

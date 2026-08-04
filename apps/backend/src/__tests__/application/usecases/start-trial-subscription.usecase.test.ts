@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure } from '@/application/types/either';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { isFailure, isSuccess } from '@/application/types/either';
 import { StartTrialSubscriptionUseCase } from '@/application/usecases/start-trial-subscription.usecase';
-import { SubscriptionStatus, BillingCycle, type Subscription } from '@/domain/entities/subscription';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 describe('StartTrialSubscriptionUseCase', () => {
   let useCase: StartTrialSubscriptionUseCase;
@@ -23,7 +23,7 @@ describe('StartTrialSubscriptionUseCase', () => {
     tenantId: '00000000-0000-0000-0000-000000000001',
     clientId: '00000000-0000-0000-0000-000000000002',
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
     status: SubscriptionStatus.ACTIVE,
     nextBilling: new Date('2026-09-01'),
@@ -55,11 +55,7 @@ describe('StartTrialSubscriptionUseCase', () => {
       validate: vi.fn().mockReturnValue(true),
     };
 
-    useCase = new StartTrialSubscriptionUseCase(
-      mockSubscriptionRepo,
-      mockEventBus,
-      mockIdGenerator,
-    );
+    useCase = new StartTrialSubscriptionUseCase(mockSubscriptionRepo, mockEventBus, mockIdGenerator);
   });
 
   it('should start a trial on an active subscription', async () => {

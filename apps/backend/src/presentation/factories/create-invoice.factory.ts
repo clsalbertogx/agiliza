@@ -1,6 +1,6 @@
 import { CreateInvoiceUseCase } from '@/application/usecases/create-invoice.usecase';
-import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
 import { PrismaClientRepository } from '@/infrastructure/database/repositories/client.repository';
+import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
 import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 import { UuidV7Generator } from '@/infrastructure/uuid/uuid-v7-generator';
 

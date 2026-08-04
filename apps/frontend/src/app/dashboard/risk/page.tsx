@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ClientCard } from '@/components/client-card';
-import { RiskBadge } from '@/components/risk-badge';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { EmptyState } from '@/components/empty-state';
 import { Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ClientCard } from '@/components/client-card';
+import { EmptyState } from '@/components/empty-state';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { RiskBadge } from '@/components/risk-badge';
 
 interface Client {
   name: string;
@@ -23,7 +23,7 @@ export default function RiskPage() {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333'}/api/clients/risk?tenantId=demo`,
-          { headers: { Authorization: 'ApiKey dev-key' } }
+          { headers: { Authorization: 'ApiKey dev-key' } },
         );
         if (res.ok) {
           const json = await res.json();
@@ -81,11 +81,11 @@ export default function RiskPage() {
         </div>
         <div className="bg-warning-50 border border-warning-200 rounded-xl p-6">
           <p className="text-lg font-bold text-warning-800">{yellowCount} clientes</p>
-          <RiskBadge level="yellow" probability={0.50} reason="Pagamentos ocasionalmente atrasados" />
+          <RiskBadge level="yellow" probability={0.5} reason="Pagamentos ocasionalmente atrasados" />
         </div>
         <div className="bg-danger-50 border border-danger-200 rounded-xl p-6">
           <p className="text-lg font-bold text-danger-800">{redCount} clientes</p>
-          <RiskBadge level="red" probability={0.20} reason="Atraso recorrente acima de 30 dias" />
+          <RiskBadge level="red" probability={0.2} reason="Atraso recorrente acima de 30 dias" />
         </div>
       </div>
 

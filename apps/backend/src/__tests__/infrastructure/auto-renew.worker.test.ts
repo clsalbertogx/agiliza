@@ -1,17 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Queue, Worker, type Job, type RepeatableJob } from 'bullmq';
-import { AutoRenewSubscriptionUseCase } from '@/application/usecases/auto-renew-subscription.usecase';
-import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { Subscription, SubscriptionStatus, BillingCycle } from '@/domain/entities/subscription';
-import { success, failure } from '@/application/types/either';
+import { type Job, Queue, type RepeatableJob, Worker } from 'bullmq';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { failure, success } from '@/application/types/either';
+import { AutoRenewSubscriptionUseCase } from '@/application/usecases/auto-renew-subscription.usecase';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 import {
   createAutoRenewQueue,
-  scheduleAutoRenewJob,
   renewDueSubscriptions,
+  scheduleAutoRenewJob,
   startAutoRenewWorker,
 } from '@/infrastructure/queue/auto-renew.worker';
 
@@ -61,9 +61,7 @@ function makeSubscription(overrides: Partial<Subscription> = {}): Subscription {
   };
 }
 
-function makeSubscriptionRepoMock(
-  dueForRenewal: Subscription[] = [],
-): SubscriptionRepositoryPort {
+function makeSubscriptionRepoMock(dueForRenewal: Subscription[] = []): SubscriptionRepositoryPort {
   return {
     create: vi.fn(),
     findById: vi.fn(),
@@ -131,10 +129,7 @@ describe('auto-renew worker', () => {
     it('should create a BullMQ queue named auto-renew with the Redis connection', () => {
       createAutoRenewQueue();
 
-      expect(Queue).toHaveBeenCalledWith(
-        'auto-renew',
-        expect.objectContaining({ connection: expect.anything() }),
-      );
+      expect(Queue).toHaveBeenCalledWith('auto-renew', expect.objectContaining({ connection: expect.anything() }));
     });
   });
 

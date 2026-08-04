@@ -1,5 +1,5 @@
-import type { DomainEvent } from '@/domain/events/domain-events';
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
+import type { DomainEvent } from '@/domain/events/domain-events';
 
 /**
  * Base class for domain event handlers that need retry-with-backoff
@@ -34,7 +34,7 @@ export abstract class RetryableWebhookHandler {
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       if (attempt < this.maxRetries) {
-        const delay = this.baseDelayMs * Math.pow(2, attempt); // 2s, 4s, 8s, 16s, 32s
+        const delay = this.baseDelayMs * 2 ** attempt; // 2s, 4s, 8s, 16s, 32s
         console.warn(`[${this.constructor.name}] Attempt ${attempt + 1} failed, retrying in ${delay}ms:`, err);
         await this.delay(delay);
         await this.handleWithRetry(event, attempt + 1);
@@ -47,7 +47,7 @@ export abstract class RetryableWebhookHandler {
   }
 
   protected delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private async sendToDLQ(event: DomainEvent, error: Error): Promise<void> {

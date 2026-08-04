@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
 import { SubscriptionAnalyticsService } from '@/domain/services/subscription-analytics.service';
-import { Subscription, SubscriptionStatus, BillingCycle } from '@/domain/entities/subscription';
 
 function makeSubscription(overrides: Partial<Subscription> = {}): Subscription {
   return {

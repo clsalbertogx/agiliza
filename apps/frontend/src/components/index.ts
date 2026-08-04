@@ -1,96 +1,84 @@
-export { ClientCard } from './client-card';
 export type { ClientCardClient } from './client-card';
-export { InvoiceTable } from './invoice-table';
-export { PaymentStatus } from './payment-status';
-export { RiskBadge } from './risk-badge';
-export { KpiCard } from './kpi-card';
-export { EmptyState } from './empty-state';
-export { ErrorState } from './error-state';
-export { LoadingSkeleton } from './loading-skeleton';
-export { StatCard } from './stat-card';
-export { StatusBadge } from './status-badge';
-export { Sidebar } from './sidebar';
-
-// === Issue #27 — Frontend Component Completion ===
-export { OnboardingWizard } from './onboarding-wizard';
+export { ClientCard } from './client-card';
 export type {
-  OnboardingWizardProps,
-  OnboardingWizardData,
-} from './onboarding-wizard';
-
-export { CollectionTimeline } from './collection-timeline';
+  ClientDetail,
+  ClientDetailCardProps,
+  RiskFeature,
+} from './client-detail-card';
+export { ClientDetailCard } from './client-detail-card';
 export type {
   CollectionTimelineProps,
   TimelineEvent,
 } from './collection-timeline';
-
-export { KanbanBoard } from './kanban-board';
+export { CollectionTimeline } from './collection-timeline';
+export { EmptyState } from './empty-state';
+export { ErrorState } from './error-state';
+export type {
+  ExceptionItem,
+  ExceptionPanelProps,
+  ExceptionSeverity,
+  ExceptionStatus,
+} from './exception-panel';
+export { ExceptionPanel } from './exception-panel';
+export type {
+  InvoiceFormClient,
+  InvoiceFormData,
+  InvoiceFormProps,
+} from './invoice-form';
+export { InvoiceForm } from './invoice-form';
+export { InvoiceTable } from './invoice-table';
 export type {
   KanbanBoardProps,
   KanbanInvoice,
 } from './kanban-board';
-
-export { ReportChart } from './report-chart';
+export { KanbanBoard } from './kanban-board';
+export { KpiCard } from './kpi-card';
+export { LoadingSkeleton } from './loading-skeleton';
 export type {
-  ReportChartProps,
-  ChartType,
-  ChartDataPoint,
-  ChartSeries,
-} from './report-chart';
-
-export { PixPaymentFlow } from './pix-payment-flow';
+  MessageDetails,
+  MessageTrackingEvent,
+  MessageTrackingProps,
+} from './message-tracking';
+export { MessageTracking } from './message-tracking';
 export type {
-  PixPaymentFlowProps,
-  PixData,
-  PaymentPollStatus,
-} from './pix-payment-flow';
-
-export { ClientDetailCard } from './client-detail-card';
+  BannerType,
+  NotificationBannerProps,
+} from './notification-banner';
+export { NotificationBanner } from './notification-banner';
 export type {
-  ClientDetailCardProps,
-  ClientDetail,
-  RiskFeature,
-} from './client-detail-card';
-
-export { InvoiceForm } from './invoice-form';
-export type {
-  InvoiceFormProps,
-  InvoiceFormData,
-  InvoiceFormClient,
-} from './invoice-form';
-
-export { PaymentHistory } from './payment-history';
+  OnboardingWizardData,
+  OnboardingWizardProps,
+} from './onboarding-wizard';
+// === Issue #27 — Frontend Component Completion ===
+export { OnboardingWizard } from './onboarding-wizard';
 export type {
   PaymentHistoryProps,
   PaymentRecord,
 } from './payment-history';
-
-export { MessageTracking } from './message-tracking';
+export { PaymentHistory } from './payment-history';
+export { PaymentStatus } from './payment-status';
 export type {
-  MessageTrackingProps,
-  MessageDetails,
-  MessageTrackingEvent,
-} from './message-tracking';
-
-export { ExceptionPanel } from './exception-panel';
+  PaymentPollStatus,
+  PixData,
+  PixPaymentFlowProps,
+} from './pix-payment-flow';
+export { PixPaymentFlow } from './pix-payment-flow';
 export type {
-  ExceptionPanelProps,
-  ExceptionItem,
-  ExceptionSeverity,
-  ExceptionStatus,
-} from './exception-panel';
-
-export { NotificationBanner } from './notification-banner';
-export type {
-  NotificationBannerProps,
-  BannerType,
-} from './notification-banner';
-
+  ChartDataPoint,
+  ChartSeries,
+  ChartType,
+  ReportChartProps,
+} from './report-chart';
+export { ReportChart } from './report-chart';
+export { RiskBadge } from './risk-badge';
+export { Sidebar } from './sidebar';
+export { StatCard } from './stat-card';
+export { StatusBadge } from './status-badge';
+export type { ButtonProps } from './ui/button';
 // === UI primitives ===
 export { Button, buttonVariants } from './ui/button';
-export type { ButtonProps } from './ui/button';
-export { Input } from './ui/input';
 export type { InputProps } from './ui/input';
+export { Input } from './ui/input';
 export { Label } from './ui/label';
-export { Textarea } from './ui/textarea';
 export type { TextareaProps } from './ui/textarea';
+export { Textarea } from './ui/textarea';

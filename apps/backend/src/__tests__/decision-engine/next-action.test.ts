@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { DecisionEngineService } from '@/application/services/decision-engine.service';
-import { RiskScore, MessageChannel } from '@/domain/entities/client';
+import { MessageChannel, RiskScore } from '@/domain/entities/client';
 import { InvoiceStatus } from '@/domain/entities/invoice';
 
 describe('Next Action Decision', () => {
@@ -24,7 +24,7 @@ describe('Next Action Decision', () => {
     id: '00000000-0000-0000-0000-000000000010',
     tenantId: '00000000-0000-0000-0000-000000000002',
     clientId: '00000000-0000-0000-0000-000000000001',
-    amount: 150.00,
+    amount: 150.0,
     dueDate: new Date('2026-08-04'),
     status: InvoiceStatus.PENDING,
     createdAt: new Date(),
@@ -37,7 +37,7 @@ describe('Next Action Decision', () => {
       const client = makeClient({ preferredTime: '19:00', preferredLeadDays: 3 });
       const invoice = makeInvoice({ dueDate: new Date('2026-08-04T12:00:00Z') });
       const decision = service.decideNextAction(client, invoice, 'default');
-      
+
       // D-3 from Aug 4 = Aug 1, at 19:00
       const expectedDate = new Date('2026-08-01T19:00:00.000Z');
       expect(decision.scheduledAt.getHours()).toBe(19);
@@ -118,7 +118,7 @@ describe('Next Action Decision', () => {
       const invoice = makeInvoice({ dueDate: new Date('2025-01-01') });
       const decision = service.decideNextAction(client, invoice, 'default');
       expect(decision.action).toBe('suggest_call');
-      expect(decision.reasoning.some(r => r.includes('alto risco'))).toBe(true);
+      expect(decision.reasoning.some((r) => r.includes('alto risco'))).toBe(true);
     });
 
     it('should suggest offer_parcel when invoice amount > 50% of client average', () => {
@@ -245,7 +245,7 @@ describe('Next Action Decision', () => {
       const invoice = makeInvoice();
       const decision = service.decideNextAction(client, invoice, 'default');
       expect(decision.action).toBe('send_reminder');
-      
+
       // If risk changes, decision changes
       const riskyClient = makeClient({ riskScore: RiskScore.RED });
       const riskyDecision = service.decideNextAction(riskyClient, invoice, 'default');

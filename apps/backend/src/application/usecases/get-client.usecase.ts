@@ -1,6 +1,6 @@
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import { ApplicationError } from '@/application/errors/application.error';
-import { Either, success, failure } from '@/application/types/either';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
 import type { Client } from '@/domain/entities/client';
 
 export interface GetClientInput {

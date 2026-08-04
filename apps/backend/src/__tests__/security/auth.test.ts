@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
-import { createToken, verifyToken, validateApiKey } from '@/infrastructure/auth';
+import { describe, expect, it, vi } from 'vitest';
+import { createToken, validateApiKey, verifyToken } from '@/infrastructure/auth';
 
 /** Helper: sign header.body with HMAC-SHA256 (mirrors jwt.strategy.ts) */
 function sign(header: string, body: string, secret: string): string {
@@ -30,13 +30,15 @@ describe('Authentication — SEC-01', () => {
       // Create a token with a past expiry manually
       const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const pastTimestamp = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
-      const body = Buffer.from(JSON.stringify({
-        tenantId: 'tenant-123',
-        userId: 'user-456',
-        role: 'owner',
-        iat: pastTimestamp - 86400,
-        exp: pastTimestamp,
-      })).toString('base64url');
+      const body = Buffer.from(
+        JSON.stringify({
+          tenantId: 'tenant-123',
+          userId: 'user-456',
+          role: 'owner',
+          iat: pastTimestamp - 86400,
+          exp: pastTimestamp,
+        }),
+      ).toString('base64url');
       const signature = sign(header, body, TEST_SECRET);
       const expiredToken = `${header}.${body}.${signature}`;
 
@@ -61,13 +63,15 @@ describe('Authentication — SEC-01', () => {
     it('should reject JWT with "none" algorithm (signature required)', () => {
       // Given a JWT with algorithm "none" in header and empty signature
       const noneAlgHeader = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
-      const body = Buffer.from(JSON.stringify({
-        tenantId: 'tenant-123',
-        userId: 'user-456',
-        role: 'owner',
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 3600,
-      })).toString('base64url');
+      const body = Buffer.from(
+        JSON.stringify({
+          tenantId: 'tenant-123',
+          userId: 'user-456',
+          role: 'owner',
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 3600,
+        }),
+      ).toString('base64url');
       // "none" algorithm token — empty signature (3rd part is empty)
       const noneAlgToken = `${noneAlgHeader}.${body}.`;
 
@@ -133,7 +137,7 @@ describe('Authentication — SEC-01', () => {
       const healthPath = '/health';
 
       // When checking if health path is in public paths
-      const isPublic = publicPaths.some(path => healthPath.startsWith(path));
+      const isPublic = publicPaths.some((path) => healthPath.startsWith(path));
 
       // Then it should be treated as public (no auth required)
       expect(isPublic).toBe(true);
@@ -267,19 +271,27 @@ describe('Authentication — SEC-01', () => {
     // RBAC permission map from security spec
     const RBAC_MAP: Record<string, string[]> = {
       owner: [
-        'clients:read', 'clients:write',
-        'invoices:read', 'invoices:write',
-        'payments:read', 'payments:write',
-        'messages:read', 'messages:write',
+        'clients:read',
+        'clients:write',
+        'invoices:read',
+        'invoices:write',
+        'payments:read',
+        'payments:write',
+        'messages:read',
+        'messages:write',
         'reports:read',
-        'settings:read', 'settings:write',
+        'settings:read',
+        'settings:write',
         'webhooks:manage',
       ],
       user: [
-        'clients:read', 'clients:write',
-        'invoices:read', 'invoices:write',
+        'clients:read',
+        'clients:write',
+        'invoices:read',
+        'invoices:write',
         'payments:read',
-        'messages:read', 'messages:write',
+        'messages:read',
+        'messages:write',
         'reports:read',
         'settings:read',
       ],
@@ -360,7 +372,7 @@ describe('Tenant Isolation — SEC-08', () => {
 
     // Repository must always filter by tenantId
     function listClients(tenantId: string) {
-      return allClients.filter(c => c.tenantId === tenantId);
+      return allClients.filter((c) => c.tenantId === tenantId);
     }
 
     // When tenant A lists clients
@@ -368,8 +380,8 @@ describe('Tenant Isolation — SEC-08', () => {
 
     // Then only tenant A's clients should be returned
     expect(tenantAClients).toHaveLength(2);
-    expect(tenantAClients.every(c => c.tenantId === 'tenant-a')).toBe(true);
-    expect(tenantAClients.some(c => c.tenantId === 'tenant-b')).toBe(false);
+    expect(tenantAClients.every((c) => c.tenantId === 'tenant-a')).toBe(true);
+    expect(tenantAClients.some((c) => c.tenantId === 'tenant-b')).toBe(false);
   });
 
   it('should return 404 when accessing other tenant invoice', () => {
@@ -403,7 +415,7 @@ describe('Tenant Isolation — SEC-08', () => {
 
     // When processing, the tenantId from auth context is used, NOT from query param
     const effectiveTenantId = authTenantId;
-    const filteredData = data.filter(d => d.tenantId === effectiveTenantId);
+    const filteredData = data.filter((d) => d.tenantId === effectiveTenantId);
 
     // Then data should be scoped to tenant A only
     expect(filteredData).toHaveLength(1);
@@ -429,8 +441,10 @@ describe('Tenant Isolation — SEC-08', () => {
     expect(result).toBe('tenant-a');
 
     // Test that queries WITHOUT tenantId would fail (VETO rule)
-    expect(() => simulatePrismaFindFirst({
-      where: { id: 'client-1' },
-    })).toThrow('VETO: tenantId filter required');
+    expect(() =>
+      simulatePrismaFindFirst({
+        where: { id: 'client-1' },
+      }),
+    ).toThrow('VETO: tenantId filter required');
   });
 });

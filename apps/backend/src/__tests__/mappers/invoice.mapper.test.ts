@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { InvoiceMapper, type PersistenceInvoice } from '@/infrastructure/database/mappers/invoice.mapper';
+import { describe, expect, it } from 'vitest';
 import type { Invoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
+import { InvoiceMapper, type PersistenceInvoice } from '@/infrastructure/database/mappers/invoice.mapper';
 
 describe('InvoiceMapper', () => {
   const mapper = new InvoiceMapper();
@@ -10,7 +10,7 @@ describe('InvoiceMapper', () => {
     tenantId: '00000000-0000-0000-0000-000000000002',
     clientId: '00000000-0000-0000-0000-000000000003',
     subscriptionId: null,
-    amount: 150.50,
+    amount: 150.5,
     dueDate: new Date('2026-08-01T00:00:00Z'),
     description: 'Monthly service fee',
     status: 'PENDING',
@@ -29,7 +29,7 @@ describe('InvoiceMapper', () => {
     id: '00000000-0000-0000-0000-000000000001',
     tenantId: '00000000-0000-0000-0000-000000000002',
     clientId: '00000000-0000-0000-0000-000000000003',
-    amount: 150.50,
+    amount: 150.5,
     dueDate: new Date('2026-08-01T00:00:00Z'),
     description: 'Monthly service fee',
     status: 'PENDING' as InvoiceStatus,

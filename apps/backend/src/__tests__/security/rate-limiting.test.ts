@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import rateLimit from '@fastify/rate-limit';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 /**
  * Rate Limiting — SEC-03
@@ -31,39 +31,51 @@ describe('Rate Limiting — SEC-03', () => {
     });
 
     // ── Health endpoint (high limit) ──
-    app.get('/health', {
-      config: {
-        rateLimit: { max: 1000, timeWindow: '1 minute' },
+    app.get(
+      '/health',
+      {
+        config: {
+          rateLimit: { max: 1000, timeWindow: '1 minute' },
+        },
       },
-    }, async (_req: FastifyRequest, reply: FastifyReply) => {
-      return reply.status(200).send({ status: 'ok' });
-    });
+      async (_req: FastifyRequest, reply: FastifyReply) => {
+        return reply.status(200).send({ status: 'ok' });
+      },
+    );
 
     // ── Auth endpoint (20 req/min per IP) ──
-    app.post('/api/auth/login', {
-      config: {
-        rateLimit: {
-          max: 20,
-          timeWindow: '1 minute',
-          keyGenerator: (req: FastifyRequest) => req.ip,
+    app.post(
+      '/api/auth/login',
+      {
+        config: {
+          rateLimit: {
+            max: 20,
+            timeWindow: '1 minute',
+            keyGenerator: (req: FastifyRequest) => req.ip,
+          },
         },
       },
-    }, async (_req: FastifyRequest, reply: FastifyReply) => {
-      return reply.status(200).send({ token: 'test-token' });
-    });
+      async (_req: FastifyRequest, reply: FastifyReply) => {
+        return reply.status(200).send({ token: 'test-token' });
+      },
+    );
 
     // ── Webhook endpoint (10 req/s per provider IP) ──
-    app.post('/api/webhooks/payment/asaas', {
-      config: {
-        rateLimit: {
-          max: 10,
-          timeWindow: '1 second',
-          keyGenerator: (req: FastifyRequest) => req.ip,
+    app.post(
+      '/api/webhooks/payment/asaas',
+      {
+        config: {
+          rateLimit: {
+            max: 10,
+            timeWindow: '1 second',
+            keyGenerator: (req: FastifyRequest) => req.ip,
+          },
         },
       },
-    }, async (_req: FastifyRequest, reply: FastifyReply) => {
-      return reply.status(200).send({ received: true });
-    });
+      async (_req: FastifyRequest, reply: FastifyReply) => {
+        return reply.status(200).send({ received: true });
+      },
+    );
 
     // ── General API endpoint (global rate limit applies) ──
     app.get('/api/clients', async (_req: FastifyRequest, reply: FastifyReply) => {

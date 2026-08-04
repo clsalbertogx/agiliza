@@ -1,6 +1,6 @@
 import { Queue, Worker } from 'bullmq';
-import { getRedis } from './redis.service';
 import type { CreateInvoiceForSubscriptionUseCase } from '@/application/usecases/create-invoice-for-subscription.usecase';
+import { getRedis } from './redis.service';
 
 const RECURRING_INVOICE_QUEUE = 'recurring-invoices';
 const JOB_NAME = 'generate-recurring-invoices';
@@ -17,11 +17,15 @@ export async function scheduleRecurringInvoiceJob(queue: Queue): Promise<void> {
   }
 
   // Add daily job at 2:00 AM
-  await queue.add(JOB_NAME, {}, {
-    repeat: { pattern: '0 2 * * *' },
-    removeOnComplete: { age: 7 * 24 * 3600 },
-    removeOnFail: { age: 30 * 24 * 3600 },
-  });
+  await queue.add(
+    JOB_NAME,
+    {},
+    {
+      repeat: { pattern: '0 2 * * *' },
+      removeOnComplete: { age: 7 * 24 * 3600 },
+      removeOnFail: { age: 30 * 24 * 3600 },
+    },
+  );
 }
 
 export function startRecurringInvoiceWorker(useCase: CreateInvoiceForSubscriptionUseCase): Worker {
@@ -30,7 +34,9 @@ export function startRecurringInvoiceWorker(useCase: CreateInvoiceForSubscriptio
     async (job) => {
       if (job.name === JOB_NAME) {
         const result = await useCase.execute();
-        console.log(`[RecurringInvoice] Created: ${result.created}, Skipped: ${result.skipped}, Errors: ${result.errors}`);
+        console.log(
+          `[RecurringInvoice] Created: ${result.created}, Skipped: ${result.skipped}, Errors: ${result.errors}`,
+        );
       }
     },
     { connection: getRedis() },

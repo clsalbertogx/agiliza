@@ -41,39 +41,23 @@ function formatDate(dateString: string): string {
 
 export function InvoiceTable({ invoices, onRowClick }: InvoiceTableProps) {
   if (invoices.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500 text-sm">
-        Nenhuma fatura encontrada.
-      </div>
-    );
+    return <div className="text-center py-12 text-gray-500 text-sm">Nenhuma fatura encontrada.</div>;
   }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <th
-            scope="col"
-            className="p-4 text-left text-sm font-medium text-gray-500"
-          >
+          <th scope="col" className="p-4 text-left text-sm font-medium text-gray-500">
             Cliente
           </th>
-          <th
-            scope="col"
-            className="p-4 text-left text-sm font-medium text-gray-500"
-          >
+          <th scope="col" className="p-4 text-left text-sm font-medium text-gray-500">
             Valor
           </th>
-          <th
-            scope="col"
-            className="p-4 text-left text-sm font-medium text-gray-500"
-          >
+          <th scope="col" className="p-4 text-left text-sm font-medium text-gray-500">
             Vencimento
           </th>
-          <th
-            scope="col"
-            className="p-4 text-left text-sm font-medium text-gray-500"
-          >
+          <th scope="col" className="p-4 text-left text-sm font-medium text-gray-500">
             Status
           </th>
         </TableRow>
@@ -95,23 +79,13 @@ export function InvoiceTable({ invoices, onRowClick }: InvoiceTableProps) {
                   }
                 : undefined
             }
-            aria-label={
-              onRowClick ? `Ver fatura de ${invoice.clientName}` : undefined
-            }
+            aria-label={onRowClick ? `Ver fatura de ${invoice.clientName}` : undefined}
           >
-            <TableCell className="font-medium text-gray-900">
-              {invoice.clientName}
-            </TableCell>
-            <TableCell className="text-gray-900 tabular-nums">
-              {formatBRL(invoice.amount)}
-            </TableCell>
-            <TableCell className="text-gray-600">
-              {formatDate(invoice.dueDate)}
-            </TableCell>
+            <TableCell className="font-medium text-gray-900">{invoice.clientName}</TableCell>
+            <TableCell className="text-gray-900 tabular-nums">{formatBRL(invoice.amount)}</TableCell>
+            <TableCell className="text-gray-600">{formatDate(invoice.dueDate)}</TableCell>
             <TableCell>
-              <Badge variant={statusToBadgeVariant[invoice.status]}>
-                {statusLabel[invoice.status]}
-              </Badge>
+              <Badge variant={statusToBadgeVariant[invoice.status]}>{statusLabel[invoice.status]}</Badge>
             </TableCell>
           </TableRow>
         ))}

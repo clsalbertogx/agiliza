@@ -43,13 +43,7 @@ describe('RiskBadge', () => {
     });
 
     it('deve exibir tooltip combinado quando probability e reason são fornecidos', () => {
-      render(
-        <RiskBadge
-          level="red"
-          probability={0.9}
-          reason="Score baixo"
-        />,
-      );
+      render(<RiskBadge level="red" probability={0.9} reason="Score baixo" />);
 
       const tooltip = screen.getByRole('tooltip');
       expect(tooltip).toHaveTextContent('Probabilidade: 90%');

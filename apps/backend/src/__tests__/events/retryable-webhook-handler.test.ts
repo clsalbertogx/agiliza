@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type SpyInstance } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type SpyInstance, vi } from 'vitest';
 import { RetryableWebhookHandler } from '@/application/events/handlers/retryable-webhook-handler';
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
 import type { DomainEvent } from '@/domain/events/domain-events';
@@ -108,10 +108,7 @@ describe('RetryableWebhookHandler', () => {
 
     it('succeeds on the 2nd attempt (1 retry)', async () => {
       const handler = new TestableHandler();
-      handler.onHandle = vi
-        .fn()
-        .mockRejectedValueOnce(new Error('transient'))
-        .mockResolvedValueOnce(undefined);
+      handler.onHandle = vi.fn().mockRejectedValueOnce(new Error('transient')).mockResolvedValueOnce(undefined);
 
       const event = makeEvent();
       await expect(handler.handleWithRetry(event)).resolves.toBeUndefined();
@@ -160,10 +157,7 @@ describe('RetryableWebhookHandler', () => {
 
       expect(handler.handleCallCount.value).toBe(6);
       // The fallback console.error from sendToDLQ fires once after exhaustion.
-      expect(errorSpy).toHaveBeenCalledWith(
-        '[DLQ] Event evt-dlq-123 sent to DLQ:',
-        'no dlq adapter',
-      );
+      expect(errorSpy).toHaveBeenCalledWith('[DLQ] Event evt-dlq-123 sent to DLQ:', 'no dlq adapter');
     });
   });
 

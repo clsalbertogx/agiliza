@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
   findById: vi.fn(),
@@ -48,11 +48,11 @@ describe('Invoice API Routes', () => {
 
   beforeAll(async () => {
     app = Fastify({ logger: false });
-    
+
     app.decorateRequest('tenantId', undefined);
     app.decorateRequest('userId', undefined);
     app.decorateRequest('authPayload', undefined);
-    
+
     app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
       const authHeader = request.headers.authorization;
       if (!authHeader) {
@@ -65,7 +65,7 @@ describe('Invoice API Routes', () => {
       }
       reply.code(401).send({ error: 'Invalid token' });
     });
-    
+
     await app.register(invoiceRoutes);
     await app.ready();
   });
@@ -102,7 +102,7 @@ describe('Invoice API Routes', () => {
     id: TEST_INVOICE_ID,
     tenantId: TEST_TENANT_ID,
     clientId: TEST_CLIENT_ID,
-    amount: 150.00,
+    amount: 150.0,
     dueDate: new Date('2026-08-01'),
     description: 'Test invoice',
     status: 'PENDING',
@@ -131,7 +131,7 @@ describe('Invoice API Routes', () => {
         headers: { authorization: validToken },
         payload: {
           clientId: TEST_CLIENT_ID,
-          amount: 150.00,
+          amount: 150.0,
           dueDate: new Date('2026-08-01T00:00:00Z').toISOString(),
         },
       });
@@ -173,7 +173,7 @@ describe('Invoice API Routes', () => {
         url: '/api/invoices',
         headers: { authorization: validToken },
         payload: {
-          amount: 150.00,
+          amount: 150.0,
           dueDate: new Date().toISOString(),
         },
       });
@@ -187,7 +187,7 @@ describe('Invoice API Routes', () => {
         headers: { authorization: validToken },
         payload: {
           clientId: TEST_CLIENT_ID,
-          amount: 150.00,
+          amount: 150.0,
           dueDate: 'not-a-date',
         },
       });
@@ -201,7 +201,7 @@ describe('Invoice API Routes', () => {
         headers: { authorization: validToken },
         payload: {
           clientId: 'not-a-uuid',
-          amount: 150.00,
+          amount: 150.0,
           dueDate: new Date().toISOString(),
         },
       });
@@ -217,7 +217,7 @@ describe('Invoice API Routes', () => {
         headers: { authorization: validToken },
         payload: {
           clientId: TEST_CLIENT_ID,
-          amount: 150.00,
+          amount: 150.0,
           dueDate: new Date().toISOString(),
         },
       });
@@ -230,7 +230,7 @@ describe('Invoice API Routes', () => {
         url: '/api/invoices',
         payload: {
           clientId: TEST_CLIENT_ID,
-          amount: 150.00,
+          amount: 150.0,
           dueDate: new Date().toISOString(),
         },
       });
@@ -316,7 +316,7 @@ describe('Invoice API Routes', () => {
       // The route calls invoiceRepo.getInvoiceWithClient(id)
       // We can't easily mock this since the repo is instantiated inside the route
       // So let's test the route directly
-      
+
       // Actually the route calls findById for the getInvoiceWithClient via prisma
       // Let me adjust - the invoice route uses invoiceRepo.getInvoiceWithClient
       // I need to intercept the prisma.invoice.findUnique call
@@ -352,13 +352,13 @@ describe('Invoice API Routes', () => {
           id: 'pay-001',
           invoiceId: TEST_INVOICE_ID,
           clientId: TEST_CLIENT_ID,
-          amount: 150.00,
+          amount: 150.0,
           method: 'PIX',
           provider: 'ASAAS',
           providerPaymentId: 'ext_001',
           status: 'CONFIRMED',
-          fee: 1.50,
-          netAmount: 148.50,
+          fee: 1.5,
+          netAmount: 148.5,
           webhookReceivedAt: null,
           webhookRetryCount: 0,
           createdAt: new Date(),

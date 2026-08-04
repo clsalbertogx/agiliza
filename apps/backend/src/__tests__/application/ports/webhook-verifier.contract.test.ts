@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { ApplicationError } from '@/application/errors/application.error';
 import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
 import type { Either } from '@/application/types/either';
-import { ApplicationError } from '@/application/errors/application.error';
 
 describe('WebhookVerifierPort — Contract Test', () => {
   it('should compile with correct verify signature (compile-time check)', () => {

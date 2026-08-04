@@ -49,7 +49,7 @@ async function main() {
       data: {
         tenantId: tenant.id,
         clientId: client.id,
-        amount: 99.90,
+        amount: 99.9,
         dueDate,
         description: 'Mensalidade Premium',
         status: 'PENDING',

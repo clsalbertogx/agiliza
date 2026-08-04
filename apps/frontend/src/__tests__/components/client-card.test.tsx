@@ -39,22 +39,14 @@ describe('ClientCard', () => {
     });
 
     it('deve renderizar label de risco green', () => {
-      render(
-        <ClientCard
-          client={{ ...defaultClient, riskScore: 'green' }}
-        />,
-      );
+      render(<ClientCard client={{ ...defaultClient, riskScore: 'green' }} />);
 
       const riskLabel = screen.getByLabelText('Baixo risco');
       expect(riskLabel).toBeInTheDocument();
     });
 
     it('deve renderizar label de risco red', () => {
-      render(
-        <ClientCard
-          client={{ ...defaultClient, riskScore: 'red' }}
-        />,
-      );
+      render(<ClientCard client={{ ...defaultClient, riskScore: 'red' }} />);
 
       const riskLabel = screen.getByLabelText('Alto risco');
       expect(riskLabel).toBeInTheDocument();
@@ -78,9 +70,7 @@ describe('ClientCard', () => {
     it('deve ter aria-label com nome do cliente quando onSelect é fornecido', () => {
       render(<ClientCard client={defaultClient} onSelect={vi.fn()} />);
 
-      expect(
-        screen.getByLabelText('Ver detalhes de João Silva'),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText('Ver detalhes de João Silva')).toBeInTheDocument();
     });
 
     it('deve chamar onSelect ao clicar no card', async () => {
@@ -126,21 +116,13 @@ describe('ClientCard', () => {
 
   describe('formatação de telefone', () => {
     it('deve formatar telefone com 9 dígitos', () => {
-      render(
-        <ClientCard
-          client={{ ...defaultClient, phone: '11987654321' }}
-        />,
-      );
+      render(<ClientCard client={{ ...defaultClient, phone: '11987654321' }} />);
 
       expect(screen.getByText('(11) 98765-4321')).toBeInTheDocument();
     });
 
     it('deve formatar telefone com 8 dígitos', () => {
-      render(
-        <ClientCard
-          client={{ ...defaultClient, phone: '1133334444' }}
-        />,
-      );
+      render(<ClientCard client={{ ...defaultClient, phone: '1133334444' }} />);
 
       expect(screen.getByText('(11) 3333-4444')).toBeInTheDocument();
     });

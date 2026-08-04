@@ -1,6 +1,6 @@
-import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
-import { ApplicationError } from '@/application/errors/application.error';
-import { Either, success } from '@/application/types/either';
+import type { ApplicationError } from '@/application/errors/application.error';
+import type { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
+import { type Either, success } from '@/application/types/either';
 
 export interface ListPaymentsForInvoiceInput {
   invoiceId: string;

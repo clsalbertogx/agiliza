@@ -1,15 +1,15 @@
-import { generateUUID } from '@/infrastructure/uuid/uuid.service';
-import { Either, success, failure, isFailure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
-import { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
-import { EncryptionPort } from '@/application/ports/gateways/encryption.port';
-import { updateInvoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { EncryptionPort } from '@/application/ports/gateways/encryption.port';
+import type { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
+import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
+import { type Either, failure, isFailure, success } from '@/application/types/either';
+import { InvoiceStatus, PaymentMethod, updateInvoice } from '@/domain/entities/invoice';
 import { createPayment, PaymentProvider } from '@/domain/entities/payment';
+import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 
 export interface ProcessPaymentInput {
   invoiceId: string;
@@ -68,22 +68,23 @@ export class ProcessPaymentUseCase {
             apiKey: decryptedApiKey,
             environment: config.environment,
           });
-          resolvedProvider = provider === 'mercadopago'
-            ? PaymentProvider.MERCADO_PAGO
-            : provider === 'stripe'
-              ? PaymentProvider.STRIPE
-              : provider === 'pagbank'
-                ? PaymentProvider.PAGBANK
-                : provider === 'polar'
-                  ? PaymentProvider.POLAR
-                  : PaymentProvider.ASAAS;
+          resolvedProvider =
+            provider === 'mercadopago'
+              ? PaymentProvider.MERCADO_PAGO
+              : provider === 'stripe'
+                ? PaymentProvider.STRIPE
+                : provider === 'pagbank'
+                  ? PaymentProvider.PAGBANK
+                  : provider === 'polar'
+                    ? PaymentProvider.POLAR
+                    : PaymentProvider.ASAAS;
           break;
         }
       }
     }
 
     // 4. Create PIX charge via payment provider
-    let pixCharge;
+    let pixCharge: PixChargeResponse;
     try {
       pixCharge = await gateway.createPixCharge({
         amount: Number(invoice.amount),
@@ -91,11 +92,13 @@ export class ProcessPaymentUseCase {
         externalReference: invoice.id,
       });
     } catch (error: any) {
-      return failure(new ApplicationError(
-        'Payment provider error: ' + (error.message || 'Unknown error'),
-        'PAYMENT_PROVIDER_ERROR',
-        502,
-      ));
+      return failure(
+        new ApplicationError(
+          'Payment provider error: ' + (error.message || 'Unknown error'),
+          'PAYMENT_PROVIDER_ERROR',
+          502,
+        ),
+      );
     }
 
     // 5. Update invoice with PIX data
@@ -114,7 +117,7 @@ export class ProcessPaymentUseCase {
       invoiceId: input.invoiceId,
       clientId: invoice.clientId,
       amount: Number(invoice.amount),
-       provider: resolvedProvider,
+      provider: resolvedProvider,
       externalId: pixCharge.id,
       paymentMethod: PaymentMethod.PIX,
     });

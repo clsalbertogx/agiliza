@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
   invoiceFindMany: vi.fn(),
@@ -11,7 +11,11 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock('@/infrastructure/database/prisma.service', () => ({
   getPrismaClient: vi.fn(() => ({
-    invoice: { findMany: mockState.invoiceFindMany, count: mockState.invoiceCount, findUnique: mockState.invoiceFindUnique },
+    invoice: {
+      findMany: mockState.invoiceFindMany,
+      count: mockState.invoiceCount,
+      findUnique: mockState.invoiceFindUnique,
+    },
     client: { findMany: mockState.clientFindMany, count: mockState.clientCount },
   })),
 }));
@@ -26,11 +30,11 @@ describe('Report API Routes', () => {
 
   beforeAll(async () => {
     app = Fastify({ logger: false });
-    
+
     app.decorateRequest('tenantId', undefined);
     app.decorateRequest('userId', undefined);
     app.decorateRequest('authPayload', undefined);
-    
+
     app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
       if (!request.headers.authorization) {
         reply.code(401).send({ error: 'Unauthorized' });
@@ -38,7 +42,7 @@ describe('Report API Routes', () => {
       }
       (request as any).tenantId = TEST_TENANT_ID;
     });
-    
+
     await app.register(reportRoutes);
     await app.ready();
   });
@@ -94,9 +98,36 @@ describe('Report API Routes', () => {
       // Provide some paid invoices to establish baseline payment rate
       const now = new Date();
       mockState.invoiceFindMany.mockResolvedValue([
-        { id: '1', tenantId: TEST_TENANT_ID, status: 'PAID', amount: 100, dueDate: new Date('2026-06-01'), clientId: 'c1', createdAt: now, updatedAt: now },
-        { id: '2', tenantId: TEST_TENANT_ID, status: 'PAID', amount: 200, dueDate: new Date('2026-06-15'), clientId: 'c1', createdAt: now, updatedAt: now },
-        { id: '3', tenantId: TEST_TENANT_ID, status: 'PAID', amount: 150, dueDate: new Date('2026-07-01'), clientId: 'c2', createdAt: now, updatedAt: now },
+        {
+          id: '1',
+          tenantId: TEST_TENANT_ID,
+          status: 'PAID',
+          amount: 100,
+          dueDate: new Date('2026-06-01'),
+          clientId: 'c1',
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: '2',
+          tenantId: TEST_TENANT_ID,
+          status: 'PAID',
+          amount: 200,
+          dueDate: new Date('2026-06-15'),
+          clientId: 'c1',
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: '3',
+          tenantId: TEST_TENANT_ID,
+          status: 'PAID',
+          amount: 150,
+          dueDate: new Date('2026-07-01'),
+          clientId: 'c2',
+          createdAt: now,
+          updatedAt: now,
+        },
       ]);
       mockState.clientFindMany.mockResolvedValue([
         { id: 'c1', tenantId: TEST_TENANT_ID, name: 'Client A', phone: '5511999998888' },

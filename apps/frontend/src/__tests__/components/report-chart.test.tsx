@@ -1,6 +1,6 @@
-import { render, screen, within, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ReportChart, type ChartDataPoint, type ChartSeries } from '@/components/report-chart';
+import { type ChartDataPoint, type ChartSeries, ReportChart } from '@/components/report-chart';
 
 const barData: ChartDataPoint[] = [
   { label: 'Jan', value: 1500 },
@@ -45,9 +45,7 @@ describe('ReportChart', () => {
     it('deve renderizar svg com aria-label "Gráfico de barras"', () => {
       render(<ReportChart {...defaultProps} />);
 
-      expect(
-        screen.getByRole('img', { name: 'Gráfico de barras' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'Gráfico de barras' })).toBeInTheDocument();
     });
 
     it('deve expor rótulos e valores formatados na tabela acessível', () => {
@@ -73,25 +71,13 @@ describe('ReportChart', () => {
 
   describe('gráfico de barras agrupadas (series)', () => {
     it('deve renderizar svg com aria-label "Gráfico de barras agrupadas" quando series é fornecido', () => {
-      render(
-        <ReportChart
-          {...defaultProps}
-          series={seriesData}
-        />,
-      );
+      render(<ReportChart {...defaultProps} series={seriesData} />);
 
-      expect(
-        screen.getByRole('img', { name: 'Gráfico de barras agrupadas' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'Gráfico de barras agrupadas' })).toBeInTheDocument();
     });
 
     it('deve renderizar a legenda com os nomes das séries', () => {
-      render(
-        <ReportChart
-          {...defaultProps}
-          series={seriesData}
-        />,
-      );
+      render(<ReportChart {...defaultProps} series={seriesData} />);
 
       const legend = screen.getByLabelText('Legenda do gráfico');
       expect(within(legend).getByText('Recebido')).toBeInTheDocument();
@@ -101,25 +87,13 @@ describe('ReportChart', () => {
 
   describe('gráfico de linha', () => {
     it('deve renderizar svg com aria-label "Gráfico de linha"', () => {
-      render(
-        <ReportChart
-          {...defaultProps}
-          type="line"
-        />,
-      );
+      render(<ReportChart {...defaultProps} type="line" />);
 
-      expect(
-        screen.getByRole('img', { name: 'Gráfico de linha' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'Gráfico de linha' })).toBeInTheDocument();
     });
 
     it('deve expor rótulos e valores na tabela acessível', () => {
-      const { container } = render(
-        <ReportChart
-          {...defaultProps}
-          type="line"
-        />,
-      );
+      const { container } = render(<ReportChart {...defaultProps} type="line" />);
 
       const text = getTableText(container);
       expect(text).toContain('Jan');
@@ -129,27 +103,13 @@ describe('ReportChart', () => {
 
   describe('gráfico de pizza', () => {
     it('deve renderizar svg com aria-label "Gráfico de pizza"', () => {
-      render(
-        <ReportChart
-          type="pie"
-          title="Distribuição"
-          data={pieData}
-        />,
-      );
+      render(<ReportChart type="pie" title="Distribuição" data={pieData} />);
 
-      expect(
-        screen.getByRole('img', { name: 'Gráfico de pizza' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'Gráfico de pizza' })).toBeInTheDocument();
     });
 
     it('deve expor valores e percentuais na tabela acessível', () => {
-      const { container } = render(
-        <ReportChart
-          type="pie"
-          title="Distribuição"
-          data={pieData}
-        />,
-      );
+      const { container } = render(<ReportChart type="pie" title="Distribuição" data={pieData} />);
 
       const text = getTableText(container);
       expect(text).toContain('Pagos');
@@ -162,44 +122,25 @@ describe('ReportChart', () => {
 
   describe('legenda', () => {
     it('não deve renderizar legenda com um único ponto de dado', () => {
-      render(
-        <ReportChart
-          {...defaultProps}
-          data={singleData}
-        />,
-      );
+      render(<ReportChart {...defaultProps} data={singleData} />);
 
-      expect(
-        screen.queryByLabelText('Legenda do gráfico'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Legenda do gráfico')).not.toBeInTheDocument();
     });
   });
 
   describe('filtro de período', () => {
     it('deve renderizar inputs de data e botão "Aplicar" quando onDateRangeChange é fornecido', () => {
-      render(
-        <ReportChart
-          {...defaultProps}
-          onDateRangeChange={vi.fn()}
-        />,
-      );
+      render(<ReportChart {...defaultProps} onDateRangeChange={vi.fn()} />);
 
       expect(screen.getByLabelText('Data inicial')).toBeInTheDocument();
       expect(screen.getByLabelText('Data final')).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: 'Aplicar' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Aplicar' })).toBeInTheDocument();
     });
 
     it('deve chamar onDateRangeChange com os valores selecionados ao clicar em "Aplicar"', async () => {
       const onDateRangeChange = vi.fn();
       const user = userEvent.setup();
-      render(
-        <ReportChart
-          {...defaultProps}
-          onDateRangeChange={onDateRangeChange}
-        />,
-      );
+      render(<ReportChart {...defaultProps} onDateRangeChange={onDateRangeChange} />);
 
       fireEvent.change(screen.getByLabelText('Data inicial'), {
         target: { value: '2026-07' },
@@ -219,34 +160,19 @@ describe('ReportChart', () => {
       render(<ReportChart {...defaultProps} />);
 
       expect(screen.queryByLabelText('Data inicial')).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole('button', { name: 'Aplicar' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Aplicar' })).not.toBeInTheDocument();
     });
   });
 
   describe('empty state', () => {
     it('deve exibir a mensagem padrão quando não há dados', () => {
-      render(
-        <ReportChart
-          {...defaultProps}
-          data={[]}
-        />,
-      );
+      render(<ReportChart {...defaultProps} data={[]} />);
 
-      expect(
-        screen.getByText('Nenhum dado disponível para o período'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Nenhum dado disponível para o período')).toBeInTheDocument();
     });
 
     it('deve exibir mensagem customizada via emptyMessage', () => {
-      render(
-        <ReportChart
-          {...defaultProps}
-          data={[]}
-          emptyMessage="Sem faturas no período"
-        />,
-      );
+      render(<ReportChart {...defaultProps} data={[]} emptyMessage="Sem faturas no período" />);
 
       expect(screen.getByText('Sem faturas no período')).toBeInTheDocument();
     });
@@ -263,33 +189,18 @@ describe('ReportChart', () => {
 
   describe('error state', () => {
     it('deve exibir mensagem de erro quando error é fornecido', () => {
-      render(
-        <ReportChart
-          {...defaultProps}
-          error="Erro ao carregar relatório"
-        />,
-      );
+      render(<ReportChart {...defaultProps} error="Erro ao carregar relatório" />);
 
       expect(screen.getByRole('alert')).toBeInTheDocument();
-      expect(
-        screen.getByText('Erro ao carregar relatório'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar relatório')).toBeInTheDocument();
     });
 
     it('deve chamar onRetry ao clicar em "Tentar novamente"', async () => {
       const onRetry = vi.fn();
       const user = userEvent.setup();
-      render(
-        <ReportChart
-          {...defaultProps}
-          error="Falha na API"
-          onRetry={onRetry}
-        />,
-      );
+      render(<ReportChart {...defaultProps} error="Falha na API" onRetry={onRetry} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /tentar novamente/i }),
-      );
+      await user.click(screen.getByRole('button', { name: /tentar novamente/i }));
 
       expect(onRetry).toHaveBeenCalledOnce();
     });

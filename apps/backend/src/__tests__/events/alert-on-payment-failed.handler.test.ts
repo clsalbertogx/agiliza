@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AlertOnPaymentFailedHandler } from '@/application/events/handlers/alert-on-payment-failed.handler';
 import type { AlertService } from '@/application/services/alert.service';
 import type { DomainEvent } from '@/domain/events/domain-events';

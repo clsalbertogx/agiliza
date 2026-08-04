@@ -1,7 +1,7 @@
 import { Queue, Worker } from 'bullmq';
-import { getRedis } from './redis.service';
-import type { AutoRenewSubscriptionUseCase } from '@/application/usecases/auto-renew-subscription.usecase';
 import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import type { AutoRenewSubscriptionUseCase } from '@/application/usecases/auto-renew-subscription.usecase';
+import { getRedis } from './redis.service';
 
 const AUTO_RENEW_QUEUE = 'auto-renew';
 const JOB_NAME = 'auto-renew-subscriptions';
@@ -18,11 +18,15 @@ export async function scheduleAutoRenewJob(queue: Queue): Promise<void> {
   }
 
   // Daily at 5:00 AM
-  await queue.add(JOB_NAME, {}, {
-    repeat: { pattern: '0 5 * * *' },
-    removeOnComplete: { age: 7 * 24 * 3600 },
-    removeOnFail: { age: 30 * 24 * 3600 },
-  });
+  await queue.add(
+    JOB_NAME,
+    {},
+    {
+      repeat: { pattern: '0 5 * * *' },
+      removeOnComplete: { age: 7 * 24 * 3600 },
+      removeOnFail: { age: 30 * 24 * 3600 },
+    },
+  );
 }
 
 /**

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { InvoiceForm } from '@/components/invoice-form';
 
@@ -33,46 +33,31 @@ describe('InvoiceForm', () => {
     it('deve renderizar o título "Nova Fatura" no modo criação', () => {
       render(<InvoiceForm {...defaultProps} />);
 
-      expect(
-        screen.getByText('Nova Fatura'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Nova Fatura')).toBeInTheDocument();
     });
 
     it('deve renderizar o título "Editar Fatura" no modo edição', () => {
-      render(
-        <InvoiceForm
-          {...defaultProps}
-          initialData={{ clientId: 'client-1' }}
-        />,
-      );
+      render(<InvoiceForm {...defaultProps} initialData={{ clientId: 'client-1' }} />);
 
-      expect(
-        screen.getByText('Editar Fatura'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Editar Fatura')).toBeInTheDocument();
     });
 
     it('deve renderizar campo de busca de cliente', () => {
       render(<InvoiceForm {...defaultProps} />);
 
-      expect(
-        screen.getByPlaceholderText('Buscar cliente...'),
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Buscar cliente...')).toBeInTheDocument();
     });
 
     it('deve renderizar campo de valor', () => {
       render(<InvoiceForm {...defaultProps} />);
 
-      expect(
-        screen.getByPlaceholderText('R$ 1.500,00'),
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('R$ 1.500,00')).toBeInTheDocument();
     });
 
     it('deve renderizar campo de data de vencimento', () => {
       render(<InvoiceForm {...defaultProps} />);
 
-      expect(
-        screen.getByLabelText('Data de Vencimento *'),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText('Data de Vencimento *')).toBeInTheDocument();
     });
 
     it('deve renderizar opções de método de pagamento', () => {
@@ -86,9 +71,7 @@ describe('InvoiceForm', () => {
     it('deve renderizar campo de descrição opcional', () => {
       render(<InvoiceForm {...defaultProps} />);
 
-      expect(
-        screen.getByPlaceholderText('Mensalidade Agosto/2026'),
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Mensalidade Agosto/2026')).toBeInTheDocument();
     });
   });
 
@@ -100,9 +83,7 @@ describe('InvoiceForm', () => {
       const searchInput = screen.getByPlaceholderText('Buscar cliente...');
       await user.type(searchInput, 'Jo');
 
-      expect(
-        screen.getByRole('listbox'),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('listbox')).toBeInTheDocument();
     });
 
     it('deve filtrar clientes pelo nome', async () => {
@@ -126,9 +107,7 @@ describe('InvoiceForm', () => {
       await user.click(screen.getByText('João Silva'));
 
       expect(screen.getByText('João Silva')).toBeInTheDocument();
-      expect(
-        screen.queryByPlaceholderText('Buscar cliente...'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('Buscar cliente...')).not.toBeInTheDocument();
     });
 
     it('deve exibir RiskBadge do cliente selecionado', async () => {
@@ -150,9 +129,7 @@ describe('InvoiceForm', () => {
       const searchInput = screen.getByPlaceholderText('Buscar cliente...');
       await user.type(searchInput, 'ZZ');
 
-      expect(
-        screen.getByText('Nenhum cliente encontrado'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Nenhum cliente encontrado')).toBeInTheDocument();
     });
   });
 
@@ -219,9 +196,7 @@ describe('InvoiceForm', () => {
     it('deve chamar onSubmit com os dados corretos', async () => {
       const onSubmit = vi.fn();
       const user = userEvent.setup();
-      render(
-        <InvoiceForm clients={mockClients} onSubmit={onSubmit} />,
-      );
+      render(<InvoiceForm clients={mockClients} onSubmit={onSubmit} />);
 
       // Selecionar cliente
       const searchInput = screen.getByPlaceholderText('Buscar cliente...');
@@ -253,9 +228,7 @@ describe('InvoiceForm', () => {
     it('deve incluir descrição quando fornecida', async () => {
       const onSubmit = vi.fn();
       const user = userEvent.setup();
-      render(
-        <InvoiceForm clients={mockClients} onSubmit={onSubmit} />,
-      );
+      render(<InvoiceForm clients={mockClients} onSubmit={onSubmit} />);
 
       // Selecionar cliente
       const searchInput = screen.getByPlaceholderText('Buscar cliente...');
@@ -285,24 +258,15 @@ describe('InvoiceForm', () => {
     });
 
     it('deve exibir botão "Voltar" quando onCancel é fornecido', () => {
-      render(
-        <InvoiceForm {...defaultProps} onCancel={vi.fn()} />,
-      );
+      render(<InvoiceForm {...defaultProps} onCancel={vi.fn()} />);
 
-      expect(
-        screen.getByRole('button', { name: /voltar/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument();
     });
   });
 
   describe('submitting state', () => {
     it('deve exibir spinner no botão quando isSubmitting é true', () => {
-      render(
-        <InvoiceForm
-          {...defaultProps}
-          isSubmitting={true}
-        />,
-      );
+      render(<InvoiceForm {...defaultProps} isSubmitting={true} />);
 
       const submitButton = screen.getByRole('button', { name: /criar fatura/i });
       expect(submitButton).toBeDisabled();
@@ -312,24 +276,15 @@ describe('InvoiceForm', () => {
     });
 
     it('deve exibir submitLabel customizado', () => {
-      render(
-        <InvoiceForm
-          {...defaultProps}
-          submitLabel="Atualizar Fatura"
-        />,
-      );
+      render(<InvoiceForm {...defaultProps} submitLabel="Atualizar Fatura" />);
 
-      expect(
-        screen.getByRole('button', { name: /atualizar fatura/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /atualizar fatura/i })).toBeInTheDocument();
     });
   });
 
   describe('loading state', () => {
     it('deve exibir LoadingSkeleton quando isLoading é true', () => {
-      render(
-        <InvoiceForm {...defaultProps} isLoading={true} />,
-      );
+      render(<InvoiceForm {...defaultProps} isLoading={true} />);
 
       const loading = screen.getByRole('status');
       expect(loading).toBeInTheDocument();
@@ -339,16 +294,9 @@ describe('InvoiceForm', () => {
 
   describe('error state', () => {
     it('deve exibir mensagem de erro quando error é fornecido', () => {
-      render(
-        <InvoiceForm
-          {...defaultProps}
-          error="Erro ao carregar dados do cliente"
-        />,
-      );
+      render(<InvoiceForm {...defaultProps} error="Erro ao carregar dados do cliente" />);
 
-      expect(
-        screen.getByText('Erro ao carregar dados do cliente'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar dados do cliente')).toBeInTheDocument();
     });
   });
 

@@ -22,11 +22,7 @@ const PROVIDER_CONFIGS: Record<string, HmacConfig> = {
   },
 };
 
-export function verifyWebhookSignature(
-  provider: string,
-  payload: string,
-  signature: string
-): boolean {
+export function verifyWebhookSignature(provider: string, payload: string, signature: string): boolean {
   const config = PROVIDER_CONFIGS[provider];
   if (!config) {
     console.warn(`Unknown provider: ${provider}`);

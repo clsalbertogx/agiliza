@@ -1,4 +1,4 @@
-import { Subscription } from '@/domain/entities/subscription';
+import type { Subscription } from '@/domain/entities/subscription';
 
 export interface SubscriptionRepositoryPort {
   create(subscription: Subscription): Promise<Subscription>;

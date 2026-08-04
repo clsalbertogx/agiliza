@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 
 interface RiskBadgeProps {
@@ -94,7 +94,10 @@ export function RiskBadge({ level, probability, reason }: RiskBadgeProps) {
           }`}
         >
           {tooltipText}
-          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" aria-hidden="true" />
+          <span
+            className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"
+            aria-hidden="true"
+          />
         </div>
       )}
     </span>

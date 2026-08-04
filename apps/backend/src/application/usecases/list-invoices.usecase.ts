@@ -1,4 +1,4 @@
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { Invoice } from '@/domain/entities/invoice';
 
 export interface ListInvoicesInput {

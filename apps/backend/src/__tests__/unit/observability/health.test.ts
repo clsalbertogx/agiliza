@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import Fastify from 'fastify';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // Mock PrismaClient before importing the routes
 vi.mock('@prisma/client', () => {

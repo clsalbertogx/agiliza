@@ -1,4 +1,4 @@
-import { Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
+import { type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
 
 export class GracePeriodService {
   static isInGracePeriod(subscription: Subscription, now = new Date()): boolean {

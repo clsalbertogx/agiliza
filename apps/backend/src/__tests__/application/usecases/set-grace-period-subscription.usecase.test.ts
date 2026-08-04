@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure } from '@/application/types/either';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { isFailure, isSuccess } from '@/application/types/either';
 import { SetGracePeriodSubscriptionUseCase } from '@/application/usecases/set-grace-period-subscription.usecase';
-import { SubscriptionStatus, BillingCycle, type Subscription } from '@/domain/entities/subscription';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 describe('SetGracePeriodSubscriptionUseCase', () => {
   let useCase: SetGracePeriodSubscriptionUseCase;
@@ -23,7 +23,7 @@ describe('SetGracePeriodSubscriptionUseCase', () => {
     tenantId: '00000000-0000-0000-0000-000000000001',
     clientId: '00000000-0000-0000-0000-000000000002',
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
     status: SubscriptionStatus.EXPIRED,
     nextBilling: new Date('2026-09-01'),
@@ -56,11 +56,7 @@ describe('SetGracePeriodSubscriptionUseCase', () => {
       validate: vi.fn().mockReturnValue(true),
     };
 
-    useCase = new SetGracePeriodSubscriptionUseCase(
-      mockSubscriptionRepo,
-      mockEventBus,
-      mockIdGenerator,
-    );
+    useCase = new SetGracePeriodSubscriptionUseCase(mockSubscriptionRepo, mockEventBus, mockIdGenerator);
   });
 
   it('should set grace period on an expired subscription', async () => {

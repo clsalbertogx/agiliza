@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PolarGateway, PolarClient } from '@/infrastructure/payment/polar.gateway';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type PolarClient, PolarGateway } from '@/infrastructure/payment/polar.gateway';
 
 function buildMockClient(): PolarClient {
   return {
@@ -25,9 +25,7 @@ describe('PolarGateway', () => {
 
   describe('constructor', () => {
     it('should throw if accessToken is missing', () => {
-      expect(() => new PolarGateway({ accessToken: '' })).toThrow(
-        'Polar accessToken is required',
-      );
+      expect(() => new PolarGateway({ accessToken: '' })).toThrow('Polar accessToken is required');
     });
   });
 
@@ -48,7 +46,7 @@ describe('PolarGateway', () => {
       });
 
       const result = await gateway.createPixCharge({
-        amount: 100.50,
+        amount: 100.5,
         description: 'Test PIX charge',
         externalReference: 'price_pix_abc',
       });
@@ -69,9 +67,9 @@ describe('PolarGateway', () => {
     it('should throw when Polar API call fails', async () => {
       mockClient.createCheckout = vi.fn().mockRejectedValue(new Error('Unauthorized'));
 
-      await expect(
-        gateway.createPixCharge({ amount: 50, description: 'Failing charge' }),
-      ).rejects.toThrow('Polar error: Unauthorized');
+      await expect(gateway.createPixCharge({ amount: 50, description: 'Failing charge' })).rejects.toThrow(
+        'Polar error: Unauthorized',
+      );
     });
   });
 

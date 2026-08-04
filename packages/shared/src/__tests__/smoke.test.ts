@@ -1,14 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 // Compile-time checks — if they pass, the exports are valid
 import type {
-  Invoice,
   ClientProfile,
-  PaymentProvider,
-  PaymentMethod,
-  InvoiceStatus,
   ClientRiskScore,
+  Invoice,
+  InvoiceStatus,
   MessageChannel,
   PaymentEvent,
+  PaymentMethod,
+  PaymentProvider,
 } from '../index';
 
 describe('@agiliza/shared exports', () => {

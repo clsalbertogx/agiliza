@@ -1,11 +1,11 @@
-import { Phone } from '../value-objects/phone';
-import { Email } from '../value-objects/email';
-import { TaxId } from '../value-objects/tax-id';
-import { RiskScore, RiskLevel } from '../value-objects/risk-score';
+import { type Either, failure, success } from '@/domain/types/either';
 import { DomainError } from '../errors/domain-error';
-import { Either, success, failure } from '@/domain/types/either';
+import { Email } from '../value-objects/email';
+import { Phone } from '../value-objects/phone';
+import { type RiskLevel, RiskScore } from '../value-objects/risk-score';
+import { TaxId } from '../value-objects/tax-id';
 
-export { RiskScore, RiskLevel } from '../value-objects/risk-score';
+export { RiskLevel, RiskScore } from '../value-objects/risk-score';
 
 export enum MessageChannel {
   WHATSAPP = 'WHATSAPP',
@@ -230,7 +230,10 @@ export const clientSchema = z.object({
   email: z.string().email().optional(),
   document: z.string().optional(),
   preferredChannel: z.enum(['WHATSAPP', 'SMS', 'EMAIL']),
-  preferredTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  preferredTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/)
+    .optional(),
   preferredLeadDays: z.number().int().min(1).max(14),
   riskScore: z.custom<RiskScore>(),
   riskScoreReason: z.unknown().optional(),

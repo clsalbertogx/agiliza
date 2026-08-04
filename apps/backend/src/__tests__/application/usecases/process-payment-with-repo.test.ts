@@ -1,16 +1,21 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure } from '@/application/types/either';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
-import { Invoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
-import { ProcessPaymentUseCase, ProcessPaymentInput } from '@/application/usecases/process-payment.usecase';
-import { ProcessPaymentWebhookUseCase, ProcessPaymentWebhookInput } from '@/application/usecases/process-payment-webhook.usecase';
-import { PaymentWebhookParserPort, PaymentWebhookData } from '@/application/ports/gateways/payment-webhook-parser.port';
-import { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
-import { success } from '@/application/types/either';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type {
+  PaymentWebhookData,
+  PaymentWebhookParserPort,
+} from '@/application/ports/gateways/payment-webhook-parser.port';
+import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
+import type { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
+import { isFailure, isSuccess, success } from '@/application/types/either';
+import { type ProcessPaymentInput, ProcessPaymentUseCase } from '@/application/usecases/process-payment.usecase';
+import {
+  type ProcessPaymentWebhookInput,
+  ProcessPaymentWebhookUseCase,
+} from '@/application/usecases/process-payment-webhook.usecase';
+import { type Invoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
 
 // ── ProcessPaymentUseCase mocks ──────────────────────────────────────
 
@@ -82,7 +87,10 @@ const validProcessPaymentInput: ProcessPaymentInput = {
 
 const validWebhookInput: ProcessPaymentWebhookInput = {
   provider: PROVIDER,
-  rawBody: JSON.stringify({ event: 'PAYMENT_CONFIRMED', payment: { id: PROVIDER_PAYMENT_ID, externalReference: INVOICE_ID, value: 150.00 } }),
+  rawBody: JSON.stringify({
+    event: 'PAYMENT_CONFIRMED',
+    payment: { id: PROVIDER_PAYMENT_ID, externalReference: INVOICE_ID, value: 150.0 },
+  }),
   signature: 'valid-signature',
   tenantId: TENANT_ID,
 };
@@ -91,7 +99,7 @@ const mockInvoice: Invoice = {
   id: INVOICE_ID,
   tenantId: TENANT_ID,
   clientId: CLIENT_ID,
-  amount: 150.00,
+  amount: 150.0,
   dueDate: new Date('2026-08-15'),
   description: 'Test invoice',
   status: InvoiceStatus.PENDING,
@@ -118,7 +126,7 @@ const confirmedWebhookData: PaymentWebhookData = {
   providerPaymentId: PROVIDER_PAYMENT_ID,
   status: 'confirmed',
   invoiceId: INVOICE_ID,
-  amount: 150.00,
+  amount: 150.0,
   paidAt: new Date('2026-07-30T12:00:00Z'),
   rawPayload: { event: 'PAYMENT_CONFIRMED', payment: { id: PROVIDER_PAYMENT_ID } },
 };
@@ -153,7 +161,7 @@ describe('ProcessPaymentUseCase — Payment Recording', () => {
     expect(recordedPayment.invoiceId).toBe(INVOICE_ID);
     expect(recordedPayment.tenantId).toBe(TENANT_ID);
     expect(recordedPayment.clientId).toBe(CLIENT_ID);
-    expect(recordedPayment.amount).toBe(150.00);
+    expect(recordedPayment.amount).toBe(150.0);
     expect(recordedPayment.status).toBe('PENDING');
     expect(recordedPayment.method).toBe(PaymentMethod.PIX);
   });
@@ -209,7 +217,7 @@ describe('ProcessPaymentWebhookUseCase — Payment Recording', () => {
     expect(recordedPayment.invoiceId).toBe(INVOICE_ID);
     expect(recordedPayment.tenantId).toBe(TENANT_ID);
     expect(recordedPayment.clientId).toBe(CLIENT_ID);
-    expect(recordedPayment.amount).toBe(150.00);
+    expect(recordedPayment.amount).toBe(150.0);
     expect(recordedPayment.status).toBe('CONFIRMED');
     expect(recordedPayment.providerPaymentId).toBe(PROVIDER_PAYMENT_ID);
   });

@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Clock, Loader2, XCircle } from 'lucide-react';
 
 type PaymentStatusValue = 'pending' | 'processing' | 'paid' | 'failed';
 type PaymentMethod = 'pix' | 'credit_card' | 'boleto';
@@ -64,15 +64,9 @@ export function PaymentStatus({ status, method }: PaymentStatusProps) {
       <div className={config.iconClass}>{config.icon}</div>
       <div className="flex flex-col">
         <span className="text-sm font-semibold">{config.label}</span>
-        {method && (
-          <span className="text-xs opacity-75">
-            via {methodLabel[method]}
-          </span>
-        )}
+        {method && <span className="text-xs opacity-75">via {methodLabel[method]}</span>}
       </div>
-      {status === 'processing' && (
-        <span className="sr-only">Processando, aguarde...</span>
-      )}
+      {status === 'processing' && <span className="sr-only">Processando, aguarde...</span>}
     </div>
   );
 }

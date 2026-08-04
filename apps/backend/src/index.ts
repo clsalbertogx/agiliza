@@ -1,21 +1,41 @@
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import rateLimit from '@fastify/rate-limit';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
+import Fastify from 'fastify';
 import Redis from 'ioredis';
 import { env } from './config/env';
-import { registerRoutes } from './routes';
+import { InMemoryEventBus } from './infrastructure/event-bus/in-memory-event-bus';
 import authPlugin from './infrastructure/plugins/auth.plugin';
 import observabilityPlugin from './infrastructure/plugins/observability.plugin';
-import { disconnectRedis, closeAllQueues, startReminderWorker, startDeadLetterWorker, closeWorker } from './infrastructure/queue';
-import { createRecurringInvoiceQueue, scheduleRecurringInvoiceJob, startRecurringInvoiceWorker } from './infrastructure/queue/recurring-invoice.worker';
-import { createAutoRenewQueue, scheduleAutoRenewJob, startAutoRenewWorker } from './infrastructure/queue/auto-renew.worker';
-import { createReminderService, createRecurringInvoiceUseCase, createAutoRenewSubscriptionUseCase, createSubscriptionRepository, createAlertService } from './presentation/factories';
-import { InMemoryEventBus } from './infrastructure/event-bus/in-memory-event-bus';
+import {
+  closeAllQueues,
+  closeWorker,
+  disconnectRedis,
+  startDeadLetterWorker,
+  startReminderWorker,
+} from './infrastructure/queue';
+import {
+  createAutoRenewQueue,
+  scheduleAutoRenewJob,
+  startAutoRenewWorker,
+} from './infrastructure/queue/auto-renew.worker';
+import {
+  createRecurringInvoiceQueue,
+  scheduleRecurringInvoiceJob,
+  startRecurringInvoiceWorker,
+} from './infrastructure/queue/recurring-invoice.worker';
+import {
+  createAlertService,
+  createAutoRenewSubscriptionUseCase,
+  createRecurringInvoiceUseCase,
+  createReminderService,
+  createSubscriptionRepository,
+} from './presentation/factories';
 import { registerEventHandlers } from './presentation/factories/register-event-handlers';
 import { errorHandler } from './presentation/handler';
+import { registerRoutes } from './routes';
 
 // Module-level worker references for graceful shutdown
 let reminderWorker: ReturnType<typeof startReminderWorker> | null = null;
@@ -45,7 +65,7 @@ async function buildApp() {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "blob:"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
         connectSrc: ["'self'", env.FRONTEND_URL],
         frameAncestors: ["'none'"],
         formAction: ["'self'"],

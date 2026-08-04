@@ -1,7 +1,7 @@
 import { Worker } from 'bullmq';
-import { getRedis } from './redis.service';
-import { QueueNames } from './queue-definitions';
 import type { AlertService } from '@/application/services/alert.service';
+import { QueueNames } from './queue-definitions';
+import { getRedis } from './redis.service';
 
 /**
  * Start a BullMQ worker that drains the dead-letter queue.
@@ -24,7 +24,7 @@ export function startDeadLetterWorker(alertService?: AlertService): Worker {
       await alertService?.alertWebhookDrained({
         eventId: job.id,
         ...(typeof job.data === 'object' && job.data !== null ? job.data : {}),
-      });      // TODO: persist to a database table for manual review UI
+      }); // TODO: persist to a database table for manual review UI
     },
     { connection: getRedis() },
   );

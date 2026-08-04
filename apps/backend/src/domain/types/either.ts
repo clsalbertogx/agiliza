@@ -1,6 +1,4 @@
-export type Either<L, R> =
-  | { success: true; value: R }
-  | { success: false; value: L };
+export type Either<L, R> = { success: true; value: R } | { success: false; value: L };
 
 export function success<R>(value: R): Either<never, R> {
   return { success: true, value };
@@ -18,30 +16,21 @@ export function isFailure<L, R>(either: Either<L, R>): either is { success: fals
   return either.success === false;
 }
 
-export function map<L, R, R2>(
-  either: Either<L, R>,
-  fn: (value: R) => R2
-): Either<L, R2> {
+export function map<L, R, R2>(either: Either<L, R>, fn: (value: R) => R2): Either<L, R2> {
   if (either.success) {
     return success(fn(either.value));
   }
   return either;
 }
 
-export function mapError<L, L2, R>(
-  either: Either<L, R>,
-  fn: (error: L) => L2
-): Either<L2, R> {
+export function mapError<L, L2, R>(either: Either<L, R>, fn: (error: L) => L2): Either<L2, R> {
   if (!either.success) {
     return failure(fn(either.value));
   }
   return either;
 }
 
-export function flatMap<L, R, R2>(
-  either: Either<L, R>,
-  fn: (value: R) => Either<L, R2>
-): Either<L, R2> {
+export function flatMap<L, R, R2>(either: Either<L, R>, fn: (value: R) => Either<L, R2>): Either<L, R2> {
   if (either.success) {
     return fn(either.value);
   }

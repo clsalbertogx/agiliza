@@ -1,5 +1,5 @@
-import type { Invoice } from '@/domain/entities/invoice';
 import type { Client } from '@/domain/entities/client';
+import type { Invoice } from '@/domain/entities/invoice';
 
 /**
  * Analytics-specific port for invoice queries.

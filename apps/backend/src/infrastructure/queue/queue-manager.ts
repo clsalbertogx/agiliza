@@ -1,11 +1,6 @@
-import { Queue, Worker, type Job } from 'bullmq';
+import { type Job, Queue, Worker } from 'bullmq';
+import { DEFAULT_JOB_OPTIONS, DLQ_JOB_OPTIONS, type QueueName, QueueNames } from './queue-definitions';
 import { getRedis } from './redis.service';
-import {
-  DEFAULT_JOB_OPTIONS,
-  DLQ_JOB_OPTIONS,
-  QueueNames,
-  type QueueName,
-} from './queue-definitions';
 
 const queues = new Map<QueueName, Queue>();
 
@@ -17,8 +12,7 @@ const queues = new Map<QueueName, Queue>();
  */
 export function getQueue(name: QueueName): Queue {
   if (!queues.has(name)) {
-    const defaultJobOptions =
-      name === QueueNames.FAILED_WEBHOOKS ? DLQ_JOB_OPTIONS : DEFAULT_JOB_OPTIONS;
+    const defaultJobOptions = name === QueueNames.FAILED_WEBHOOKS ? DLQ_JOB_OPTIONS : DEFAULT_JOB_OPTIONS;
 
     const queue = new Queue(name, {
       connection: getRedis(),

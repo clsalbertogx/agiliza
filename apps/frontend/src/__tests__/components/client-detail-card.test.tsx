@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ClientDetailCard, type ClientDetail } from '@/components/client-detail-card';
+import { type ClientDetail, ClientDetailCard } from '@/components/client-detail-card';
 
 const defaultClient: ClientDetail = {
   id: 'client-1',
@@ -50,17 +50,13 @@ describe('ClientDetailCard', () => {
     it('deve renderizar botão de editar quando onEdit é fornecido', () => {
       render(<ClientDetailCard client={defaultClient} onEdit={vi.fn()} />);
 
-      expect(
-        screen.getByRole('button', { name: /editar cliente/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /editar cliente/i })).toBeInTheDocument();
     });
 
     it('não deve renderizar botão de editar quando onEdit não é fornecido', () => {
       render(<ClientDetailCard client={defaultClient} />);
 
-      expect(
-        screen.queryByRole('button', { name: /editar cliente/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /editar cliente/i })).not.toBeInTheDocument();
     });
   });
 
@@ -86,11 +82,7 @@ describe('ClientDetailCard', () => {
     });
 
     it('deve exibir "Não cadastrado" quando email não é fornecido', () => {
-      render(
-        <ClientDetailCard
-          client={{ ...defaultClient, email: undefined }}
-        />,
-      );
+      render(<ClientDetailCard client={{ ...defaultClient, email: undefined }} />);
 
       expect(screen.getByText('Não cadastrado')).toBeInTheDocument();
     });
@@ -128,11 +120,7 @@ describe('ClientDetailCard', () => {
     });
 
     it('deve renderizar badge "Onboarding Pendente" quando onboardingCompleted é false', () => {
-      render(
-        <ClientDetailCard
-          client={{ ...defaultClient, onboardingCompleted: false }}
-        />,
-      );
+      render(<ClientDetailCard client={{ ...defaultClient, onboardingCompleted: false }} />);
 
       expect(screen.getByText('Onboarding Pendente')).toBeInTheDocument();
     });
@@ -173,15 +161,9 @@ describe('ClientDetailCard', () => {
     });
 
     it('deve exibir "Dados insuficientes" quando não há risk features', () => {
-      render(
-        <ClientDetailCard
-          client={{ ...defaultClient, riskFeatures: [] }}
-        />,
-      );
+      render(<ClientDetailCard client={{ ...defaultClient, riskFeatures: [] }} />);
 
-      expect(
-        screen.getByText('Dados insuficientes para análise de risco'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Dados insuficientes para análise de risco')).toBeInTheDocument();
     });
   });
 
@@ -196,9 +178,7 @@ describe('ClientDetailCard', () => {
       render(<ClientDetailCard client={defaultClient} />);
 
       // toLocaleString('pt-BR', { style: 'currency' }) usa separador não-16
-      expect(
-        screen.getByText((content) => content.includes('25.000,00')),
-      ).toBeInTheDocument();
+      expect(screen.getByText((content) => content.includes('25.000,00'))).toBeInTheDocument();
     });
 
     it('deve renderizar quantidade de faturas pagas', () => {
@@ -222,9 +202,7 @@ describe('ClientDetailCard', () => {
 
   describe('loading state', () => {
     it('deve exibir skeleton de carregamento quando isLoading é true', () => {
-      render(
-        <ClientDetailCard client={defaultClient} isLoading={true} />,
-      );
+      render(<ClientDetailCard client={defaultClient} isLoading={true} />);
 
       const loading = screen.getByRole('status');
       expect(loading).toBeInTheDocument();
@@ -232,9 +210,7 @@ describe('ClientDetailCard', () => {
     });
 
     it('não deve exibir conteúdo do cliente durante loading', () => {
-      render(
-        <ClientDetailCard client={defaultClient} isLoading={true} />,
-      );
+      render(<ClientDetailCard client={defaultClient} isLoading={true} />);
 
       expect(screen.queryByText('Maria Souza')).not.toBeInTheDocument();
     });
@@ -242,41 +218,22 @@ describe('ClientDetailCard', () => {
 
   describe('error state', () => {
     it('deve exibir mensagem de erro quando error é fornecido', () => {
-      render(
-        <ClientDetailCard
-          client={defaultClient}
-          error="Erro ao carregar dados do cliente"
-        />,
-      );
+      render(<ClientDetailCard client={defaultClient} error="Erro ao carregar dados do cliente" />);
 
       expect(screen.getByText('Erro ao carregar dados do cliente')).toBeInTheDocument();
     });
 
     it('deve exibir botão "Tentar novamente" quando onRetry é fornecido', () => {
-      render(
-        <ClientDetailCard
-          client={defaultClient}
-          error="Erro"
-          onRetry={vi.fn()}
-        />,
-      );
+      render(<ClientDetailCard client={defaultClient} error="Erro" onRetry={vi.fn()} />);
 
-      expect(
-        screen.getByRole('button', { name: /tentar novamente/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeInTheDocument();
     });
 
     it('deve chamar onRetry ao clicar em "Tentar novamente"', async () => {
       const onRetry = vi.fn();
       const user = userEvent.setup();
 
-      render(
-        <ClientDetailCard
-          client={defaultClient}
-          error="Erro"
-          onRetry={onRetry}
-        />,
-      );
+      render(<ClientDetailCard client={defaultClient} error="Erro" onRetry={onRetry} />);
 
       await user.click(screen.getByRole('button', { name: /tentar novamente/i }));
       expect(onRetry).toHaveBeenCalledTimes(1);
@@ -288,13 +245,9 @@ describe('ClientDetailCard', () => {
       const onEdit = vi.fn();
       const user = userEvent.setup();
 
-      render(
-        <ClientDetailCard client={defaultClient} onEdit={onEdit} />,
-      );
+      render(<ClientDetailCard client={defaultClient} onEdit={onEdit} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /editar cliente/i }),
-      );
+      await user.click(screen.getByRole('button', { name: /editar cliente/i }));
       expect(onEdit).toHaveBeenCalledTimes(1);
     });
   });

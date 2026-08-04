@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import { EncryptionPort } from '@/application/ports/gateways/encryption.port';
+import type { EncryptionPort } from '@/application/ports/gateways/encryption.port';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;

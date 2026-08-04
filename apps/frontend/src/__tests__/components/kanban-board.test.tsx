@@ -6,7 +6,7 @@ const mockInvoices = [
   {
     id: 'inv-1',
     clientName: 'João Silva',
-    amount: 1500.00,
+    amount: 1500.0,
     dueDate: '2026-08-15T00:00:00.000Z',
     status: 'pending' as const,
     riskScore: 'yellow' as const,
@@ -15,7 +15,7 @@ const mockInvoices = [
   {
     id: 'inv-2',
     clientName: 'Maria Souza',
-    amount: 3200.50,
+    amount: 3200.5,
     dueDate: '2026-07-01T00:00:00.000Z',
     status: 'overdue' as const,
     riskScore: 'red' as const,
@@ -24,7 +24,7 @@ const mockInvoices = [
   {
     id: 'inv-3',
     clientName: 'Pedro Santos',
-    amount: 850.00,
+    amount: 850.0,
     dueDate: '2026-07-20T00:00:00.000Z',
     status: 'paid' as const,
     riskScore: 'green' as const,
@@ -33,7 +33,7 @@ const mockInvoices = [
   {
     id: 'inv-4',
     clientName: 'Ana Costa',
-    amount: 2100.00,
+    amount: 2100.0,
     dueDate: '2026-08-30T00:00:00.000Z',
     status: 'pending' as const,
   },
@@ -134,12 +134,7 @@ describe('KanbanBoard', () => {
     it('deve chamar onInvoiceClick ao clicar em um cartão', async () => {
       const onInvoiceClick = vi.fn();
       const user = userEvent.setup();
-      render(
-        <KanbanBoard
-          {...defaultProps}
-          onInvoiceClick={onInvoiceClick}
-        />,
-      );
+      render(<KanbanBoard {...defaultProps} onInvoiceClick={onInvoiceClick} />);
 
       const card = screen.getByLabelText('Fatura de João Silva - R$ 1.500,00');
       await user.click(card);
@@ -154,20 +149,13 @@ describe('KanbanBoard', () => {
       const moveButtons = screen.getAllByLabelText('Mover fatura');
       await user.click(moveButtons[0]);
 
-      expect(
-        screen.getByText('Mover para Pagas'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Mover para Pagas')).toBeInTheDocument();
     });
 
     it('deve chamar onStatusChange ao selecionar um destino no menu', async () => {
       const onStatusChange = vi.fn();
       const user = userEvent.setup();
-      render(
-        <KanbanBoard
-          invoices={mockInvoices}
-          onStatusChange={onStatusChange}
-        />,
-      );
+      render(<KanbanBoard invoices={mockInvoices} onStatusChange={onStatusChange} />);
 
       const moveButtons = screen.getAllByLabelText('Mover fatura');
       await user.click(moveButtons[0]); // Primeiro card: João Silva (pending)
@@ -180,29 +168,15 @@ describe('KanbanBoard', () => {
 
   describe('empty state', () => {
     it('deve exibir "Nenhuma fatura encontrada" quando não há invoices', () => {
-      render(
-        <KanbanBoard
-          invoices={[]}
-          onStatusChange={vi.fn()}
-        />,
-      );
+      render(<KanbanBoard invoices={[]} onStatusChange={vi.fn()} />);
 
-      expect(
-        screen.getByText('Nenhuma fatura encontrada'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Nenhuma fatura encontrada')).toBeInTheDocument();
     });
 
     it('deve exibir descrição "Crie uma nova fatura para começar" quando vazio', () => {
-      render(
-        <KanbanBoard
-          invoices={[]}
-          onStatusChange={vi.fn()}
-        />,
-      );
+      render(<KanbanBoard invoices={[]} onStatusChange={vi.fn()} />);
 
-      expect(
-        screen.getByText('Crie uma nova fatura para começar'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Crie uma nova fatura para começar')).toBeInTheDocument();
     });
   });
 
@@ -211,12 +185,7 @@ describe('KanbanBoard', () => {
       const onlyPendingInvoices = [
         { ...mockInvoices[0] }, // apenas João Silva (pending)
       ];
-      render(
-        <KanbanBoard
-          invoices={onlyPendingInvoices}
-          onStatusChange={vi.fn()}
-        />,
-      );
+      render(<KanbanBoard invoices={onlyPendingInvoices} onStatusChange={vi.fn()} />);
 
       // Colunas Vencidas e Pagas devem mostrar "Nenhuma fatura"
       const emptyTexts = screen.getAllByText('Nenhuma fatura');
@@ -226,12 +195,7 @@ describe('KanbanBoard', () => {
 
   describe('loading state', () => {
     it('deve exibir loading skeleton quando isLoading é true', () => {
-      const { container } = render(
-        <KanbanBoard
-          {...defaultProps}
-          isLoading={true}
-        />,
-      );
+      const { container } = render(<KanbanBoard {...defaultProps} isLoading={true} />);
 
       const loading = screen.getByRole('status');
       expect(loading).toBeInTheDocument();
@@ -239,12 +203,7 @@ describe('KanbanBoard', () => {
     });
 
     it('não deve exibir cartões de fatura durante o loading', () => {
-      render(
-        <KanbanBoard
-          {...defaultProps}
-          isLoading={true}
-        />,
-      );
+      render(<KanbanBoard {...defaultProps} isLoading={true} />);
 
       expect(screen.queryByText('João Silva')).not.toBeInTheDocument();
     });
@@ -252,31 +211,15 @@ describe('KanbanBoard', () => {
 
   describe('error state', () => {
     it('deve exibir mensagem de erro quando error é fornecido', () => {
-      render(
-        <KanbanBoard
-          {...defaultProps}
-          error="Erro ao carregar faturas"
-          onRetry={vi.fn()}
-        />,
-      );
+      render(<KanbanBoard {...defaultProps} error="Erro ao carregar faturas" onRetry={vi.fn()} />);
 
-      expect(
-        screen.getByText('Erro ao carregar faturas'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar faturas')).toBeInTheDocument();
     });
 
     it('deve exibir botão "Tentar novamente" quando error e onRetry são fornecidos', () => {
-      render(
-        <KanbanBoard
-          {...defaultProps}
-          error="Erro ao carregar"
-          onRetry={vi.fn()}
-        />,
-      );
+      render(<KanbanBoard {...defaultProps} error="Erro ao carregar" onRetry={vi.fn()} />);
 
-      expect(
-        screen.getByRole('button', { name: /tentar novamente/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeInTheDocument();
     });
   });
 });

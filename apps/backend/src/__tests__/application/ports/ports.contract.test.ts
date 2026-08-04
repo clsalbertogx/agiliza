@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { UnitOfWorkPort } from '@/application/ports/adapters/unit-of-work.port';
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import type { PaymentGatewayPort } from '@/application/ports/gateways/payment-gateway.port';
+import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { TenantRepositoryPort } from '@/application/ports/repositories/tenant.repository.port';
-import type { PaymentGatewayPort } from '@/application/ports/gateways/payment-gateway.port';
-import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
-import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
-import type { UnitOfWorkPort } from '@/application/ports/adapters/unit-of-work.port';
-import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 
 describe('Application Ports - Contract Tests', () => {
   describe('ClientRepositoryPort', () => {
@@ -93,10 +93,22 @@ describe('Application Ports - Contract Tests', () => {
   describe('PaymentGatewayPort', () => {
     it('should have correct method signatures with Either return types', () => {
       const port: PaymentGatewayPort = {
-        createPixCharge: async () => ({ success: true, value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' } }),
-        createCreditCardCharge: async () => ({ success: true, value: { id: '', status: '', amount: 0, currency: '', paymentMethod: '' } }),
-        createBoletoCharge: async () => ({ success: true, value: { id: '', status: '', amount: 0, currency: '', barcode: '' } }),
-        getCharge: async () => ({ success: true, value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' } }),
+        createPixCharge: async () => ({
+          success: true,
+          value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' },
+        }),
+        createCreditCardCharge: async () => ({
+          success: true,
+          value: { id: '', status: '', amount: 0, currency: '', paymentMethod: '' },
+        }),
+        createBoletoCharge: async () => ({
+          success: true,
+          value: { id: '', status: '', amount: 0, currency: '', barcode: '' },
+        }),
+        getCharge: async () => ({
+          success: true,
+          value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' },
+        }),
         cancelCharge: async () => ({ success: true, value: undefined }),
         verifyWebhook: async () => true,
         handleWebhook: () => ({ success: true, value: { event: '', paymentId: '', status: '', metadata: {} } }),

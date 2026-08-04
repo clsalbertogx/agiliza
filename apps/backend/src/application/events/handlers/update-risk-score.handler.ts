@@ -1,9 +1,9 @@
-import { DomainEvent } from '@/domain/events/domain-events';
 import { RetryableWebhookHandler } from '@/application/events/handlers/retryable-webhook-handler';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { RiskCalculatorService } from '@/application/services/risk-calculator.service';
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { RiskCalculatorService } from '@/application/services/risk-calculator.service';
+import type { DomainEvent } from '@/domain/events/domain-events';
 
 export class UpdateRiskScoreHandler extends RetryableWebhookHandler {
   constructor(

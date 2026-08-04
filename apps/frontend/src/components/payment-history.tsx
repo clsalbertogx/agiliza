@@ -1,29 +1,14 @@
 'use client';
 
+import { ChevronLeft, ChevronRight, CreditCard, FileText, Filter, QrCode, Receipt, X } from 'lucide-react';
 import { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/status-badge';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
-import {
-  ChevronLeft,
-  ChevronRight,
-  QrCode,
-  FileText,
-  CreditCard,
-  Receipt,
-  Filter,
-  X,
-} from 'lucide-react';
+import { StatusBadge } from '@/components/status-badge';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 
 export interface PaymentRecord {
   id: string;
@@ -51,10 +36,7 @@ export interface PaymentHistoryProps {
   onRetry?: () => void;
 }
 
-const methodConfig: Record<
-  string,
-  { icon: React.ReactNode; label: string }
-> = {
+const methodConfig: Record<string, { icon: React.ReactNode; label: string }> = {
   pix: {
     icon: <QrCode className="w-4 h-4" aria-hidden="true" />,
     label: 'PIX',
@@ -153,14 +135,10 @@ export function PaymentHistory({
       >
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-semibold text-gray-900">{payment.clientName}</p>
-          <Badge variant={statusToBadgeVariant[payment.status]}>
-            {statusLabel[payment.status]}
-          </Badge>
+          <Badge variant={statusToBadgeVariant[payment.status]}>{statusLabel[payment.status]}</Badge>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="font-bold text-gray-900 tabular-nums">
-            {formatBRL(payment.amount)}
-          </span>
+          <span className="font-bold text-gray-900 tabular-nums">{formatBRL(payment.amount)}</span>
           <span className="flex items-center gap-1 text-gray-500">
             {method.icon}
             {method.label}
@@ -252,10 +230,7 @@ export function PaymentHistory({
       )}
 
       {payments.length === 0 && !isFiltered && !isUnfilteredEmpty && (
-        <EmptyState
-          icon={<Receipt className="w-16 h-16" />}
-          title="Nenhum pagamento encontrado"
-        />
+        <EmptyState icon={<Receipt className="w-16 h-16" />} title="Nenhum pagamento encontrado" />
       )}
 
       {/* Desktop table */}
@@ -302,9 +277,7 @@ export function PaymentHistory({
                           : undefined
                       }
                     >
-                      <TableCell className="font-medium text-gray-900">
-                        {payment.clientName}
-                      </TableCell>
+                      <TableCell className="font-medium text-gray-900">{payment.clientName}</TableCell>
                       <TableCell className="text-gray-900 tabular-nums font-medium">
                         {formatBRL(payment.amount)}
                       </TableCell>
@@ -315,13 +288,9 @@ export function PaymentHistory({
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusToBadgeVariant[payment.status]}>
-                          {statusLabel[payment.status]}
-                        </Badge>
+                        <Badge variant={statusToBadgeVariant[payment.status]}>{statusLabel[payment.status]}</Badge>
                       </TableCell>
-                      <TableCell className="text-gray-600">
-                        {formatDate(payment.paidAt)}
-                      </TableCell>
+                      <TableCell className="text-gray-600">{formatDate(payment.paidAt)}</TableCell>
                     </TableRow>
                   );
                 })}
@@ -330,9 +299,7 @@ export function PaymentHistory({
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden space-y-3">
-            {payments.map(renderMobileCard)}
-          </div>
+          <div className="md:hidden space-y-3">{payments.map(renderMobileCard)}</div>
 
           {/* Pagination */}
           {totalPages > 1 && (

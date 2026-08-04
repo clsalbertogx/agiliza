@@ -1,15 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('SSRF Prevention — SEC-10', () => {
   // URL validation utility that prevents SSRF
   const BLOCKED_HOSTS = [
-    '169.254.169.254',        // AWS metadata endpoint
-    '127.0.0.1',              // Localhost IPv4
-    '::1',                    // Localhost IPv6
-    'localhost',              // Localhost hostname
-    '0.0.0.0',                // All interfaces
-    '10.',                    // RFC 1918 (10.0.0.0/8)
-    '172.16.',                // RFC 1918 (172.16.0.0/12)
+    '169.254.169.254', // AWS metadata endpoint
+    '127.0.0.1', // Localhost IPv4
+    '::1', // Localhost IPv6
+    'localhost', // Localhost hostname
+    '0.0.0.0', // All interfaces
+    '10.', // RFC 1918 (10.0.0.0/8)
+    '172.16.', // RFC 1918 (172.16.0.0/12)
     '172.17.',
     '172.18.',
     '172.19.',
@@ -25,7 +25,7 @@ describe('SSRF Prevention — SEC-10', () => {
     '172.29.',
     '172.30.',
     '172.31.',
-    '192.168.',               // RFC 1918 (192.168.0.0/16)
+    '192.168.', // RFC 1918 (192.168.0.0/16)
   ];
 
   // Known payment provider domains for webhook URL allowlisting
@@ -40,7 +40,7 @@ describe('SSRF Prevention — SEC-10', () => {
 
   function isInternalIP(hostname: string): boolean {
     const lower = hostname.toLowerCase();
-    return BLOCKED_HOSTS.some(blocked => lower.startsWith(blocked) || lower === blocked);
+    return BLOCKED_HOSTS.some((blocked) => lower.startsWith(blocked) || lower === blocked);
   }
 
   function validateUrl(url: string): { valid: boolean; reason?: string } {
@@ -78,8 +78,8 @@ describe('SSRF Prevention — SEC-10', () => {
       }
 
       // Check if hostname is in allowlist
-      const isAllowed = ALLOWED_PROVIDER_DOMAINS.some(domain =>
-        parsed.hostname === domain || parsed.hostname.endsWith('.' + domain)
+      const isAllowed = ALLOWED_PROVIDER_DOMAINS.some(
+        (domain) => parsed.hostname === domain || parsed.hostname.endsWith('.' + domain),
       );
 
       if (!isAllowed) {

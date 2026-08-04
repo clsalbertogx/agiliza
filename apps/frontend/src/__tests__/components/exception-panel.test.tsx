@@ -1,10 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {
-  ExceptionPanel,
-  type ExceptionItem,
-  type ExceptionSeverity,
-} from '@/components/exception-panel';
+import { type ExceptionItem, ExceptionPanel, type ExceptionSeverity } from '@/components/exception-panel';
 
 const baseExceptions: ExceptionItem[] = [
   {
@@ -38,9 +34,7 @@ const baseExceptions: ExceptionItem[] = [
   },
 ];
 
-function makeException(
-  overrides: Partial<ExceptionItem> & { id: string },
-): ExceptionItem {
+function makeException(overrides: Partial<ExceptionItem> & { id: string }): ExceptionItem {
   return {
     type: 'provider_error',
     severity: 'medium',
@@ -77,12 +71,7 @@ describe('ExceptionPanel', () => {
     });
 
     it('deve exibir mensagem de erro quando error é fornecido', () => {
-      render(
-        <ExceptionPanel
-          {...defaultProps}
-          error="Erro ao carregar exceções"
-        />,
-      );
+      render(<ExceptionPanel {...defaultProps} error="Erro ao carregar exceções" />);
 
       expect(screen.getByRole('alert')).toBeInTheDocument();
       expect(screen.getByText('Erro ao carregar exceções')).toBeInTheDocument();
@@ -91,17 +80,9 @@ describe('ExceptionPanel', () => {
     it('deve chamar onRetryFetch ao clicar em "Tentar novamente" no estado de erro', async () => {
       const onRetryFetch = vi.fn();
       const user = userEvent.setup();
-      render(
-        <ExceptionPanel
-          {...defaultProps}
-          error="Erro ao carregar"
-          onRetryFetch={onRetryFetch}
-        />,
-      );
+      render(<ExceptionPanel {...defaultProps} error="Erro ao carregar" onRetryFetch={onRetryFetch} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /tentar novamente/i }),
-      );
+      await user.click(screen.getByRole('button', { name: /tentar novamente/i }));
 
       expect(onRetryFetch).toHaveBeenCalledOnce();
     });
@@ -117,9 +98,7 @@ describe('ExceptionPanel', () => {
     it('deve exibir badge com a quantidade de exceções pendentes', () => {
       render(<ExceptionPanel {...defaultProps} />);
 
-      expect(
-        screen.getByLabelText('2 exceções pendentes'),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText('2 exceções pendentes')).toBeInTheDocument();
     });
 
     it('não deve exibir badge de pendentes quando todas as exceções estão resolvidas', () => {
@@ -140,13 +119,9 @@ describe('ExceptionPanel', () => {
 
     it('deve renderizar o label de severidade de cada exceção', () => {
       const severities: ExceptionSeverity[] = ['critical', 'high', 'medium', 'low'];
-      const exceptions = severities.map((severity, i) =>
-        makeException({ id: `exc-sv-${i}`, severity }),
-      );
+      const exceptions = severities.map((severity, i) => makeException({ id: `exc-sv-${i}`, severity }));
 
-      render(
-        <ExceptionPanel {...defaultProps} exceptions={exceptions} />,
-      );
+      render(<ExceptionPanel {...defaultProps} exceptions={exceptions} />);
 
       expect(screen.getByText('Crítico')).toBeInTheDocument();
       expect(screen.getByText('Alto')).toBeInTheDocument();
@@ -169,9 +144,7 @@ describe('ExceptionPanel', () => {
     });
 
     it('deve aplicar classe de borda específica da severidade no cartão', () => {
-      const { container } = render(
-        <ExceptionPanel {...defaultProps} />,
-      );
+      const { container } = render(<ExceptionPanel {...defaultProps} />);
 
       const section = container.querySelector('section[aria-labelledby="exception-title-exc-1"]');
       expect(section).toHaveClass('border-l-danger-500');
@@ -182,22 +155,16 @@ describe('ExceptionPanel', () => {
     it('deve ocultar a descrição por padrão (cartão colapsado)', () => {
       render(<ExceptionPanel {...defaultProps} />);
 
-      expect(
-        screen.queryByText('Valor pago difere do valor da fatura.'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Valor pago difere do valor da fatura.')).not.toBeInTheDocument();
     });
 
     it('deve exibir a descrição ao expandir o cartão', async () => {
       const user = userEvent.setup();
       render(<ExceptionPanel {...defaultProps} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }),
-      );
+      await user.click(screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }));
 
-      expect(
-        screen.getByText('Valor pago difere do valor da fatura.'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Valor pago difere do valor da fatura.')).toBeInTheDocument();
     });
 
     it('deve alternar aria-expanded ao expandir e recolher', async () => {
@@ -218,9 +185,7 @@ describe('ExceptionPanel', () => {
       const user = userEvent.setup();
       render(<ExceptionPanel {...defaultProps} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }),
-      );
+      await user.click(screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }));
 
       expect(screen.getByText('R$ 1.500,00')).toBeInTheDocument();
       expect(screen.getByText('#inv-1')).toBeInTheDocument();
@@ -230,26 +195,18 @@ describe('ExceptionPanel', () => {
       const user = userEvent.setup();
       render(<ExceptionPanel {...defaultProps} />);
 
-      expect(
-        screen.queryByText('Pagamento parcial detectado'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Pagamento parcial detectado')).not.toBeInTheDocument();
 
-      await user.click(
-        screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }),
-      );
+      await user.click(screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }));
 
-      expect(
-        screen.getByText('Pagamento parcial detectado'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Pagamento parcial detectado')).toBeInTheDocument();
     });
 
     it('deve exibir o contador de tentativas quando retryCount e maxRetries são fornecidos', async () => {
       const user = userEvent.setup();
       render(<ExceptionPanel {...defaultProps} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }),
-      );
+      await user.click(screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }));
 
       expect(screen.getByText(/Tentativa 1\/3/)).toBeInTheDocument();
     });
@@ -261,12 +218,8 @@ describe('ExceptionPanel', () => {
       const user = userEvent.setup();
       render(<ExceptionPanel {...defaultProps} onRetry={onRetry} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }),
-      );
-      await user.click(
-        screen.getByRole('button', { name: 'Tentar novamente exceção exc-1' }),
-      );
+      await user.click(screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }));
+      await user.click(screen.getByRole('button', { name: 'Tentar novamente exceção exc-1' }));
 
       expect(onRetry).toHaveBeenCalledWith('exc-1');
     });
@@ -276,9 +229,7 @@ describe('ExceptionPanel', () => {
       const user = userEvent.setup();
       render(<ExceptionPanel {...defaultProps} onResolve={onResolve} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }),
-      );
+      await user.click(screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }));
       await user.click(screen.getByRole('button', { name: 'Resolver' }));
 
       expect(onResolve).toHaveBeenCalledWith('exc-1');
@@ -289,9 +240,7 @@ describe('ExceptionPanel', () => {
       const user = userEvent.setup();
       render(<ExceptionPanel {...defaultProps} onIgnore={onIgnore} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }),
-      );
+      await user.click(screen.getByRole('button', { name: /Divergência de R\$ 150,00/ }));
       await user.click(screen.getByRole('button', { name: 'Ignorar' }));
 
       expect(onIgnore).toHaveBeenCalledWith('exc-1');
@@ -314,9 +263,7 @@ describe('ExceptionPanel', () => {
         />,
       );
 
-      await user.click(
-        screen.getByRole('button', { name: 'Mostrar resolvidas' }),
-      );
+      await user.click(screen.getByRole('button', { name: 'Mostrar resolvidas' }));
       await user.click(screen.getByRole('button', { name: /Falha já resolvida/ }));
 
       expect(screen.queryByRole('button', { name: 'Resolver' })).not.toBeInTheDocument();
@@ -339,9 +286,7 @@ describe('ExceptionPanel', () => {
         />,
       );
 
-      await user.click(
-        screen.getByRole('button', { name: 'Mostrar resolvidas' }),
-      );
+      await user.click(screen.getByRole('button', { name: 'Mostrar resolvidas' }));
       await user.click(screen.getByRole('button', { name: /Falha ignorada/ }));
 
       expect(screen.queryByRole('button', { name: 'Ignorar' })).not.toBeInTheDocument();
@@ -357,13 +302,7 @@ describe('ExceptionPanel', () => {
         maxRetries: 3,
       });
 
-      render(
-        <ExceptionPanel
-          exceptions={[maxedExc]}
-          onRetry={onRetry}
-          onResolve={vi.fn()}
-        />,
-      );
+      render(<ExceptionPanel exceptions={[maxedExc]} onRetry={onRetry} onResolve={vi.fn()} />);
 
       return onRetry;
     }
@@ -374,9 +313,7 @@ describe('ExceptionPanel', () => {
 
       await user.click(screen.getByRole('button', { name: /Falha no provedor/ }));
 
-      expect(
-        screen.getByRole('button', { name: 'Tentar novamente exceção exc-max' }),
-      ).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Tentar novamente exceção exc-max' })).toBeDisabled();
     });
 
     it('deve exibir "Retries esgotados" no botão quando o limite é atingido', async () => {
@@ -406,9 +343,7 @@ describe('ExceptionPanel', () => {
       const user = userEvent.setup();
 
       await user.click(screen.getByRole('button', { name: /Falha no provedor/ }));
-      await user.click(
-        screen.getByRole('button', { name: 'Tentar novamente exceção exc-max' }),
-      );
+      await user.click(screen.getByRole('button', { name: 'Tentar novamente exceção exc-max' }));
 
       expect(onRetry).not.toHaveBeenCalled();
     });
@@ -421,12 +356,7 @@ describe('ExceptionPanel', () => {
         makeException({ id: 'exc-r', title: 'Falha resolvida', status: 'resolved' }),
       ];
 
-      render(
-        <ExceptionPanel
-          exceptions={withResolved}
-          onRetry={vi.fn()}
-        />,
-      );
+      render(<ExceptionPanel exceptions={withResolved} onRetry={vi.fn()} />);
 
       expect(screen.queryByText('Falha resolvida')).not.toBeInTheDocument();
     });
@@ -438,12 +368,7 @@ describe('ExceptionPanel', () => {
         makeException({ id: 'exc-r', title: 'Falha resolvida', status: 'resolved' }),
       ];
 
-      render(
-        <ExceptionPanel
-          exceptions={withResolved}
-          onRetry={vi.fn()}
-        />,
-      );
+      render(<ExceptionPanel exceptions={withResolved} onRetry={vi.fn()} />);
 
       await user.click(screen.getByRole('button', { name: 'Mostrar resolvidas' }));
 
@@ -454,15 +379,11 @@ describe('ExceptionPanel', () => {
       const user = userEvent.setup();
       render(<ExceptionPanel {...defaultProps} />);
 
-      expect(
-        screen.getByRole('button', { name: 'Mostrar resolvidas' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Mostrar resolvidas' })).toBeInTheDocument();
 
       await user.click(screen.getByRole('button', { name: 'Mostrar resolvidas' }));
 
-      expect(
-        screen.getByRole('button', { name: 'Ocultar resolvidas' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Ocultar resolvidas' })).toBeInTheDocument();
     });
   });
 
@@ -470,38 +391,21 @@ describe('ExceptionPanel', () => {
     it('deve renderizar "Marcar todas como resolvidas" quando há múltiplas pendentes e onResolve', () => {
       render(<ExceptionPanel {...defaultProps} />);
 
-      expect(
-        screen.getByRole('button', { name: 'Marcar todas como resolvidas' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Marcar todas como resolvidas' })).toBeInTheDocument();
     });
 
     it('não deve renderizar "Marcar todas como resolvidas" com apenas uma pendente', () => {
       const singlePending = [baseExceptions[0]];
 
-      render(
-        <ExceptionPanel
-          exceptions={singlePending}
-          onRetry={vi.fn()}
-          onResolve={vi.fn()}
-        />,
-      );
+      render(<ExceptionPanel exceptions={singlePending} onRetry={vi.fn()} onResolve={vi.fn()} />);
 
-      expect(
-        screen.queryByRole('button', { name: 'Marcar todas como resolvidas' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Marcar todas como resolvidas' })).not.toBeInTheDocument();
     });
 
     it('não deve renderizar "Marcar todas como resolvidas" sem onResolve', () => {
-      render(
-        <ExceptionPanel
-          exceptions={baseExceptions}
-          onRetry={vi.fn()}
-        />,
-      );
+      render(<ExceptionPanel exceptions={baseExceptions} onRetry={vi.fn()} />);
 
-      expect(
-        screen.queryByRole('button', { name: 'Marcar todas como resolvidas' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Marcar todas como resolvidas' })).not.toBeInTheDocument();
     });
   });
 
@@ -509,12 +413,7 @@ describe('ExceptionPanel', () => {
     it('deve exibir "Nenhuma exceção encontrada" quando não há exceções pendentes', () => {
       const resolvedOnly = [makeException({ id: 'exc-r', status: 'resolved' })];
 
-      render(
-        <ExceptionPanel
-          exceptions={resolvedOnly}
-          onRetry={vi.fn()}
-        />,
-      );
+      render(<ExceptionPanel exceptions={resolvedOnly} onRetry={vi.fn()} />);
 
       expect(screen.getByText('Nenhuma exceção encontrada')).toBeInTheDocument();
     });
@@ -522,16 +421,9 @@ describe('ExceptionPanel', () => {
     it('deve exibir a descrição do empty state', () => {
       const resolvedOnly = [makeException({ id: 'exc-r', status: 'resolved' })];
 
-      render(
-        <ExceptionPanel
-          exceptions={resolvedOnly}
-          onRetry={vi.fn()}
-        />,
-      );
+      render(<ExceptionPanel exceptions={resolvedOnly} onRetry={vi.fn()} />);
 
-      expect(
-        screen.getByText('Todas as reconciliações estão em dia.'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Todas as reconciliações estão em dia.')).toBeInTheDocument();
     });
   });
 });

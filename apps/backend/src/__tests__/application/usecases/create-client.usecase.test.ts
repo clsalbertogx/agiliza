@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Either, isSuccess, isFailure } from '@/application/types/either';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { Client, createClient, MessageChannel, RiskScore } from '@/domain/entities/client';
-import { Phone } from '@/domain/value-objects/phone';
-import { Email } from '@/domain/value-objects/email';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import { Either, isFailure, isSuccess } from '@/application/types/either';
+import { type CreateClientInput, CreateClientUseCase } from '@/application/usecases/create-client.usecase';
+import { type Client, createClient, MessageChannel, RiskScore } from '@/domain/entities/client';
 import { createDomainEvent } from '@/domain/events/domain-events';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { CreateClientUseCase, CreateClientInput } from '@/application/usecases/create-client.usecase';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { Email } from '@/domain/value-objects/email';
+import { Phone } from '@/domain/value-objects/phone';
 
 describe('CreateClientUseCase', () => {
   let useCase: CreateClientUseCase;
@@ -105,7 +105,7 @@ describe('CreateClientUseCase', () => {
           eventType: 'client.created',
           tenantId: '00000000-0000-0000-0000-000000000001',
           clientId: expect.any(String),
-        })
+        }),
       );
     });
   });

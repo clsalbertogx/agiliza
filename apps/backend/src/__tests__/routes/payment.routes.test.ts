@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import Fastify from 'fastify';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockVerify = vi.hoisted(() => vi.fn());
 
@@ -41,7 +41,7 @@ describe('Payment API Routes', () => {
         payload: {
           tenantId: TENANT_ID,
           event: 'PAYMENT_CONFIRMED',
-          payment: { id: 'pay_123', value: 150.00 },
+          payment: { id: 'pay_123', value: 150.0 },
         },
       });
       expect(res.statusCode).toBe(200);

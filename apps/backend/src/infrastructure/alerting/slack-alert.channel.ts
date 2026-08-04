@@ -1,4 +1,4 @@
-import { AlertChannelPort, AlertMessage } from '@/application/ports/gateways/alert-channel.port';
+import type { AlertChannelPort, AlertMessage } from '@/application/ports/gateways/alert-channel.port';
 
 export class SlackAlertChannel implements AlertChannelPort {
   private readonly webhookUrl: string;
@@ -9,9 +9,12 @@ export class SlackAlertChannel implements AlertChannelPort {
 
   private severityColor(severity: AlertMessage['severity']): string {
     switch (severity) {
-      case 'critical': return 'danger';
-      case 'warning': return 'warning';
-      default: return 'good';
+      case 'critical':
+        return 'danger';
+      case 'warning':
+        return 'warning';
+      default:
+        return 'good';
     }
   }
 
@@ -19,16 +22,18 @@ export class SlackAlertChannel implements AlertChannelPort {
     if (!this.webhookUrl) return; // silent no-op if not configured
 
     const payload = {
-      attachments: [{
-        color: this.severityColor(alert.severity),
-        title: alert.title,
-        text: alert.message,
-        fields: Object.entries(alert.metadata || {}).map(([title, value]) => ({
-          title,
-          value: String(value),
-          short: true,
-        })),
-      }],
+      attachments: [
+        {
+          color: this.severityColor(alert.severity),
+          title: alert.title,
+          text: alert.message,
+          fields: Object.entries(alert.metadata || {}).map(([title, value]) => ({
+            title,
+            value: String(value),
+            short: true,
+          })),
+        },
+      ],
     };
 
     await fetch(this.webhookUrl, {

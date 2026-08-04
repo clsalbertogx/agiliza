@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { describe, expect, it } from 'vitest';
 
 describe('PII Encryption at Rest — SEC-05', () => {
   // AES-256-GCM encryption implementation matching the security spec

@@ -3,9 +3,12 @@ process.env.ASAAS_WEBHOOK_SECRET = 'asaas-test-secret-key';
 process.env.MERCADOPAGO_WEBHOOK_SECRET = 'mp-test-secret-key';
 process.env.EVOLUTION_API_KEY = 'evolution-secret-key-123';
 
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import type { verifyWebhookSignature as VerifyFn, getSignatureHeader as HeaderFn } from '@/infrastructure/payment/hmac-verifier';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type {
+  getSignatureHeader as HeaderFn,
+  verifyWebhookSignature as VerifyFn,
+} from '@/infrastructure/payment/hmac-verifier';
 
 let verifyWebhookSignature: typeof VerifyFn;
 let getSignatureHeader: typeof HeaderFn;
@@ -69,7 +72,7 @@ describe('Webhook Security', () => {
       // Test timing-safe comparison behavior
       const correctResult = timingSafeEqual(
         Buffer.from(correctSignature),
-        Buffer.from(createHmac('sha256', secret).update(payload).digest('hex'))
+        Buffer.from(createHmac('sha256', secret).update(payload).digest('hex')),
       );
       expect(correctResult).toBe(true);
 
@@ -77,7 +80,7 @@ describe('Webhook Security', () => {
       try {
         const wrongResult = timingSafeEqual(
           Buffer.from(wrongSignature),
-          Buffer.from(createHmac('sha256', secret).update(payload).digest('hex'))
+          Buffer.from(createHmac('sha256', secret).update(payload).digest('hex')),
         );
         expect(wrongResult).toBe(false);
       } catch {
@@ -103,9 +106,7 @@ describe('Webhook Security', () => {
       const secret = 'mp-test-secret-key';
       const timestamp = Math.floor(Date.now() / 1000);
       // Mercado Pago format: HMAC(ts + '.' + body, secret)
-      const combinedSignature = createHmac('sha256', secret)
-        .update(`${timestamp}.${payload}`)
-        .digest('hex');
+      const combinedSignature = createHmac('sha256', secret).update(`${timestamp}.${payload}`).digest('hex');
 
       function verifyMercadoPago(rawBody: string, headerValue: string, secretKey: string): boolean {
         // Parse the x-signature header format: ts=12345,v1=abc123
@@ -124,9 +125,7 @@ describe('Webhook Security', () => {
         if (Math.abs(now - parseInt(ts)) > 300) return false;
 
         // Verify HMAC(ts + '.' + body, secret)
-        const expected = createHmac('sha256', secretKey)
-          .update(`${ts}.${rawBody}`)
-          .digest('hex');
+        const expected = createHmac('sha256', secretKey).update(`${ts}.${rawBody}`).digest('hex');
         try {
           return timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
         } catch {
@@ -154,9 +153,7 @@ describe('Webhook Security', () => {
       });
       const secret = 'mp-test-secret-key';
       const oldTimestamp = Math.floor(Date.now() / 1000) - 600; // 10 min ago (past 5 min window)
-      const signature = createHmac('sha256', secret)
-        .update(`${oldTimestamp}.${payload}`)
-        .digest('hex');
+      const signature = createHmac('sha256', secret).update(`${oldTimestamp}.${payload}`).digest('hex');
 
       function verifyMercadoPagoWithExpiry(rawBody: string, headerValue: string, secretKey: string): boolean {
         const parts = headerValue.split(',');
@@ -173,9 +170,7 @@ describe('Webhook Security', () => {
         const now = Math.floor(Date.now() / 1000);
         if (Math.abs(now - parseInt(ts)) > 300) return false;
 
-        const expected = createHmac('sha256', secretKey)
-          .update(`${ts}.${rawBody}`)
-          .digest('hex');
+        const expected = createHmac('sha256', secretKey).update(`${ts}.${rawBody}`).digest('hex');
         try {
           return timingSafeEqual(Buffer.from(v1), Buffer.from(expected));
         } catch {
@@ -200,14 +195,10 @@ describe('Webhook Security', () => {
       const secret = 'pagbank-test-secret';
 
       // PagBank uses base64-encoded HMAC-SHA256
-      const expectedSignature = createHmac('sha256', secret)
-        .update(payload)
-        .digest('base64');
+      const expectedSignature = createHmac('sha256', secret).update(payload).digest('base64');
 
       function verifyPagBank(rawBody: string, signature: string, secretKey: string): boolean {
-        const expected = createHmac('sha256', secretKey)
-          .update(rawBody)
-          .digest('base64');
+        const expected = createHmac('sha256', secretKey).update(rawBody).digest('base64');
         try {
           return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
         } catch {
@@ -235,9 +226,7 @@ describe('Webhook Security', () => {
 
       // Polar format: HMAC(msgId + '.' + timestamp + '.' + body, secret)
       const toSign = `${msgId}.${timestamp}.${payload}`;
-      const expectedSignature = createHmac('sha256', secret)
-        .update(toSign)
-        .digest('base64');
+      const expectedSignature = createHmac('sha256', secret).update(toSign).digest('base64');
 
       function verifyPolar(rawBody: string, headers: Record<string, string>, secretKey: string): boolean {
         const msgId = headers['webhook-id'];
@@ -246,9 +235,7 @@ describe('Webhook Security', () => {
         if (!msgId || !timestamp || !signature) return false;
 
         const toSign = `${msgId}.${timestamp}.${rawBody}`;
-        const expected = createHmac('sha256', secretKey)
-          .update(toSign)
-          .digest('base64');
+        const expected = createHmac('sha256', secretKey).update(toSign).digest('base64');
         try {
           return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
         } catch {
@@ -484,7 +471,7 @@ describe('Webhook Security', () => {
       function retryWithBackoff(maxRetries: number): boolean {
         for (let attempt = 0; attempt < maxRetries; attempt++) {
           attemptCount++;
-          const delay = 10 * Math.pow(3, attempt);
+          const delay = 10 * 3 ** attempt;
           backoffDelays.push(delay);
           if (attempt === maxRetries - 1) {
             return true;

@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ReminderService } from '@/application/services/reminder.service';
-import { DecisionEngineService } from '@/application/services/decision-engine.service';
-import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import type { QueuePort } from '@/application/ports/queue/queue.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { EventRepositoryPort } from '@/application/ports/repositories/event.repository.port';
-import type { QueuePort } from '@/application/ports/queue/queue.port';
-import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
-import { MessageChannel, type Client } from '@/domain/entities/client';
-import { InvoiceStatus, type Invoice } from '@/domain/entities/invoice';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { DecisionEngineService } from '@/application/services/decision-engine.service';
+import { ReminderService } from '@/application/services/reminder.service';
+import { type Client, MessageChannel } from '@/domain/entities/client';
+import { type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
 import { RiskScore } from '@/domain/value-objects/risk-score';
 
 function createMocks() {
@@ -73,7 +73,7 @@ const makeInvoice = (overrides: Partial<Invoice> = {}): Invoice => ({
   id: 'inv-123',
   tenantId: 'tenant-123',
   clientId: 'client-123',
-  amount: 250.50,
+  amount: 250.5,
   dueDate: new Date('2026-08-05'),
   status: InvoiceStatus.PENDING,
   createdAt: new Date('2026-07-01'),
@@ -141,11 +141,7 @@ describe('ReminderService', () => {
         }),
       );
       expect(mocks.clientRepo.findById).toHaveBeenCalledWith(invoice.clientId);
-      expect(vi.mocked(decisionEngine.decideNextAction)).toHaveBeenCalledWith(
-        client,
-        invoice,
-        'default',
-      );
+      expect(vi.mocked(decisionEngine.decideNextAction)).toHaveBeenCalledWith(client, invoice, 'default');
     });
 
     it('should skip invoices where client is not found', async () => {
@@ -239,9 +235,7 @@ describe('ReminderService', () => {
         data: [invoice1, invoice2],
         total: 2,
       });
-      vi.mocked(mocks.clientRepo.findById)
-        .mockResolvedValueOnce(client1)
-        .mockResolvedValueOnce(client2);
+      vi.mocked(mocks.clientRepo.findById).mockResolvedValueOnce(client1).mockResolvedValueOnce(client2);
 
       const result = await service.processPendingReminders('tenant-123');
 
@@ -300,9 +294,7 @@ describe('ReminderService', () => {
     it('should throw error when invoice is not found', async () => {
       vi.mocked(mocks.invoiceRepo.findById).mockResolvedValue(null);
 
-      await expect(
-        service.sendReminderNow('nonexistent', 'tenant-123'),
-      ).rejects.toThrow('Invoice not found');
+      await expect(service.sendReminderNow('nonexistent', 'tenant-123')).rejects.toThrow('Invoice not found');
 
       expect(mocks.clientRepo.findById).not.toHaveBeenCalled();
       expect(mocks.messageProvider.sendTemplate).not.toHaveBeenCalled();
@@ -313,9 +305,7 @@ describe('ReminderService', () => {
       vi.mocked(mocks.invoiceRepo.findById).mockResolvedValue(invoice);
       vi.mocked(mocks.clientRepo.findById).mockResolvedValue(null);
 
-      await expect(
-        service.sendReminderNow(invoice.id, 'tenant-123'),
-      ).rejects.toThrow('Client not found');
+      await expect(service.sendReminderNow(invoice.id, 'tenant-123')).rejects.toThrow('Client not found');
 
       expect(mocks.messageProvider.sendTemplate).not.toHaveBeenCalled();
     });
@@ -359,13 +349,9 @@ describe('ReminderService', () => {
 
   describe('error handling', () => {
     it('should handle invoice repo failure on processPendingReminders', async () => {
-      vi.mocked(mocks.invoiceRepo.findMany).mockRejectedValue(
-        new Error('Database connection failed'),
-      );
+      vi.mocked(mocks.invoiceRepo.findMany).mockRejectedValue(new Error('Database connection failed'));
 
-      await expect(
-        service.processPendingReminders('tenant-123'),
-      ).rejects.toThrow('Database connection failed');
+      await expect(service.processPendingReminders('tenant-123')).rejects.toThrow('Database connection failed');
     });
 
     it('should handle queue failure on scheduleReminder', async () => {
@@ -377,13 +363,9 @@ describe('ReminderService', () => {
         total: 1,
       });
       vi.mocked(mocks.clientRepo.findById).mockResolvedValue(client);
-      vi.mocked(mocks.queue.addJob).mockRejectedValue(
-        new Error('Queue unavailable'),
-      );
+      vi.mocked(mocks.queue.addJob).mockRejectedValue(new Error('Queue unavailable'));
 
-      await expect(
-        service.processPendingReminders('tenant-123'),
-      ).rejects.toThrow('Queue unavailable');
+      await expect(service.processPendingReminders('tenant-123')).rejects.toThrow('Queue unavailable');
     });
 
     it('should handle message provider failure on sendReminderNow', async () => {
@@ -392,13 +374,9 @@ describe('ReminderService', () => {
 
       vi.mocked(mocks.invoiceRepo.findById).mockResolvedValue(invoice);
       vi.mocked(mocks.clientRepo.findById).mockResolvedValue(client);
-      vi.mocked(mocks.messageProvider.sendTemplate).mockRejectedValue(
-        new Error('Provider API error'),
-      );
+      vi.mocked(mocks.messageProvider.sendTemplate).mockRejectedValue(new Error('Provider API error'));
 
-      await expect(
-        service.sendReminderNow(invoice.id, 'tenant-123'),
-      ).rejects.toThrow('Provider API error');
+      await expect(service.sendReminderNow(invoice.id, 'tenant-123')).rejects.toThrow('Provider API error');
     });
 
     it('should handle event repo failure on processPendingReminders', async () => {
@@ -410,13 +388,9 @@ describe('ReminderService', () => {
         total: 1,
       });
       vi.mocked(mocks.clientRepo.findById).mockResolvedValue(client);
-      vi.mocked(mocks.eventRepo.save).mockRejectedValue(
-        new Error('Event log failure'),
-      );
+      vi.mocked(mocks.eventRepo.save).mockRejectedValue(new Error('Event log failure'));
 
-      await expect(
-        service.processPendingReminders('tenant-123'),
-      ).rejects.toThrow('Event log failure');
+      await expect(service.processPendingReminders('tenant-123')).rejects.toThrow('Event log failure');
     });
   });
 
@@ -517,8 +491,7 @@ describe('ReminderService', () => {
       await service.processPendingReminders('tenant-123');
 
       // The dueDate is formatted from decision.scheduledAt
-      const expectedDate = new Date('2026-08-02T09:00:00.000Z')
-        .toLocaleDateString('pt-BR');
+      const expectedDate = new Date('2026-08-02T09:00:00.000Z').toLocaleDateString('pt-BR');
 
       expect(mocks.queue.addJob).toHaveBeenCalledWith(
         'send-message',

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 describe('SQL Injection Prevention — SEC-04', () => {
@@ -19,7 +19,7 @@ describe('SQL Injection Prevention — SEC-04', () => {
 
     // Then the client is created normally (name stored as literal)
     expect(client.name).toBe(maliciousName);
-    expect(client.name).toContain("DROP TABLE clients");
+    expect(client.name).toContain('DROP TABLE clients');
     expect(client.name).toContain("';");
   });
 
@@ -46,14 +46,14 @@ describe('SQL Injection Prevention — SEC-04', () => {
 
     // The malicious pattern is stored/used as a literal search string
     // In Prisma, `contains` operator parameterizes the input as a literal
-    expect(result.term).toContain("1=1"); // The literal string includes "1=1"
-    expect(result.term).toContain("OR");  // It's just text, not SQL
+    expect(result.term).toContain('1=1'); // The literal string includes "1=1"
+    expect(result.term).toContain('OR'); // It's just text, not SQL
     expect(result.filtered).toBe(true); // Tenant isolation still enforced
   });
 
   it('should prevent NoSQL-style injection via JSONB metadata', () => {
     // Given a malicious metadata payload with MongoDB operators
-    const maliciousMetadata = { "$gt": "", "$ne": null };
+    const maliciousMetadata = { $gt: '', $ne: null };
 
     // Simulate Prisma's JSONB handling — stores the JSON as literal value
     // Prisma treats JSON fields as structured data, not executable operators
@@ -68,8 +68,8 @@ describe('SQL Injection Prevention — SEC-04', () => {
 
     // Then metadata is stored as a literal JSON object
     const parsedMetadata = JSON.parse(invoice.metadata);
-    expect(parsedMetadata).toEqual({ "$gt": "", "$ne": null });
-    expect(parsedMetadata["$gt"]).toBe("");
+    expect(parsedMetadata).toEqual({ $gt: '', $ne: null });
+    expect(parsedMetadata['$gt']).toBe('');
 
     // And no injection occurs — the $gt operator was stored literally, not executed
   });
@@ -87,15 +87,15 @@ describe('SQL Injection Prevention — SEC-04', () => {
       "`SELECT * FROM clients WHERE id = '${id}'`",
       "`DELETE FROM clients WHERE name = '${name}'`",
       "`INSERT INTO clients VALUES ('${name}')`",
-      "`SELECT * FROM clients WHERE ${filter}`",
+      '`SELECT * FROM clients WHERE ${filter}`',
     ];
 
     // These patterns are REQUIRED (Prisma parameterized):
     const requiredPatterns = [
-      "prisma.client.findFirst({ where: { id, tenantId } })",
-      "prisma.client.findMany({ where: { name: { contains: search }, tenantId } })",
-      "prisma.client.create({ data: { name, tenantId } })",
-      "prisma.client.update({ where: { id }, data: { name } })",
+      'prisma.client.findFirst({ where: { id, tenantId } })',
+      'prisma.client.findMany({ where: { name: { contains: search }, tenantId } })',
+      'prisma.client.create({ data: { name, tenantId } })',
+      'prisma.client.update({ where: { id }, data: { name } })',
     ];
 
     // Verify that prohibited patterns are NOT used
@@ -117,7 +117,10 @@ describe('SQL Injection Prevention — SEC-04', () => {
     const createClientSchema = z.object({
       name: z.string().min(1).max(255),
       email: z.string().email().optional(),
-      phone: z.string().regex(/^\+?[1-9]\d{1,14}$/).optional(),
+      phone: z
+        .string()
+        .regex(/^\+?[1-9]\d{1,14}$/)
+        .optional(),
       tenantId: z.string().uuid(),
     });
 
@@ -133,11 +136,11 @@ describe('SQL Injection Prevention — SEC-04', () => {
 
     // Malicious/invalid input should be rejected by Zod BEFORE reaching DB
     const maliciousInputs = [
-      { name: '', email: 'john@example.com', tenantId: '550e8400-e29b-41d4-a716-446655440000' },          // Empty name
+      { name: '', email: 'john@example.com', tenantId: '550e8400-e29b-41d4-a716-446655440000' }, // Empty name
       { name: 'A'.repeat(300), email: 'john@example.com', tenantId: '550e8400-e29b-41d4-a716-446655440000' }, // Name too long
-      { name: 'John', email: 'not-an-email', tenantId: '550e8400-e29b-41d4-a716-446655440000' },            // Invalid email
-      { name: 'John', phone: 'abc', tenantId: '550e8400-e29b-41d4-a716-446655440000' },                     // Invalid phone
-      { name: 'John', tenantId: 'not-a-uuid' },                                                              // Invalid UUID
+      { name: 'John', email: 'not-an-email', tenantId: '550e8400-e29b-41d4-a716-446655440000' }, // Invalid email
+      { name: 'John', phone: 'abc', tenantId: '550e8400-e29b-41d4-a716-446655440000' }, // Invalid phone
+      { name: 'John', tenantId: 'not-a-uuid' }, // Invalid UUID
     ];
 
     for (const input of maliciousInputs) {
@@ -150,8 +153,8 @@ describe('SQL Injection Prevention — SEC-04', () => {
     });
 
     // $gt injection as literal — Zod treats it as a plain string key
-    const metadataInput = { metadata: { "$gt": "" } };
+    const metadataInput = { metadata: { $gt: '' } };
     const metadataParsed = metadataSchema.parse(metadataInput);
-    expect(metadataParsed.metadata!["$gt"]).toBe("");
+    expect(metadataParsed.metadata!['$gt']).toBe('');
   });
 });

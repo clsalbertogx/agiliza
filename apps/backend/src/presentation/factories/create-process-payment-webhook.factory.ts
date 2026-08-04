@@ -1,9 +1,9 @@
 import { ProcessPaymentWebhookUseCase } from '@/application/usecases/process-payment-webhook.usecase';
-import { PerTenantHmacVerifier } from '@/infrastructure/payment/per-tenant-hmac-verifier';
-import { AsaasWebhookParser } from '@/infrastructure/payment/asaas-webhook-parser';
 import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
 import { PrismaPaymentRepository } from '@/infrastructure/database/repositories/payment.repository';
 import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
+import { AsaasWebhookParser } from '@/infrastructure/payment/asaas-webhook-parser';
+import { PerTenantHmacVerifier } from '@/infrastructure/payment/per-tenant-hmac-verifier';
 
 export function createProcessPaymentWebhookUseCase(): ProcessPaymentWebhookUseCase {
   return new ProcessPaymentWebhookUseCase(

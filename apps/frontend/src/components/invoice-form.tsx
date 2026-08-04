@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Calendar, DollarSign, Loader2, Search, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ErrorState } from '@/components/error-state';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { RiskBadge } from '@/components/risk-badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { RiskBadge } from '@/components/risk-badge';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { ErrorState } from '@/components/error-state';
-import { Search, X, Loader2, Calendar, DollarSign } from 'lucide-react';
 
 export interface InvoiceFormClient {
   id: string;
@@ -77,19 +77,13 @@ export function InvoiceForm({
 }: InvoiceFormProps) {
   const [clientSearch, setClientSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<InvoiceFormClient | null>(
-    initialData?.clientId
-      ? clients.find((c) => c.id === initialData.clientId) ?? null
-      : null
+    initialData?.clientId ? (clients.find((c) => c.id === initialData.clientId) ?? null) : null,
   );
   const [showDropdown, setShowDropdown] = useState(false);
-  const [amountText, setAmountText] = useState(
-    initialData?.amount ? formatBRL(initialData.amount) : ''
-  );
-  const [dueDate, setDueDate] = useState(
-    initialData?.dueDate ? formatDateInput(initialData.dueDate) : ''
-  );
+  const [amountText, setAmountText] = useState(initialData?.amount ? formatBRL(initialData.amount) : '');
+  const [dueDate, setDueDate] = useState(initialData?.dueDate ? formatDateInput(initialData.dueDate) : '');
   const [paymentMethod, setPaymentMethod] = useState<InvoiceFormData['paymentMethod']>(
-    initialData?.paymentMethod ?? 'pix'
+    initialData?.paymentMethod ?? 'pix',
   );
   const [description, setDescription] = useState(initialData?.description ?? '');
 
@@ -105,13 +99,12 @@ export function InvoiceForm({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredClients = clientSearch.length >= 2
-    ? clients.filter(
-        (c) =>
-          c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-          c.phone.includes(clientSearch)
-      )
-    : [];
+  const filteredClients =
+    clientSearch.length >= 2
+      ? clients.filter(
+          (c) => c.name.toLowerCase().includes(clientSearch.toLowerCase()) || c.phone.includes(clientSearch),
+        )
+      : [];
 
   const handleSelectClient = useCallback((client: InvoiceFormClient) => {
     setSelectedClient(client);
@@ -150,7 +143,7 @@ export function InvoiceForm({
         description: description || undefined,
       });
     },
-    [onSubmit, selectedClient, amountText, dueDate, paymentMethod, description]
+    [onSubmit, selectedClient, amountText, dueDate, paymentMethod, description],
   );
 
   if (isLoading) {
@@ -191,7 +184,10 @@ export function InvoiceForm({
                 </div>
               ) : (
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+                  <Search
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                    aria-hidden="true"
+                  />
                   <Input
                     id="client-search"
                     type="text"
@@ -257,7 +253,10 @@ export function InvoiceForm({
               Valor <span className="text-danger-500">*</span>
             </Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+              <DollarSign
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                aria-hidden="true"
+              />
               <Input
                 id="amount"
                 type="text"
@@ -354,11 +353,7 @@ export function InvoiceForm({
                 Voltar
               </Button>
             )}
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={!isFormValid || isSubmitting}
-            >
+            <Button type="submit" variant="primary" disabled={!isFormValid || isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />

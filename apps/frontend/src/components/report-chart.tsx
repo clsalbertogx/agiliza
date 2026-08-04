@@ -1,13 +1,13 @@
-// @deprecated — not wired yet
+// Wired into the dashboard — distribution of invoices by status.
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { BarChart3, Calendar, PieChart, TrendingUp } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { BarChart3, TrendingUp, PieChart, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export type ChartType = 'bar' | 'line' | 'pie';
 
@@ -73,25 +73,13 @@ function ChartSkeleton({ height }: { height: number }) {
         <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" aria-hidden="true" />
         <div className="h-8 w-40 bg-gray-200 rounded animate-pulse" aria-hidden="true" />
       </div>
-      <div
-        className="bg-gray-100 rounded-xl animate-pulse"
-        style={{ height: `${height}px` }}
-        aria-hidden="true"
-      />
+      <div className="bg-gray-100 rounded-xl animate-pulse" style={{ height: `${height}px` }} aria-hidden="true" />
     </div>
   );
 }
 
 // -------- Bar Chart --------
-function BarChart({
-  data,
-  series,
-  height,
-}: {
-  data: ChartDataPoint[];
-  series?: ChartSeries[];
-  height: number;
-}) {
+function BarChart({ data, series, height }: { data: ChartDataPoint[]; series?: ChartSeries[]; height: number }) {
   const padding = { top: 20, right: 20, bottom: 50, left: 60 };
   const chartWidth = 600;
   const chartHeight = height;
@@ -114,22 +102,24 @@ function BarChart({
     return labels;
   }, [maxValue]);
 
-  const barWidth = hasSeries && series
-    ? Math.min(innerWidth / data.length / (series.length + 1) - 4, 30)
-    : Math.min(innerWidth / data.length - 8, 50);
+  const barWidth =
+    hasSeries && series
+      ? Math.min(innerWidth / data.length / (series.length + 1) - 4, 30)
+      : Math.min(innerWidth / data.length - 8, 50);
 
   // Build accessible table data
-  const tableData = hasSeries && series
-    ? series!.map((s) => ({
-        name: s.name,
-        values: data.map((d, i) => ({ label: d.label, value: s.data[i] ?? 0 })),
-      }))
-    : [
-        {
-          name: 'Valores',
-          values: data.map((d) => ({ label: d.label, value: d.value })),
-        },
-      ];
+  const tableData =
+    hasSeries && series
+      ? series!.map((s) => ({
+          name: s.name,
+          values: data.map((d, i) => ({ label: d.label, value: s.data[i] ?? 0 })),
+        }))
+      : [
+          {
+            name: 'Valores',
+            values: data.map((d) => ({ label: d.label, value: d.value })),
+          },
+        ];
 
   return (
     <>
@@ -168,20 +158,8 @@ function BarChart({
           const y = padding.top + innerHeight - (label / maxValue) * innerHeight;
           return (
             <g key={label}>
-              <line
-                x1={padding.left}
-                y1={y}
-                x2={chartWidth - padding.right}
-                y2={y}
-                stroke="#e5e7eb"
-                strokeWidth={1}
-              />
-              <text
-                x={padding.left - 8}
-                y={y + 4}
-                textAnchor="end"
-                className="text-xs fill-gray-400"
-              >
+              <line x1={padding.left} y1={y} x2={chartWidth - padding.right} y2={y} stroke="#e5e7eb" strokeWidth={1} />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" className="text-xs fill-gray-400">
                 {formatBRL(label)}
               </text>
             </g>
@@ -215,12 +193,11 @@ function BarChart({
                   const value = s.data[di] ?? 0;
                   const barHeight = (value / maxValue) * innerHeight;
                   const groupWidth = innerWidth / data.length;
-                  const x =
-                    padding.left + di * groupWidth + (groupWidth / (series.length + 1)) * si + 2;
+                  const x = padding.left + di * groupWidth + (groupWidth / (series.length + 1)) * si + 2;
                   const y = padding.top + innerHeight - barHeight;
                   return (
                     <rect
-                      key={`${s.name}-${di}`}
+                      key={`${s.name}-${d.label}`}
                       x={x}
                       y={y}
                       width={barWidth}
@@ -276,15 +253,7 @@ function BarChart({
 }
 
 // -------- Line Chart --------
-function LineChart({
-  data,
-  series,
-  height,
-}: {
-  data: ChartDataPoint[];
-  series?: ChartSeries[];
-  height: number;
-}) {
+function LineChart({ data, series, height }: { data: ChartDataPoint[]; series?: ChartSeries[]; height: number }) {
   const padding = { top: 20, right: 20, bottom: 50, left: 60 };
   const chartWidth = 600;
   const chartHeight = height;
@@ -305,24 +274,23 @@ function LineChart({
     return labels;
   }, [maxValue]);
 
-  const getX = (i: number) =>
-    padding.left + (i / (data.length - 1 || 1)) * innerWidth;
+  const getX = (i: number) => padding.left + (i / (data.length - 1 || 1)) * innerWidth;
 
-  const getY = (value: number) =>
-    padding.top + innerHeight - (value / maxValue) * innerHeight;
+  const getY = (value: number) => padding.top + innerHeight - (value / maxValue) * innerHeight;
 
   // Accessible table
-  const tableData = hasSeries && series
-    ? series!.map((s) => ({
-        name: s.name,
-        values: data.map((d, i) => ({ label: d.label, value: s.data[i] ?? 0 })),
-      }))
-    : [
-        {
-          name: 'Valores',
-          values: data.map((d) => ({ label: d.label, value: d.value })),
-        },
-      ];
+  const tableData =
+    hasSeries && series
+      ? series!.map((s) => ({
+          name: s.name,
+          values: data.map((d, i) => ({ label: d.label, value: s.data[i] ?? 0 })),
+        }))
+      : [
+          {
+            name: 'Valores',
+            values: data.map((d) => ({ label: d.label, value: d.value })),
+          },
+        ];
 
   return (
     <>
@@ -359,20 +327,8 @@ function LineChart({
           const y = getY(label);
           return (
             <g key={label}>
-              <line
-                x1={padding.left}
-                y1={y}
-                x2={chartWidth - padding.right}
-                y2={y}
-                stroke="#e5e7eb"
-                strokeWidth={1}
-              />
-              <text
-                x={padding.left - 8}
-                y={y + 4}
-                textAnchor="end"
-                className="text-xs fill-gray-400"
-              >
+              <line x1={padding.left} y1={y} x2={chartWidth - padding.right} y2={y} stroke="#e5e7eb" strokeWidth={1} />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" className="text-xs fill-gray-400">
                 {formatBRL(label)}
               </text>
             </g>
@@ -399,9 +355,7 @@ function LineChart({
         {/* Lines */}
         {hasSeries && series
           ? series.map((s, si) => {
-              const points = s.data
-                .map((value, i) => `${getX(i)},${getY(value)}`)
-                .join(' ');
+              const points = s.data.map((value, i) => `${getX(i)},${getY(value)}`).join(' ');
               return (
                 <g key={s.name}>
                   <polyline
@@ -414,7 +368,7 @@ function LineChart({
                   />
                   {s.data.map((value, i) => (
                     <circle
-                      key={`${s.name}-${i}`}
+                      key={`${s.name}-${data[i].label ?? i}`}
                       cx={getX(i)}
                       cy={getY(value)}
                       r={3}
@@ -428,9 +382,7 @@ function LineChart({
               );
             })
           : (() => {
-              const points = data
-                .map((d, i) => `${getX(i)},${getY(d.value)}`)
-                .join(' ');
+              const points = data.map((d, i) => `${getX(i)},${getY(d.value)}`).join(' ');
               return (
                 <g>
                   <polyline
@@ -442,13 +394,7 @@ function LineChart({
                     strokeLinecap="round"
                   />
                   {data.map((d, i) => (
-                    <circle
-                      key={d.label}
-                      cx={getX(i)}
-                      cy={getY(d.value)}
-                      r={3}
-                      fill={d.color ?? defaultColors[0]}
-                    >
+                    <circle key={d.label} cx={getX(i)} cy={getY(d.value)} r={3} fill={d.color ?? defaultColors[0]}>
                       <title>{`${d.label}: ${formatBRL(d.value)}`}</title>
                     </circle>
                   ))}
@@ -471,13 +417,7 @@ function LineChart({
 }
 
 // -------- Pie Chart --------
-function PieChartSvg({
-  data,
-  height,
-}: {
-  data: ChartDataPoint[];
-  height: number;
-}) {
+function PieChartSvg({ data, height }: { data: ChartDataPoint[]; height: number }) {
   const cx = 150;
   const cy = 150;
   const radius = 120;
@@ -571,11 +511,7 @@ function ChartLegend({ data, series }: { data: ChartDataPoint[]; series?: ChartS
     <div className="flex flex-wrap justify-center gap-4 mt-4" aria-label="Legenda do gráfico">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1.5">
-          <span
-            className="w-3 h-3 rounded-sm"
-            style={{ backgroundColor: item.color }}
-            aria-hidden="true"
-          />
+          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} aria-hidden="true" />
           <span className="text-xs text-gray-600">{item.label}</span>
         </div>
       ))}
@@ -617,7 +553,10 @@ export function ReportChart({
           {onDateRangeChange && (
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+                <Calendar
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                  aria-hidden="true"
+                />
                 <input
                   type="month"
                   value={localStart}
@@ -628,7 +567,10 @@ export function ReportChart({
               </div>
               <span className="text-gray-400 text-sm">─</span>
               <div className="relative">
-                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+                <Calendar
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                  aria-hidden="true"
+                />
                 <input
                   type="month"
                   value={localEnd}
@@ -651,10 +593,7 @@ export function ReportChart({
       <CardContent>
         {!hasData ? (
           <div className="py-8">
-            <EmptyState
-              icon={<BarChart3 className="w-12 h-12" />}
-              title={emptyMessage}
-            />
+            <EmptyState icon={<BarChart3 className="w-12 h-12" />} title={emptyMessage} />
           </div>
         ) : (
           <div className="overflow-x-auto">

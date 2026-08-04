@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('LGPD Right to Deletion — SEC-13', () => {
   it('should anonymize client PII fields on deletion request', () => {
@@ -57,9 +57,7 @@ describe('LGPD Right to Deletion — SEC-13', () => {
       { id: 'inv-2', clientId: 'client-123', amount: 2500, dueDate: '2026-03-15', status: 'pending' },
     ];
 
-    const payments = [
-      { id: 'pay-1', invoiceId: 'inv-1', amount: 1500, status: 'confirmed' },
-    ];
+    const payments = [{ id: 'pay-1', invoiceId: 'inv-1', amount: 1500, status: 'confirmed' }];
 
     // Anonymize the client (same pattern as LGPD deletion)
     const anonymizedClient = {
@@ -113,7 +111,7 @@ describe('LGPD Right to Deletion — SEC-13', () => {
       };
 
       // All client PII under this tenant is anonymized
-      const anonymizedClients = clients.map(c => {
+      const anonymizedClients = clients.map((c) => {
         if (c.tenantId === tenantId) {
           return { ...c, name: 'DELETADO', phone: '00000000000' };
         }
@@ -126,12 +124,12 @@ describe('LGPD Right to Deletion — SEC-13', () => {
     const result = deleteTenantCascade('tenant-abc');
 
     // Then all client PII under this tenant is anonymized
-    const deletedClients = result.anonymizedClients.filter(c => c.tenantId === 'tenant-abc');
-    expect(deletedClients.every(c => c.name === 'DELETADO')).toBe(true);
-    expect(deletedClients.every(c => c.phone === '00000000000')).toBe(true);
+    const deletedClients = result.anonymizedClients.filter((c) => c.tenantId === 'tenant-abc');
+    expect(deletedClients.every((c) => c.name === 'DELETADO')).toBe(true);
+    expect(deletedClients.every((c) => c.phone === '00000000000')).toBe(true);
 
     // The other tenant's clients are NOT affected
-    const otherTenantClients = result.anonymizedClients.filter(c => c.tenantId === 'tenant-xyz');
+    const otherTenantClients = result.anonymizedClients.filter((c) => c.tenantId === 'tenant-xyz');
     expect(otherTenantClients[0].name).toBe('Client C');
     expect(otherTenantClients[0].phone).toBe('11999990003');
 
@@ -203,7 +201,7 @@ describe('LGPD Right to Deletion — SEC-13', () => {
     expect(consentLogs[1].clientId).toBe('client-456');
 
     // The log is append-only — no entry is modified or deleted
-    const allLogs = consentLogs.map(l => l.action);
-    expect(allLogs.every(a => a === 'deletion_request')).toBe(true);
+    const allLogs = consentLogs.map((l) => l.action);
+    expect(allLogs.every((a) => a === 'deletion_request')).toBe(true);
   });
 });

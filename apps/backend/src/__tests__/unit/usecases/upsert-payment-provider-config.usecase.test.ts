@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import { UpsertPaymentProviderConfigUseCase } from '@/application/usecases/upsert-payment-provider-config.usecase';
-import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
+import { describe, expect, it, vi } from 'vitest';
 import type { EncryptionPort } from '@/application/ports/gateways/encryption.port';
+import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
+import { UpsertPaymentProviderConfigUseCase } from '@/application/usecases/upsert-payment-provider-config.usecase';
 
 function createMocks() {
   const repo: PaymentProviderConfigRepositoryPort = {

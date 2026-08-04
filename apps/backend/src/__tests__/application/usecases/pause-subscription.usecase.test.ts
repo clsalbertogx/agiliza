@@ -1,11 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure } from '@/application/types/either';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { PauseSubscriptionUseCase, PauseSubscriptionInput } from '@/application/usecases/pause-subscription.usecase';
-import { SubscriptionStatus, BillingCycle, type Subscription } from '@/domain/entities/subscription';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { isFailure, isSuccess } from '@/application/types/either';
+import {
+  type PauseSubscriptionInput,
+  PauseSubscriptionUseCase,
+} from '@/application/usecases/pause-subscription.usecase';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 describe('PauseSubscriptionUseCase', () => {
   let useCase: PauseSubscriptionUseCase;
@@ -24,7 +27,7 @@ describe('PauseSubscriptionUseCase', () => {
     tenantId: '00000000-0000-0000-0000-000000000001',
     clientId: '00000000-0000-0000-0000-000000000002',
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
     status: SubscriptionStatus.ACTIVE,
     nextBilling: new Date('2026-09-01'),
@@ -56,11 +59,7 @@ describe('PauseSubscriptionUseCase', () => {
       validate: vi.fn().mockReturnValue(true),
     };
 
-    useCase = new PauseSubscriptionUseCase(
-      mockSubscriptionRepo,
-      mockEventBus,
-      mockIdGenerator,
-    );
+    useCase = new PauseSubscriptionUseCase(mockSubscriptionRepo, mockEventBus, mockIdGenerator);
   });
 
   describe('Happy Path', () => {

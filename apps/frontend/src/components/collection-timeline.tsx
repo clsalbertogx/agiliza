@@ -1,10 +1,10 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { AlertCircle, Check, Clock, Mail, MessageSquare, Phone, X } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { Check, X, Clock, MessageSquare, Phone, Mail, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export interface TimelineEvent {
@@ -26,10 +26,7 @@ export interface CollectionTimelineProps {
   onRetry?: () => void;
 }
 
-const eventConfig: Record<
-  string,
-  { dotClass: string; label: string; bgClass: string; icon: React.ReactNode }
-> = {
+const eventConfig: Record<string, { dotClass: string; label: string; bgClass: string; icon: React.ReactNode }> = {
   queued: {
     dotClass: 'bg-gray-400',
     label: 'Na fila',
@@ -151,11 +148,7 @@ export function CollectionTimeline({
                 key={event.id}
                 role={event.event === 'failed' ? 'alert' : 'listitem'}
                 className="flex items-start gap-3"
-                aria-label={
-                  event.event === 'failed' && event.errorMessage
-                    ? `Falha: ${event.errorMessage}`
-                    : undefined
-                }
+                aria-label={event.event === 'failed' && event.errorMessage ? `Falha: ${event.errorMessage}` : undefined}
               >
                 <div className="flex flex-col items-center">
                   <div
@@ -164,35 +157,21 @@ export function CollectionTimeline({
                   >
                     {config.icon}
                   </div>
-                  {!isLast && (
-                    <div className="w-0.5 flex-1 bg-gray-200 mt-1" aria-hidden="true" />
-                  )}
-                  {isLast && isPending && (
-                    <div className="w-0.5 flex-1 mt-1" aria-hidden="true" />
-                  )}
+                  {!isLast && <div className="w-0.5 flex-1 bg-gray-200 mt-1" aria-hidden="true" />}
+                  {isLast && isPending && <div className="w-0.5 flex-1 mt-1" aria-hidden="true" />}
                 </div>
 
                 <div className={`pb-6 flex-1 min-w-0 ${config.bgClass} rounded-lg p-3`}>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-gray-700">
-                      {config.label}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      · {channelLabel[event.channel]}
-                    </span>
+                    <span className="text-xs font-semibold text-gray-700">{config.label}</span>
+                    <span className="text-xs text-gray-400">· {channelLabel[event.channel]}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {formatDateTime(event.timestamp)}
-                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(event.timestamp)}</p>
                   {event.templateName && (
-                    <p className="text-xs text-gray-500 mt-1 font-mono">
-                      Template: {event.templateName}
-                    </p>
+                    <p className="text-xs text-gray-500 mt-1 font-mono">Template: {event.templateName}</p>
                   )}
                   {event.content && (
-                    <p className="text-xs text-gray-600 mt-1 italic truncate">
-                      &ldquo;{event.content}&rdquo;
-                    </p>
+                    <p className="text-xs text-gray-600 mt-1 italic truncate">&ldquo;{event.content}&rdquo;</p>
                   )}
                   {event.event === 'failed' && event.errorMessage && (
                     <p className="text-xs text-danger-500 mt-1 flex items-center gap-1">

@@ -1,5 +1,5 @@
-import type { Either } from '@/application/types/either';
 import type { ApplicationError } from '@/application/errors/application.error';
+import type { Either } from '@/application/types/either';
 
 export interface PixChargeResponse {
   id: string;
@@ -68,10 +68,13 @@ export interface PaymentGatewayPort {
 
   verifyWebhook(provider: string, payload: string, signature: string): Promise<boolean>;
 
-  handleWebhook(payload: unknown): Either<ApplicationError, {
-    event: string;
-    paymentId: string;
-    status: string;
-    metadata: Record<string, unknown>;
-  }>;
+  handleWebhook(payload: unknown): Either<
+    ApplicationError,
+    {
+      event: string;
+      paymentId: string;
+      status: string;
+      metadata: Record<string, unknown>;
+    }
+  >;
 }

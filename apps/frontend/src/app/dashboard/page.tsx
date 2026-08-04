@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { KpiCard } from '@/components/kpi-card';
-import { InvoiceTable } from '@/components/invoice-table';
-import { RiskBadge } from '@/components/risk-badge';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { ErrorState } from '@/components/error-state';
+import { AlertTriangle, CreditCard, DollarSign, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { InvoiceTable } from '@/components/invoice-table';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
+import type { ChartDataPoint } from '@/components/report-chart';
+import { ReportChart } from '@/components/report-chart';
+import { RiskBadge } from '@/components/risk-badge';
+import { StatCard } from '@/components/stat-card';
 import { api } from '@/lib/api';
-import { DollarSign, TrendingUp, AlertTriangle, CreditCard } from 'lucide-react';
 
 interface DashboardData {
   totalInvoiced: number;
@@ -30,11 +32,11 @@ interface InvoiceRow {
 }
 
 const demoInvoices: InvoiceRow[] = [
-  { id: '1', clientName: 'João Silva', amount: 149.90, dueDate: '2026-08-15', status: 'PAID' as const },
-  { id: '2', clientName: 'Maria Santos', amount: 99.90, dueDate: '2026-08-10', status: 'PENDING' as const },
-  { id: '3', clientName: 'Carlos Oliveira', amount: 299.70, dueDate: '2026-07-01', status: 'OVERDUE' as const },
-  { id: '4', clientName: 'Ana Costa', amount: 49.90, dueDate: '2026-08-20', status: 'PAID' as const },
-  { id: '5', clientName: 'Pedro Alves', amount: 199.80, dueDate: '2026-07-25', status: 'OVERDUE' as const },
+  { id: '1', clientName: 'João Silva', amount: 149.9, dueDate: '2026-08-15', status: 'PAID' as const },
+  { id: '2', clientName: 'Maria Santos', amount: 99.9, dueDate: '2026-08-10', status: 'PENDING' as const },
+  { id: '3', clientName: 'Carlos Oliveira', amount: 299.7, dueDate: '2026-07-01', status: 'OVERDUE' as const },
+  { id: '4', clientName: 'Ana Costa', amount: 49.9, dueDate: '2026-08-20', status: 'PAID' as const },
+  { id: '5', clientName: 'Pedro Alves', amount: 199.8, dueDate: '2026-07-25', status: 'OVERDUE' as const },
 ];
 
 const demoDashboardData: DashboardData = {
@@ -102,6 +104,14 @@ function getTenantId(): string {
     return localStorage.getItem('tenant_id') || 'demo';
   }
   return 'demo';
+}
+
+function buildStatusChartData(data: DashboardData): ChartDataPoint[] {
+  return [
+    { label: 'Pagas', value: data.paidInvoices, color: '#22c55e' },
+    { label: 'Pendentes', value: data.pendingInvoices, color: '#f59e0b' },
+    { label: 'Vencidas', value: data.overdueInvoices, color: '#ef4444' },
+  ];
 }
 
 export default function DashboardPage() {
@@ -192,38 +202,35 @@ export default function DashboardPage() {
     );
   }
 
-  const fmt = (v: number) =>
-    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <span className="text-sm text-gray-400">
-          Atualizado automaticamente
-        </span>
+        <span className="text-sm text-gray-400">Atualizado automaticamente</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard
+        <StatCard
           title="Faturamento"
           value={fmt(data.totalCollected)}
           subtitle={`De ${fmt(data.totalInvoiced)}`}
           icon={<DollarSign className="w-5 h-5" aria-hidden="true" />}
         />
-        <KpiCard
+        <StatCard
           title="A Receber"
           value={fmt(data.totalOutstanding)}
           subtitle={`${data.overdueRate}% em atraso`}
           icon={<TrendingUp className="w-5 h-5" aria-hidden="true" />}
         />
-        <KpiCard
+        <StatCard
           title="Inadimplência"
           value={`${data.overdueRate}%`}
           subtitle={`${data.overdueInvoices} faturas vencidas`}
           icon={<AlertTriangle className="w-5 h-5" aria-hidden="true" />}
         />
-        <KpiCard
+        <StatCard
           title="Recebimento"
           value={`${data.paidInvoices}/${data.totalInvoices}`}
           subtitle="faturas pagas"
@@ -231,25 +238,25 @@ export default function DashboardPage() {
         />
       </div>
 
+      <ReportChart
+        type="pie"
+        title="Distribuição de Faturas por Status"
+        data={buildStatusChartData(data)}
+        height={280}
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Últimas Faturas
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Últimas Faturas</h2>
           {invoices.length > 0 ? (
             <InvoiceTable invoices={invoices} />
           ) : (
-            <EmptyState
-              title="Nenhuma fatura encontrada"
-              description="As faturas recentes aparecerão aqui."
-            />
+            <EmptyState title="Nenhuma fatura encontrada" description="As faturas recentes aparecerão aqui." />
           )}
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Distribuição de Risco
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Distribuição de Risco</h2>
           <div className="space-y-3">
             {riskDistribution.map((risk) => (
               <div key={risk.level} className="flex justify-between items-center">

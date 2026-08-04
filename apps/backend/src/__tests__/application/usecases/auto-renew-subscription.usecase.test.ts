@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure } from '@/application/types/either';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { isFailure, isSuccess } from '@/application/types/either';
 import { AutoRenewSubscriptionUseCase } from '@/application/usecases/auto-renew-subscription.usecase';
-import { SubscriptionStatus, BillingCycle, type Subscription } from '@/domain/entities/subscription';
-import { InvoiceStatus, type Invoice } from '@/domain/entities/invoice';
+import { type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 describe('AutoRenewSubscriptionUseCase', () => {
   let useCase: AutoRenewSubscriptionUseCase;
@@ -27,7 +27,7 @@ describe('AutoRenewSubscriptionUseCase', () => {
     tenantId: '00000000-0000-0000-0000-000000000001',
     clientId: '00000000-0000-0000-0000-000000000002',
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
     status: SubscriptionStatus.ACTIVE,
     nextBilling: new Date('2026-08-20'),
@@ -78,12 +78,7 @@ describe('AutoRenewSubscriptionUseCase', () => {
       validate: vi.fn().mockReturnValue(true),
     };
 
-    useCase = new AutoRenewSubscriptionUseCase(
-      mockSubscriptionRepo,
-      mockInvoiceRepo,
-      mockEventBus,
-      mockIdGenerator,
-    );
+    useCase = new AutoRenewSubscriptionUseCase(mockSubscriptionRepo, mockInvoiceRepo, mockEventBus, mockIdGenerator);
   });
 
   describe('Happy Path', () => {

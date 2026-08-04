@@ -1,10 +1,10 @@
-import { Either, success, failure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { Subscription, enterGracePeriod } from '@/domain/entities/subscription';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
+import { enterGracePeriod, type Subscription } from '@/domain/entities/subscription';
 import { createDomainEvent } from '@/domain/events/domain-events';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 export interface SetGracePeriodSubscriptionInput {
   subscriptionId: string;

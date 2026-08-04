@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import Fastify, { FastifyReply, FastifyRequest } from 'fastify';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { errorHandler } from '@/presentation/handler';
 import { ApplicationError } from '@/application/errors/application.error';
+import { errorHandler } from '@/presentation/handler';
 
 describe('Global Error Handler — SEC-04 / Issue #22', () => {
   describe('Zod validation errors', () => {

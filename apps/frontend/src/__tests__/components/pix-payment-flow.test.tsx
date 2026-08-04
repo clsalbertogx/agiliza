@@ -1,4 +1,3 @@
-
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PixPaymentFlow } from '@/components/pix-payment-flow';
@@ -9,9 +8,10 @@ FAR_FUTURE.setFullYear(FAR_FUTURE.getFullYear() + 1);
 
 const mockPixData = {
   qrCodeBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-  copyPasteKey: '00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540410.005802BR5912JohnDoe6009SaoPaulo62070503***6304ABCD',
+  copyPasteKey:
+    '00020126360014br.gov.bcb.pix0114+5511999999999520400005303986540410.005802BR5912JohnDoe6009SaoPaulo62070503***6304ABCD',
   expiresAt: FAR_FUTURE.toISOString(),
-  amount: 1500.50,
+  amount: 1500.5,
   invoiceId: 'inv-123',
 };
 
@@ -34,10 +34,7 @@ describe('PixPaymentFlow', () => {
 
       const qrImage = screen.getByAltText('QR Code para pagamento PIX');
       expect(qrImage).toBeInTheDocument();
-      expect(qrImage).toHaveAttribute(
-        'src',
-        expect.stringContaining('data:image/png;base64,'),
-      );
+      expect(qrImage).toHaveAttribute('src', expect.stringContaining('data:image/png;base64,'));
     });
 
     it('deve renderizar a chave PIX para cópia', () => {
@@ -53,9 +50,7 @@ describe('PixPaymentFlow', () => {
     it('deve renderizar botão de copiar código PIX', () => {
       render(<PixPaymentFlow {...defaultProps} />);
 
-      expect(
-        screen.getByRole('button', { name: /copiar código pix/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /copiar código pix/i })).toBeInTheDocument();
     });
 
     it('deve renderizar o timer de expiração', () => {
@@ -67,9 +62,7 @@ describe('PixPaymentFlow', () => {
     it('deve renderizar o status de pagamento como "Aguardando pagamento"', () => {
       render(<PixPaymentFlow {...defaultProps} />);
 
-      expect(
-        screen.getByText('Aguardando pagamento'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Aguardando pagamento')).toBeInTheDocument();
     });
   });
 
@@ -102,56 +95,29 @@ describe('PixPaymentFlow', () => {
 
   describe('estado de pagamento confirmado (paid)', () => {
     it('deve exibir "Pagamento Confirmado!" quando pollStatus é "paid"', () => {
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          pollStatus="paid"
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} pollStatus="paid" />);
 
-      expect(
-        screen.getByText('Pagamento Confirmado!'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Pagamento Confirmado!')).toBeInTheDocument();
     });
 
     it('deve exibir o valor pago no estado de confirmação', () => {
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          pollStatus="paid"
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} pollStatus="paid" />);
 
       expect(screen.getByText('R$ 1.500,50')).toBeInTheDocument();
     });
 
     it('deve exibir botão "Voltar para faturas" quando pago', () => {
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          pollStatus="paid"
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} pollStatus="paid" />);
 
-      expect(
-        screen.getByRole('button', { name: /voltar para faturas/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /voltar para faturas/i })).toBeInTheDocument();
     });
 
     it('deve chamar onPaid ao clicar em "Voltar para faturas"', async () => {
       const onPaid = vi.fn();
       const user = userEvent.setup();
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          pollStatus="paid"
-          onPaid={onPaid}
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} pollStatus="paid" onPaid={onPaid} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /voltar para faturas/i }),
-      );
+      await user.click(screen.getByRole('button', { name: /voltar para faturas/i }));
 
       expect(onPaid).toHaveBeenCalledTimes(1);
     });
@@ -159,69 +125,37 @@ describe('PixPaymentFlow', () => {
 
   describe('estado expirado (expired)', () => {
     it('deve exibir "QR Code Expirado" quando pollStatus é "expired"', () => {
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          pollStatus="expired"
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} pollStatus="expired" />);
 
-      expect(
-        screen.getByText('QR Code Expirado'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('QR Code Expirado')).toBeInTheDocument();
     });
 
     it('deve exibir botão "Gerar novo QR Code" quando expirado', () => {
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          pollStatus="expired"
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} pollStatus="expired" />);
 
-      expect(
-        screen.getByRole('button', { name: /gerar novo qr code/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /gerar novo qr code/i })).toBeInTheDocument();
     });
 
     it('deve chamar onExpired ao clicar em "Gerar novo QR Code"', async () => {
       const onExpired = vi.fn();
       const user = userEvent.setup();
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          pollStatus="expired"
-          onExpired={onExpired}
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} pollStatus="expired" onExpired={onExpired} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /gerar novo qr code/i }),
-      );
+      await user.click(screen.getByRole('button', { name: /gerar novo qr code/i }));
 
       expect(onExpired).toHaveBeenCalledTimes(1);
     });
 
     it('deve exibir botão "Cancelar pagamento" quando onCancel é fornecido no estado expirado', () => {
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          pollStatus="expired"
-          onCancel={vi.fn()}
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} pollStatus="expired" onCancel={vi.fn()} />);
 
-      expect(
-        screen.getByRole('button', { name: /cancelar pagamento/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /cancelar pagamento/i })).toBeInTheDocument();
     });
   });
 
   describe('loading state', () => {
     it('deve exibir skeleton de carregamento quando isLoading é true', () => {
-      render(
-        <PixPaymentFlow {...defaultProps} isLoading={true} />,
-      );
+      render(<PixPaymentFlow {...defaultProps} isLoading={true} />);
 
       const loading = screen.getByRole('status');
       expect(loading).toBeInTheDocument();
@@ -229,56 +163,31 @@ describe('PixPaymentFlow', () => {
     });
 
     it('não deve exibir QR Code quando isLoading é true', () => {
-      render(
-        <PixPaymentFlow {...defaultProps} isLoading={true} />,
-      );
+      render(<PixPaymentFlow {...defaultProps} isLoading={true} />);
 
-      expect(
-        screen.queryByAltText('QR Code para pagamento PIX'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByAltText('QR Code para pagamento PIX')).not.toBeInTheDocument();
     });
   });
 
   describe('error state', () => {
     it('deve exibir mensagem de erro quando error é fornecido', () => {
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          error="Erro ao carregar PIX"
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} error="Erro ao carregar PIX" />);
 
-      expect(
-        screen.getByText('Erro ao carregar PIX'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar PIX')).toBeInTheDocument();
     });
   });
 
   describe('polling e timer', () => {
     it('deve exibir PaymentStatus com status "processing" quando pollStatus é "processing"', () => {
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          pollStatus="processing"
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} pollStatus="processing" />);
 
-      expect(
-        screen.getByText('Processando pagamento'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Processando pagamento')).toBeInTheDocument();
     });
 
     it('deve exibir botão "Cancelar" quando onCancel é fornecido', () => {
-      render(
-        <PixPaymentFlow
-          {...defaultProps}
-          onCancel={vi.fn()}
-        />,
-      );
+      render(<PixPaymentFlow {...defaultProps} onCancel={vi.fn()} />);
 
-      expect(
-        screen.getByRole('button', { name: /cancelar/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /cancelar/i })).toBeInTheDocument();
     });
   });
 });

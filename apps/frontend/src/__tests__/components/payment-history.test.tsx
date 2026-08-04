@@ -7,7 +7,7 @@ const mockPayments = [
     id: 'pay-1',
     invoiceId: 'inv-1',
     clientName: 'João Silva',
-    amount: 1500.00,
+    amount: 1500.0,
     method: 'pix' as const,
     status: 'paid' as const,
     paidAt: '2026-07-28T14:30:00.000Z',
@@ -18,7 +18,7 @@ const mockPayments = [
     id: 'pay-2',
     invoiceId: 'inv-2',
     clientName: 'Maria Souza',
-    amount: 3200.50,
+    amount: 3200.5,
     method: 'boleto' as const,
     status: 'pending' as const,
     dueDate: '2026-08-01T00:00:00.000Z',
@@ -28,7 +28,7 @@ const mockPayments = [
     id: 'pay-3',
     invoiceId: 'inv-3',
     clientName: 'Pedro Santos',
-    amount: 850.00,
+    amount: 850.0,
     method: 'credit_card' as const,
     status: 'failed' as const,
     paidAt: '2026-07-25T10:00:00.000Z',
@@ -50,17 +50,13 @@ describe('PaymentHistory', () => {
     it('deve renderizar o título "Histórico de Pagamentos"', () => {
       render(<PaymentHistory {...defaultProps} />);
 
-      expect(
-        screen.getByText('Histórico de Pagamentos'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Histórico de Pagamentos')).toBeInTheDocument();
     });
 
     it('deve renderizar botão "Filtrar"', () => {
       render(<PaymentHistory {...defaultProps} />);
 
-      expect(
-        screen.getByRole('button', { name: /filtrar pagamentos/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /filtrar pagamentos/i })).toBeInTheDocument();
     });
   });
 
@@ -129,53 +125,28 @@ describe('PaymentHistory', () => {
 
   describe('paginação', () => {
     it('deve renderizar controles de paginação quando totalPages > 1', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          total={10}
-          perPage={5}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} total={10} perPage={5} />);
 
       const nav = screen.getByLabelText('Paginação');
       expect(nav).toBeInTheDocument();
     });
 
     it('deve exibir botão "Página anterior" desabilitado na primeira página', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          page={1}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} page={1} />);
 
       const prevButton = screen.getByLabelText('Página anterior');
       expect(prevButton).toBeDisabled();
     });
 
     it('deve exibir botão "Próxima página" habilitado quando não está na última', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          total={10}
-          perPage={5}
-          page={1}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} total={10} perPage={5} page={1} />);
 
       const nextButton = screen.getByLabelText('Próxima página');
       expect(nextButton).not.toBeDisabled();
     });
 
     it('deve exibir botão "Próxima página" desabilitado na última página', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          total={10}
-          perPage={5}
-          page={2}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} total={10} perPage={5} page={2} />);
 
       const nextButton = screen.getByLabelText('Próxima página');
       expect(nextButton).toBeDisabled();
@@ -184,15 +155,7 @@ describe('PaymentHistory', () => {
     it('deve chamar onPageChange ao clicar em uma página', async () => {
       const onPageChange = vi.fn();
       const user = userEvent.setup();
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          onPageChange={onPageChange}
-          total={10}
-          perPage={5}
-          page={1}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} onPageChange={onPageChange} total={10} perPage={5} page={1} />);
 
       await user.click(screen.getByLabelText('Página 2'));
 
@@ -202,15 +165,7 @@ describe('PaymentHistory', () => {
     it('deve chamar onPageChange ao clicar em "Próxima página"', async () => {
       const onPageChange = vi.fn();
       const user = userEvent.setup();
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          onPageChange={onPageChange}
-          total={10}
-          perPage={5}
-          page={1}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} onPageChange={onPageChange} total={10} perPage={5} page={1} />);
 
       await user.click(screen.getByLabelText('Próxima página'));
 
@@ -218,13 +173,7 @@ describe('PaymentHistory', () => {
     });
 
     it('não deve renderizar paginação quando totalPages é 1', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          total={3}
-          perPage={5}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} total={3} perPage={5} />);
 
       expect(screen.queryByLabelText('Paginação')).not.toBeInTheDocument();
     });
@@ -235,9 +184,7 @@ describe('PaymentHistory', () => {
       const user = userEvent.setup();
       render(<PaymentHistory {...defaultProps} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /filtrar pagamentos/i }),
-      );
+      await user.click(screen.getByRole('button', { name: /filtrar pagamentos/i }));
 
       expect(screen.getByText('Todos')).toBeInTheDocument();
       expect(screen.getByText('Pagos')).toBeInTheDocument();
@@ -249,57 +196,30 @@ describe('PaymentHistory', () => {
     it('deve chamar onFilterChange ao selecionar um filtro', async () => {
       const onFilterChange = vi.fn();
       const user = userEvent.setup();
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          filterStatus=""
-          onFilterChange={onFilterChange}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} filterStatus="" onFilterChange={onFilterChange} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /filtrar pagamentos/i }),
-      );
+      await user.click(screen.getByRole('button', { name: /filtrar pagamentos/i }));
       await user.click(screen.getByText('Pagos'));
 
       expect(onFilterChange).toHaveBeenCalledWith('paid');
     });
 
     it('deve exibir badge com filtro ativo quando filterStatus é fornecido', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          filterStatus="paid"
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} filterStatus="paid" />);
 
       expect(screen.getByText('Filtro: Pagos')).toBeInTheDocument();
     });
 
     it('deve exibir botão de limpar filtro quando filterStatus é fornecido', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          filterStatus="paid"
-          onFilterChange={vi.fn()}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} filterStatus="paid" onFilterChange={vi.fn()} />);
 
-      expect(
-        screen.getByLabelText('Limpar filtro'),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText('Limpar filtro')).toBeInTheDocument();
     });
 
     it('deve chamar onFilterChange(null) ao limpar filtro', async () => {
       const onFilterChange = vi.fn();
       const user = userEvent.setup();
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          filterStatus="paid"
-          onFilterChange={onFilterChange}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} filterStatus="paid" onFilterChange={onFilterChange} />);
 
       await user.click(screen.getByLabelText('Limpar filtro'));
 
@@ -309,40 +229,21 @@ describe('PaymentHistory', () => {
 
   describe('empty states', () => {
     it('deve exibir mensagem "Nenhum pagamento encontrado" quando lista está vazia', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          payments={[]}
-          total={0}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} payments={[]} total={0} />);
 
-      expect(
-        screen.getByText('Nenhum pagamento encontrado'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Nenhum pagamento encontrado')).toBeInTheDocument();
     });
 
     it('deve exibir "Nenhum resultado para este filtro" quando filtro ativo sem resultados', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          payments={[]}
-          total={0}
-          filterStatus="paid"
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} payments={[]} total={0} filterStatus="paid" />);
 
-      expect(
-        screen.getByText('Nenhum resultado para este filtro'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Nenhum resultado para este filtro')).toBeInTheDocument();
     });
   });
 
   describe('loading state', () => {
     it('deve exibir LoadingSkeleton quando isLoading é true', () => {
-      render(
-        <PaymentHistory {...defaultProps} isLoading={true} />,
-      );
+      render(<PaymentHistory {...defaultProps} isLoading={true} />);
 
       const loading = screen.getByRole('status');
       expect(loading).toBeInTheDocument();
@@ -350,9 +251,7 @@ describe('PaymentHistory', () => {
     });
 
     it('não deve exibir dados da tabela durante o loading', () => {
-      render(
-        <PaymentHistory {...defaultProps} isLoading={true} />,
-      );
+      render(<PaymentHistory {...defaultProps} isLoading={true} />);
 
       expect(screen.queryByRole('table')).not.toBeInTheDocument();
     });
@@ -360,17 +259,9 @@ describe('PaymentHistory', () => {
 
   describe('error state', () => {
     it('deve exibir mensagem de erro quando error é fornecido', () => {
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          error="Erro ao carregar pagamentos"
-          onRetry={vi.fn()}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} error="Erro ao carregar pagamentos" onRetry={vi.fn()} />);
 
-      expect(
-        screen.getByText('Erro ao carregar pagamentos'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar pagamentos')).toBeInTheDocument();
     });
   });
 
@@ -378,12 +269,7 @@ describe('PaymentHistory', () => {
     it('deve chamar onPaymentClick ao clicar em um payment', async () => {
       const onPaymentClick = vi.fn();
       const user = userEvent.setup();
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          onPaymentClick={onPaymentClick}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} onPaymentClick={onPaymentClick} />);
 
       // O card mobile tem role="button" e aria-label
       const paymentCards = screen.getAllByLabelText(/pagamento de/i);
@@ -403,13 +289,7 @@ describe('PaymentHistory', () => {
           clientName: 'Ana Costa',
         },
       ];
-      render(
-        <PaymentHistory
-          {...defaultProps}
-          payments={paymentsWithRefund}
-          total={1}
-        />,
-      );
+      render(<PaymentHistory {...defaultProps} payments={paymentsWithRefund} total={1} />);
 
       const estornadoElements = screen.getAllByText('Estornado');
       expect(estornadoElements.length).toBeGreaterThanOrEqual(1);

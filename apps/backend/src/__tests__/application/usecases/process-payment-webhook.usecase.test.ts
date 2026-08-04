@@ -1,13 +1,19 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure, success } from '@/application/types/either';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
-import { ProcessPaymentWebhookUseCase, ProcessPaymentWebhookInput } from '@/application/usecases/process-payment-webhook.usecase';
-import { PaymentWebhookParserPort, PaymentWebhookData } from '@/application/ports/gateways/payment-webhook-parser.port';
-import { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { Invoice, InvoiceStatus } from '@/domain/entities/invoice';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type {
+  PaymentWebhookData,
+  PaymentWebhookParserPort,
+} from '@/application/ports/gateways/payment-webhook-parser.port';
+import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
+import { isFailure, isSuccess, success } from '@/application/types/either';
+import {
+  type ProcessPaymentWebhookInput,
+  ProcessPaymentWebhookUseCase,
+} from '@/application/usecases/process-payment-webhook.usecase';
+import { type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
@@ -51,7 +57,10 @@ const PROVIDER_PAYMENT_ID = 'pay_abc123';
 
 const validInput: ProcessPaymentWebhookInput = {
   provider: PROVIDER,
-  rawBody: JSON.stringify({ event: 'PAYMENT_CONFIRMED', payment: { id: PROVIDER_PAYMENT_ID, externalReference: INVOICE_ID, value: 150.00 } }),
+  rawBody: JSON.stringify({
+    event: 'PAYMENT_CONFIRMED',
+    payment: { id: PROVIDER_PAYMENT_ID, externalReference: INVOICE_ID, value: 150.0 },
+  }),
   signature: 'valid-signature',
   tenantId: TENANT_ID,
 };
@@ -60,7 +69,7 @@ const mockInvoice: Invoice = {
   id: INVOICE_ID,
   tenantId: TENANT_ID,
   clientId: CLIENT_ID,
-  amount: 150.00,
+  amount: 150.0,
   dueDate: new Date('2026-08-15'),
   description: 'Test invoice',
   status: InvoiceStatus.PENDING,
@@ -76,13 +85,7 @@ const mockInvoice: Invoice = {
 };
 
 function makeUseCase() {
-  return new ProcessPaymentWebhookUseCase(
-    mockVerifier,
-    mockParser,
-    mockInvoiceRepo,
-    mockPaymentRepo,
-    mockEventBus,
-  );
+  return new ProcessPaymentWebhookUseCase(mockVerifier, mockParser, mockInvoiceRepo, mockPaymentRepo, mockEventBus);
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -101,12 +104,7 @@ describe('ProcessPaymentWebhookUseCase', () => {
       await useCase.execute(validInput);
 
       expect(mockVerifier.verify).toHaveBeenCalledTimes(1);
-      expect(mockVerifier.verify).toHaveBeenCalledWith(
-        PROVIDER,
-        validInput.rawBody,
-        validInput.signature,
-        TENANT_ID,
-      );
+      expect(mockVerifier.verify).toHaveBeenCalledWith(PROVIDER, validInput.rawBody, validInput.signature, TENANT_ID);
     });
 
     it('should return UNAUTHORIZED for invalid signature', async () => {
@@ -154,7 +152,7 @@ describe('ProcessPaymentWebhookUseCase', () => {
       providerPaymentId: PROVIDER_PAYMENT_ID,
       status: 'confirmed',
       invoiceId: INVOICE_ID,
-      amount: 150.00,
+      amount: 150.0,
       paidAt: new Date('2026-07-30T12:00:00Z'),
       rawPayload: { event: 'PAYMENT_CONFIRMED', payment: { id: PROVIDER_PAYMENT_ID } },
     };
@@ -194,7 +192,7 @@ describe('ProcessPaymentWebhookUseCase', () => {
       expect(publishedEvent.tenantId).toBe(TENANT_ID);
       expect(publishedEvent.invoiceId).toBe(INVOICE_ID);
       expect(publishedEvent.metadata).toEqual({
-        amount: 150.00,
+        amount: 150.0,
         provider: PROVIDER,
         providerPaymentId: PROVIDER_PAYMENT_ID,
       });
@@ -205,7 +203,7 @@ describe('ProcessPaymentWebhookUseCase', () => {
         providerPaymentId: PROVIDER_PAYMENT_ID,
         status: 'confirmed',
         invoiceId: INVOICE_ID,
-        amount: 150.00,
+        amount: 150.0,
         paidAt: undefined,
         rawPayload: { event: 'PAYMENT_CONFIRMED', payment: { id: PROVIDER_PAYMENT_ID } },
       };
@@ -288,10 +286,7 @@ describe('ProcessPaymentWebhookUseCase', () => {
       await useCase.execute(validInput);
 
       expect(mockParser.parse).toHaveBeenCalledTimes(1);
-      expect(mockParser.parse).toHaveBeenCalledWith(
-        PROVIDER,
-        JSON.parse(validInput.rawBody),
-      );
+      expect(mockParser.parse).toHaveBeenCalledWith(PROVIDER, JSON.parse(validInput.rawBody));
     });
 
     it('should return failure for invalid JSON body', async () => {
@@ -316,7 +311,7 @@ describe('ProcessPaymentWebhookUseCase', () => {
       providerPaymentId: PROVIDER_PAYMENT_ID,
       status: 'refunded',
       invoiceId: INVOICE_ID,
-      amount: 150.00,
+      amount: 150.0,
       rawPayload: { event: 'PAYMENT_REFUNDED', payment: { id: PROVIDER_PAYMENT_ID } },
     };
 
@@ -339,7 +334,7 @@ describe('ProcessPaymentWebhookUseCase', () => {
       providerPaymentId: PROVIDER_PAYMENT_ID,
       status: 'confirmed',
       invoiceId: undefined,
-      amount: 150.00,
+      amount: 150.0,
       rawPayload: { event: 'PAYMENT_CONFIRMED', payment: { id: PROVIDER_PAYMENT_ID } },
     };
 

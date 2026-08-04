@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { OnboardingService } from '@/application/services/onboarding.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { EventRepositoryPort } from '@/application/ports/repositories/event.repository.port';
-import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import { OnboardingService } from '@/application/services/onboarding.service';
 import { MessageChannel } from '@/domain/entities/client';
 import { RiskScore } from '@/domain/value-objects/risk-score';
 
@@ -60,11 +60,7 @@ describe('OnboardingService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks = createMocks();
-    service = new OnboardingService(
-      mocks.clientRepo,
-      mocks.eventRepo,
-      mocks.messageProvider,
-    );
+    service = new OnboardingService(mocks.clientRepo, mocks.eventRepo, mocks.messageProvider);
   });
 
   describe('startOnboarding', () => {
@@ -91,9 +87,7 @@ describe('OnboardingService', () => {
     it('should throw error when client is not found', async () => {
       vi.mocked(mocks.clientRepo.findById).mockResolvedValue(null);
 
-      await expect(
-        service.startOnboarding('nonexistent', 'tenant-123'),
-      ).rejects.toThrow('Client not found');
+      await expect(service.startOnboarding('nonexistent', 'tenant-123')).rejects.toThrow('Client not found');
 
       expect(mocks.messageProvider.sendText).not.toHaveBeenCalled();
     });
@@ -114,9 +108,7 @@ describe('OnboardingService', () => {
 
   describe('sendQuestion', () => {
     it('should throw error when onboarding session not found', async () => {
-      await expect(service.sendQuestion('no-session')).rejects.toThrow(
-        'Onboarding session not found',
-      );
+      await expect(service.sendQuestion('no-session')).rejects.toThrow('Onboarding session not found');
     });
 
     it('should throw error when session is expired', async () => {
@@ -129,9 +121,7 @@ describe('OnboardingService', () => {
       vi.useFakeTimers();
       vi.advanceTimersByTime(25 * 60 * 60 * 1000);
 
-      await expect(service.sendQuestion(client.id)).rejects.toThrow(
-        'Onboarding session expired',
-      );
+      await expect(service.sendQuestion(client.id)).rejects.toThrow('Onboarding session expired');
 
       vi.useRealTimers();
     });
@@ -349,19 +339,17 @@ describe('OnboardingService', () => {
       // processAnswer #2 (time): sendQuestion's findById (4)
       // processAnswer #3 (leadDays): completeOnboarding's findById (5) → null
       vi.mocked(mocks.clientRepo.findById)
-        .mockResolvedValueOnce(client)  // 1: startOnboarding
-        .mockResolvedValueOnce(client)  // 2: startOnboarding → sendQuestion
-        .mockResolvedValueOnce(client)  // 3: processAnswer channel → sendQuestion
-        .mockResolvedValueOnce(client)  // 4: processAnswer time → sendQuestion
-        .mockResolvedValueOnce(null);   // 5: completeOnboarding → throw!
+        .mockResolvedValueOnce(client) // 1: startOnboarding
+        .mockResolvedValueOnce(client) // 2: startOnboarding → sendQuestion
+        .mockResolvedValueOnce(client) // 3: processAnswer channel → sendQuestion
+        .mockResolvedValueOnce(client) // 4: processAnswer time → sendQuestion
+        .mockResolvedValueOnce(null); // 5: completeOnboarding → throw!
 
       await service.startOnboarding(client.id, client.tenantId);
       await service.processAnswer(client.id, '1');
       await service.processAnswer(client.id, '1');
 
-      await expect(
-        service.processAnswer(client.id, '1'),
-      ).rejects.toThrow('Client not found');
+      await expect(service.processAnswer(client.id, '1')).rejects.toThrow('Client not found');
     });
 
     it('should use provided lead days from answer', async () => {
@@ -418,42 +406,30 @@ describe('OnboardingService', () => {
 
   describe('error handling', () => {
     it('should handle client repo failure on startOnboarding', async () => {
-      vi.mocked(mocks.clientRepo.findById).mockRejectedValue(
-        new Error('Database connection failed'),
-      );
+      vi.mocked(mocks.clientRepo.findById).mockRejectedValue(new Error('Database connection failed'));
 
-      await expect(
-        service.startOnboarding('client-123', 'tenant-123'),
-      ).rejects.toThrow('Database connection failed');
+      await expect(service.startOnboarding('client-123', 'tenant-123')).rejects.toThrow('Database connection failed');
     });
 
     it('should handle message provider failure on startOnboarding', async () => {
       const client = makeClient();
       vi.mocked(mocks.clientRepo.findById).mockResolvedValue(client);
-      vi.mocked(mocks.messageProvider.sendText).mockRejectedValue(
-        new Error('Provider API error'),
-      );
+      vi.mocked(mocks.messageProvider.sendText).mockRejectedValue(new Error('Provider API error'));
 
-      await expect(
-        service.startOnboarding(client.id, client.tenantId),
-      ).rejects.toThrow('Provider API error');
+      await expect(service.startOnboarding(client.id, client.tenantId)).rejects.toThrow('Provider API error');
     });
 
     it('should handle client repo update failure on completion', async () => {
       const client = makeClient();
 
       vi.mocked(mocks.clientRepo.findById).mockResolvedValue(client);
-      vi.mocked(mocks.clientRepo.update).mockRejectedValue(
-        new Error('DB error on update'),
-      );
+      vi.mocked(mocks.clientRepo.update).mockRejectedValue(new Error('DB error on update'));
 
       await service.startOnboarding(client.id, client.tenantId);
       await service.processAnswer(client.id, '1');
       await service.processAnswer(client.id, '1');
 
-      await expect(service.processAnswer(client.id, '1')).rejects.toThrow(
-        'DB error on update',
-      );
+      await expect(service.processAnswer(client.id, '1')).rejects.toThrow('DB error on update');
     });
   });
 });

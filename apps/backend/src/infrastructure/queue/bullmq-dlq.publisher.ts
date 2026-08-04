@@ -1,5 +1,5 @@
-import type { DomainEvent } from '@/domain/events/domain-events';
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
+import type { DomainEvent } from '@/domain/events/domain-events';
 import { addFailedWebhookJob } from '@/infrastructure/queue/queue-manager';
 
 /**

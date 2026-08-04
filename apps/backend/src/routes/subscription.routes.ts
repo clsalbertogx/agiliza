@@ -1,18 +1,21 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { createCreateSubscriptionUseCase, createSubscriptionRepository } from '@/presentation/factories/create-subscription.factory';
+import { BillingCycle, type Subscription } from '@/domain/entities/subscription';
+import { createAutoRenewSubscriptionUseCase } from '@/presentation/factories/create-auto-renew-subscription.factory';
 import { createCancelSubscriptionUseCase } from '@/presentation/factories/create-cancel-subscription.factory';
 import { createExpireSubscriptionUseCase } from '@/presentation/factories/create-expire-subscription.factory';
-import { createRenewSubscriptionUseCase } from '@/presentation/factories/create-renew-subscription.factory';
 import { createPauseSubscriptionUseCase } from '@/presentation/factories/create-pause-subscription.factory';
+import { createRenewSubscriptionUseCase } from '@/presentation/factories/create-renew-subscription.factory';
 import { createResumeSubscriptionUseCase } from '@/presentation/factories/create-resume-subscription.factory';
-import { createAutoRenewSubscriptionUseCase } from '@/presentation/factories/create-auto-renew-subscription.factory';
-import { createUpgradeSubscriptionUseCase } from '@/presentation/factories/create-upgrade-subscription.factory';
-import { createStartTrialSubscriptionUseCase } from '@/presentation/factories/create-start-trial-subscription.factory';
 import { createSetGracePeriodSubscriptionUseCase } from '@/presentation/factories/create-set-grace-period-subscription.factory';
-import { createToggleAutoRenewSubscriptionUseCase } from '@/presentation/factories/create-toggle-auto-renew-subscription.factory';
+import { createStartTrialSubscriptionUseCase } from '@/presentation/factories/create-start-trial-subscription.factory';
+import {
+  createCreateSubscriptionUseCase,
+  createSubscriptionRepository,
+} from '@/presentation/factories/create-subscription.factory';
 import { createGetSubscriptionAnalyticsUseCase } from '@/presentation/factories/create-subscription-analytics.factory';
-import { BillingCycle, type Subscription } from '@/domain/entities/subscription';
+import { createToggleAutoRenewSubscriptionUseCase } from '@/presentation/factories/create-toggle-auto-renew-subscription.factory';
+import { createUpgradeSubscriptionUseCase } from '@/presentation/factories/create-upgrade-subscription.factory';
 
 const billingCycleValues = Object.values(BillingCycle) as [string, ...string[]];
 
@@ -106,471 +109,522 @@ const upgradeBodySchema = {
 
 export async function subscriptionRoutes(app: FastifyInstance) {
   // POST /api/subscriptions — Create subscription
-  app.post('/api/subscriptions', {
-    schema: {
-      tags: ['Subscriptions'],
-      summary: 'Create a subscription',
-      security: [{ bearerAuth: [] }],
-      body: subscriptionBodySchema,
-      response: {
-        201: dataEnvelope,
+  app.post(
+    '/api/subscriptions',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Create a subscription',
+        security: [{ bearerAuth: [] }],
+        body: subscriptionBodySchema,
+        response: {
+          201: dataEnvelope,
+        },
       },
     },
-  }, async (request, reply) => {
-    const parsed = createSubscriptionSchema.safeParse(request.body);
-    if (!parsed.success) {
-      reply.code(400);
-      return { error: 'Validation error', details: parsed.error.flatten() };
-    }
+    async (request, reply) => {
+      const parsed = createSubscriptionSchema.safeParse(request.body);
+      if (!parsed.success) {
+        reply.code(400);
+        return { error: 'Validation error', details: parsed.error.flatten() };
+      }
 
-    const data = parsed.data;
-    const useCase = createCreateSubscriptionUseCase();
+      const data = parsed.data;
+      const useCase = createCreateSubscriptionUseCase();
 
-    const result = await useCase.execute({
-      tenantId: request.tenantId!,
-      clientId: data.clientId,
-      plan: data.plan,
-      amount: data.amount,
-      billingCycle: data.billingCycle as BillingCycle,
-      trialDays: data.trialDays,
-      gracePeriodDays: data.gracePeriodDays,
-      autoRenew: data.autoRenew,
-    });
+      const result = await useCase.execute({
+        tenantId: request.tenantId!,
+        clientId: data.clientId,
+        plan: data.plan,
+        amount: data.amount,
+        billingCycle: data.billingCycle as BillingCycle,
+        trialDays: data.trialDays,
+        gracePeriodDays: data.gracePeriodDays,
+        autoRenew: data.autoRenew,
+      });
 
-    if (!result.success) {
-      reply.code(result.value.statusCode);
-      return { error: result.value.message };
-    }
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-    reply.code(201);
-    return { data: result.value };
-  });
+      reply.code(201);
+      return { data: result.value };
+    },
+  );
 
   // GET /api/subscriptions — List subscriptions by tenant
-  app.get('/api/subscriptions', {
-    schema: {
-      tags: ['Subscriptions'],
-      summary: 'List subscriptions',
-      security: [{ bearerAuth: [] }],
-      querystring: {
-        type: 'object',
-        properties: {
-          tenantId: { type: 'string', format: 'uuid' },
-          clientId: { type: 'string', format: 'uuid' },
+  app.get(
+    '/api/subscriptions',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'List subscriptions',
+        security: [{ bearerAuth: [] }],
+        querystring: {
+          type: 'object',
+          properties: {
+            tenantId: { type: 'string', format: 'uuid' },
+            clientId: { type: 'string', format: 'uuid' },
+          },
+        },
+        response: {
+          200: listEnvelope,
         },
       },
-      response: {
-        200: listEnvelope,
-      },
     },
-  }, async (request) => {
-    const query = request.query as any;
-    const tenantId = request.tenantId || query.tenantId;
-    const clientId = query.clientId as string | undefined;
+    async (request) => {
+      const query = request.query as any;
+      const tenantId = request.tenantId || query.tenantId;
+      const clientId = query.clientId as string | undefined;
 
-    const subscriptionRepo = createSubscriptionRepository();
+      const subscriptionRepo = createSubscriptionRepository();
 
-    if (clientId) {
-      const subscriptions = await subscriptionRepo.findByClientId(clientId, tenantId);
+      if (clientId) {
+        const subscriptions = await subscriptionRepo.findByClientId(clientId, tenantId);
+        return { data: subscriptions };
+      }
+
+      const subscriptions = await subscriptionRepo.findByTenantId(tenantId);
       return { data: subscriptions };
-    }
-
-    const subscriptions = await subscriptionRepo.findByTenantId(tenantId);
-    return { data: subscriptions };
-  });
+    },
+  );
 
   // GET /api/subscriptions/analytics — Subscription revenue analytics (MRR, churn, LTV)
-  app.get('/api/subscriptions/analytics', {
-    schema: {
-      tags: ['Subscriptions'],
-      summary: 'Get subscription revenue analytics (MRR, churn, LTV)',
-      security: [{ bearerAuth: [] }],
-      querystring: {
-        type: 'object',
-        properties: {
-          from: { type: 'string', format: 'date' },
-          to: { type: 'string', format: 'date' },
+  app.get(
+    '/api/subscriptions/analytics',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Get subscription revenue analytics (MRR, churn, LTV)',
+        security: [{ bearerAuth: [] }],
+        querystring: {
+          type: 'object',
+          properties: {
+            from: { type: 'string', format: 'date' },
+            to: { type: 'string', format: 'date' },
+          },
+        },
+        response: {
+          200: dataEnvelope,
         },
       },
-      response: {
-        200: dataEnvelope,
-      },
     },
-  }, async (request, reply) => {
-    const tenantId = request.tenantId;
+    async (request, reply) => {
+      const tenantId = request.tenantId;
 
-    if (!tenantId) {
-      reply.code(401);
-      return { error: 'Unauthorized' };
-    }
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
 
-    const query = request.query as { from?: string; to?: string };
-    const from = query.from ? new Date(query.from) : undefined;
-    const to = query.to ? new Date(query.to) : undefined;
+      const query = request.query as { from?: string; to?: string };
+      const from = query.from ? new Date(query.from) : undefined;
+      const to = query.to ? new Date(query.to) : undefined;
 
-    const useCase = createGetSubscriptionAnalyticsUseCase();
-    const result = await useCase.execute({ tenantId, from, to });
+      const useCase = createGetSubscriptionAnalyticsUseCase();
+      const result = await useCase.execute({ tenantId, from, to });
 
-    if (!result.success) {
-      reply.code(result.value.statusCode);
-      return { error: result.value.message };
-    }
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-    return { data: result.value };
-  });
+      return { data: result.value };
+    },
+  );
 
   // GET /api/subscriptions/:id — Get subscription by id
-  app.get('/api/subscriptions/:id', {
-    schema: {
-      tags: ['Subscriptions'],
-      summary: 'Get a subscription by ID',
-      security: [{ bearerAuth: [] }],
-      params: idParamsSchema,
-      response: {
-        200: dataEnvelope,
+  app.get(
+    '/api/subscriptions/:id',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Get a subscription by ID',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        response: {
+          200: dataEnvelope,
+        },
       },
     },
-  }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const tenantId = request.tenantId;
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
 
-    const subscriptionRepo = createSubscriptionRepository();
-    const subscription = await subscriptionRepo.findById(id, tenantId);
+      const subscriptionRepo = createSubscriptionRepository();
+      const subscription = await subscriptionRepo.findById(id, tenantId);
 
-    if (!subscription) {
-      reply.code(404);
-      return { error: 'Subscription not found' };
-    }
+      if (!subscription) {
+        reply.code(404);
+        return { error: 'Subscription not found' };
+      }
 
-    return { data: subscription };
-  });
+      return { data: subscription };
+    },
+  );
 
   // DELETE /api/subscriptions/:id — Cancel subscription
-  app.delete('/api/subscriptions/:id', {
-    schema: {
-      tags: ['Subscriptions'],
-      summary: 'Cancel a subscription',
-      security: [{ bearerAuth: [] }],
-      params: idParamsSchema,
-      response: {
-        200: dataEnvelope,
+  app.delete(
+    '/api/subscriptions/:id',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Cancel a subscription',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        response: {
+          200: dataEnvelope,
+        },
       },
     },
-  }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const tenantId = request.tenantId;
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
 
-    if (!tenantId) {
-      reply.code(401);
-      return { error: 'Unauthorized' };
-    }
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
 
-    const useCase = createCancelSubscriptionUseCase();
-    const result = await useCase.execute({ id, tenantId });
+      const useCase = createCancelSubscriptionUseCase();
+      const result = await useCase.execute({ id, tenantId });
 
-    if (!result.success) {
-      reply.code(result.value.statusCode);
-      return { error: result.value.message };
-    }
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-    return { data: result.value };
-  });
+      return { data: result.value };
+    },
+  );
 
   // PATCH /api/subscriptions/:id/expire — Expire subscription
-  app.patch('/api/subscriptions/:id/expire', {
-    schema: {
-      tags: ['Subscriptions'],
-      summary: 'Expire a subscription',
-      security: [{ bearerAuth: [] }],
-      params: idParamsSchema,
-      response: {
-        200: dataEnvelope,
+  app.patch(
+    '/api/subscriptions/:id/expire',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Expire a subscription',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        response: {
+          200: dataEnvelope,
+        },
       },
     },
-  }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const tenantId = request.tenantId;
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
 
-    if (!tenantId) {
-      reply.code(401);
-      return { error: 'Unauthorized' };
-    }
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
 
-    const useCase = createExpireSubscriptionUseCase();
-    const result = await useCase.execute({ subscriptionId: id, tenantId });
+      const useCase = createExpireSubscriptionUseCase();
+      const result = await useCase.execute({ subscriptionId: id, tenantId });
 
-    if (!result.success) {
-      reply.code(result.value.statusCode);
-      return { error: result.value.message };
-    }
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-    return { data: result.value };
-  });
+      return { data: result.value };
+    },
+  );
 
   // PATCH /api/subscriptions/:id/renew — Renew subscription
-  app.patch('/api/subscriptions/:id/renew', {
-    schema: {
-      tags: ['Subscriptions'],
-      summary: 'Renew a subscription',
-      security: [{ bearerAuth: [] }],
-      params: idParamsSchema,
-      response: {
-        200: dataEnvelope,
+  app.patch(
+    '/api/subscriptions/:id/renew',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Renew a subscription',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        response: {
+          200: dataEnvelope,
+        },
       },
     },
-  }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const tenantId = request.tenantId;
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
 
-    if (!tenantId) {
-      reply.code(401);
-      return { error: 'Unauthorized' };
-    }
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
 
-    const useCase = createRenewSubscriptionUseCase();
-    const result = await useCase.execute({ subscriptionId: id, tenantId });
+      const useCase = createRenewSubscriptionUseCase();
+      const result = await useCase.execute({ subscriptionId: id, tenantId });
 
-    if (!result.success) {
-      reply.code(result.value.statusCode);
-      return { error: result.value.message };
-    }
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-    return { data: result.value };
-  });
+      return { data: result.value };
+    },
+  );
 
   // PATCH /api/subscriptions/:id/pause — Pause subscription
-  app.patch('/api/subscriptions/:id/pause', {
-    schema: {
-      tags: ['Subscriptions'],
-      summary: 'Pause a subscription',
-      security: [{ bearerAuth: [] }],
-      params: idParamsSchema,
-      response: {
-        200: dataEnvelope,
+  app.patch(
+    '/api/subscriptions/:id/pause',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Pause a subscription',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        response: {
+          200: dataEnvelope,
+        },
       },
     },
-  }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const tenantId = request.tenantId;
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
 
-    if (!tenantId) {
-      reply.code(401);
-      return { error: 'Unauthorized' };
-    }
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
 
-    const useCase = createPauseSubscriptionUseCase();
-    const result = await useCase.execute({ subscriptionId: id, tenantId });
+      const useCase = createPauseSubscriptionUseCase();
+      const result = await useCase.execute({ subscriptionId: id, tenantId });
 
-    if (!result.success) {
-      reply.code(result.value.statusCode);
-      return { error: result.value.message };
-    }
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-    return { data: result.value };
+      return { data: result.value };
+    },
+  );
+
+  // PATCH /api/subscriptions/:id/resume — Resume subscription
+  app.patch(
+    '/api/subscriptions/:id/resume',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Resume subscription',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        response: {
+          200: dataEnvelope,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
+
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
+
+      const useCase = createResumeSubscriptionUseCase();
+      const result = await useCase.execute({ subscriptionId: id, tenantId });
+
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
+
+      return { data: result.value };
+    },
+  );
+
+  // PATCH /api/subscriptions/:id/trial — Start trial period
+  const startTrialSchema = z.object({
+    trialDays: z.number().int().positive().max(365),
   });
 
-   // PATCH /api/subscriptions/:id/resume — Resume subscription
-   app.patch('/api/subscriptions/:id/resume', {
-     schema: {
-       tags: ['Subscriptions'],
-       summary: 'Resume subscription',
-       security: [{ bearerAuth: [] }],
-       params: idParamsSchema,
-       response: {
-         200: dataEnvelope,
-       },
-     },
-   }, async (request, reply) => {
-     const { id } = request.params as { id: string };
-     const tenantId = request.tenantId;
+  app.patch(
+    '/api/subscriptions/:id/trial',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Start a trial period',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        body: startTrialBodySchema,
+        response: {
+          200: dataEnvelope,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
 
-     if (!tenantId) {
-       reply.code(401);
-       return { error: 'Unauthorized' };
-     }
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
 
-     const useCase = createResumeSubscriptionUseCase();
-     const result = await useCase.execute({ subscriptionId: id, tenantId });
+      const parsed = startTrialSchema.safeParse(request.body);
+      if (!parsed.success) {
+        reply.code(400);
+        return { error: 'Validation error', details: parsed.error.flatten() };
+      }
 
-     if (!result.success) {
-       reply.code(result.value.statusCode);
-       return { error: result.value.message };
-     }
+      const useCase = createStartTrialSubscriptionUseCase();
+      const result = await useCase.execute({
+        subscriptionId: id,
+        tenantId,
+        trialDays: parsed.data.trialDays,
+      });
 
-     return { data: result.value };
-   });
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-   // PATCH /api/subscriptions/:id/trial — Start trial period
-   const startTrialSchema = z.object({
-     trialDays: z.number().int().positive().max(365),
-   });
+      return { data: result.value };
+    },
+  );
 
-   app.patch('/api/subscriptions/:id/trial', {
-     schema: {
-       tags: ['Subscriptions'],
-       summary: 'Start a trial period',
-       security: [{ bearerAuth: [] }],
-       params: idParamsSchema,
-       body: startTrialBodySchema,
-       response: {
-         200: dataEnvelope,
-       },
-     },
-   }, async (request, reply) => {
-     const { id } = request.params as { id: string };
-     const tenantId = request.tenantId;
+  // PATCH /api/subscriptions/:id/grace-period — Manually set grace period
+  const gracePeriodSchema = z.object({
+    days: z.number().int().positive().max(90),
+  });
 
-     if (!tenantId) {
-       reply.code(401);
-       return { error: 'Unauthorized' };
-     }
+  app.patch(
+    '/api/subscriptions/:id/grace-period',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Set grace period on a subscription',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        body: gracePeriodBodySchema,
+        response: {
+          200: dataEnvelope,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
 
-     const parsed = startTrialSchema.safeParse(request.body);
-     if (!parsed.success) {
-       reply.code(400);
-       return { error: 'Validation error', details: parsed.error.flatten() };
-     }
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
 
-     const useCase = createStartTrialSubscriptionUseCase();
-     const result = await useCase.execute({
-       subscriptionId: id,
-       tenantId,
-       trialDays: parsed.data.trialDays,
-     });
+      const parsed = gracePeriodSchema.safeParse(request.body);
+      if (!parsed.success) {
+        reply.code(400);
+        return { error: 'Validation error', details: parsed.error.flatten() };
+      }
 
-     if (!result.success) {
-       reply.code(result.value.statusCode);
-       return { error: result.value.message };
-     }
+      const useCase = createSetGracePeriodSubscriptionUseCase();
+      const result = await useCase.execute({
+        subscriptionId: id,
+        tenantId,
+        days: parsed.data.days,
+      });
 
-     return { data: result.value };
-   });
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-   // PATCH /api/subscriptions/:id/grace-period — Manually set grace period
-   const gracePeriodSchema = z.object({
-     days: z.number().int().positive().max(90),
-   });
+      return { data: result.value };
+    },
+  );
 
-   app.patch('/api/subscriptions/:id/grace-period', {
-     schema: {
-       tags: ['Subscriptions'],
-       summary: 'Set grace period on a subscription',
-       security: [{ bearerAuth: [] }],
-       params: idParamsSchema,
-       body: gracePeriodBodySchema,
-       response: {
-         200: dataEnvelope,
-       },
-     },
-   }, async (request, reply) => {
-     const { id } = request.params as { id: string };
-     const tenantId = request.tenantId;
+  // PATCH /api/subscriptions/:id/auto-renew — Toggle auto-renew
+  const autoRenewSchema = z.object({
+    autoRenew: z.boolean(),
+  });
 
-     if (!tenantId) {
-       reply.code(401);
-       return { error: 'Unauthorized' };
-     }
+  app.patch(
+    '/api/subscriptions/:id/auto-renew',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Toggle auto-renew on a subscription',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        body: autoRenewBodySchema,
+        response: {
+          200: dataEnvelope,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
 
-     const parsed = gracePeriodSchema.safeParse(request.body);
-     if (!parsed.success) {
-       reply.code(400);
-       return { error: 'Validation error', details: parsed.error.flatten() };
-     }
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
 
-     const useCase = createSetGracePeriodSubscriptionUseCase();
-     const result = await useCase.execute({
-       subscriptionId: id,
-       tenantId,
-       days: parsed.data.days,
-     });
+      const parsed = autoRenewSchema.safeParse(request.body);
+      if (!parsed.success) {
+        reply.code(400);
+        return { error: 'Validation error', details: parsed.error.flatten() };
+      }
 
-     if (!result.success) {
-       reply.code(result.value.statusCode);
-       return { error: result.value.message };
-     }
+      const useCase = createToggleAutoRenewSubscriptionUseCase();
+      const result = await useCase.execute({
+        subscriptionId: id,
+        tenantId,
+        autoRenew: parsed.data.autoRenew,
+      });
 
-     return { data: result.value };
-   });
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-   // PATCH /api/subscriptions/:id/auto-renew — Toggle auto-renew
-   const autoRenewSchema = z.object({
-     autoRenew: z.boolean(),
-   });
+      return { data: result.value };
+    },
+  );
 
-   app.patch('/api/subscriptions/:id/auto-renew', {
-     schema: {
-       tags: ['Subscriptions'],
-       summary: 'Toggle auto-renew on a subscription',
-       security: [{ bearerAuth: [] }],
-       params: idParamsSchema,
-       body: autoRenewBodySchema,
-       response: {
-         200: dataEnvelope,
-       },
-     },
-   }, async (request, reply) => {
-     const { id } = request.params as { id: string };
-     const tenantId = request.tenantId;
+  // PATCH /api/subscriptions/:id/upgrade — Upgrade subscription with proration
+  const upgradeSchema = z.object({
+    newPlan: z.string().min(1).max(255),
+    newAmount: z.number().positive(),
+    billingCycle: z.enum(['MONTHLY', 'BIMONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL']).optional(),
+    trialDays: z.number().int().nonnegative().max(365).optional(),
+  });
 
-     if (!tenantId) {
-       reply.code(401);
-       return { error: 'Unauthorized' };
-     }
+  app.patch(
+    '/api/subscriptions/:id/upgrade',
+    {
+      schema: {
+        tags: ['Subscriptions'],
+        summary: 'Upgrade subscription with proration',
+        security: [{ bearerAuth: [] }],
+        params: idParamsSchema,
+        body: upgradeBodySchema,
+        response: {
+          200: dataEnvelope,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.tenantId;
 
-     const parsed = autoRenewSchema.safeParse(request.body);
-     if (!parsed.success) {
-       reply.code(400);
-       return { error: 'Validation error', details: parsed.error.flatten() };
-     }
+      if (!tenantId) {
+        reply.code(401);
+        return { error: 'Unauthorized' };
+      }
 
-     const useCase = createToggleAutoRenewSubscriptionUseCase();
-     const result = await useCase.execute({
-       subscriptionId: id,
-       tenantId,
-       autoRenew: parsed.data.autoRenew,
-     });
-
-     if (!result.success) {
-       reply.code(result.value.statusCode);
-       return { error: result.value.message };
-     }
-
-     return { data: result.value };
-   });
-
-   // PATCH /api/subscriptions/:id/upgrade — Upgrade subscription with proration
-   const upgradeSchema = z.object({
-     newPlan: z.string().min(1).max(255),
-     newAmount: z.number().positive(),
-     billingCycle: z.enum(['MONTHLY', 'BIMONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL']).optional(),
-     trialDays: z.number().int().nonnegative().max(365).optional(),
-   });
-
-   app.patch('/api/subscriptions/:id/upgrade', {
-     schema: {
-       tags: ['Subscriptions'],
-       summary: 'Upgrade subscription with proration',
-       security: [{ bearerAuth: [] }],
-       params: idParamsSchema,
-       body: upgradeBodySchema,
-       response: {
-         200: dataEnvelope,
-       },
-     },
-   }, async (request, reply) => {
-     const { id } = request.params as { id: string };
-     const tenantId = request.tenantId;
-
-     if (!tenantId) {
-       reply.code(401);
-       return { error: 'Unauthorized' };
-     }
-
-     const parsed = upgradeSchema.safeParse(request.body);
-     if (!parsed.success) {
-       reply.code(400);
-       return { error: 'Validation error', details: parsed.error.flatten() };
-     }
+      const parsed = upgradeSchema.safeParse(request.body);
+      if (!parsed.success) {
+        reply.code(400);
+        return { error: 'Validation error', details: parsed.error.flatten() };
+      }
 
       const useCase = createUpgradeSubscriptionUseCase();
       const result = await useCase.execute({
@@ -582,11 +636,12 @@ export async function subscriptionRoutes(app: FastifyInstance) {
         trialDays: parsed.data.trialDays,
       });
 
-     if (!result.success) {
-       reply.code(result.value.statusCode);
-       return { error: result.value.message };
-     }
+      if (!result.success) {
+        reply.code(result.value.statusCode);
+        return { error: result.value.message };
+      }
 
-     return { data: result.value };
-   });
- }
+      return { data: result.value };
+    },
+  );
+}

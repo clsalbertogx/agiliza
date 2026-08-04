@@ -33,16 +33,12 @@ export function KpiCard({ title, value, icon, trend, subtitle }: KpiCardProps) {
                 trend.isPositive ? 'text-success-600' : 'text-danger-600'
               }`}
             >
-              <span aria-hidden="true">
-                {trend.isPositive ? '\u2191' : '\u2193'}
-              </span>
+              <span aria-hidden="true">{trend.isPositive ? '\u2191' : '\u2193'}</span>
               {Math.abs(trend.value)}%
             </span>
           )}
         </div>
-        {subtitle && (
-          <p className="mt-1 text-sm text-gray-400">{subtitle}</p>
-        )}
+        {subtitle && <p className="mt-1 text-sm text-gray-400">{subtitle}</p>}
       </CardContent>
     </Card>
   );

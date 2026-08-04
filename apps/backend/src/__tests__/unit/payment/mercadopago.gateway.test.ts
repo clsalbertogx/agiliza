@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MercadoPagoGateway, MercadoPagoSdk } from '@/infrastructure/payment/mercadopago.gateway';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MercadoPagoGateway, type MercadoPagoSdk } from '@/infrastructure/payment/mercadopago.gateway';
 
 function buildMockSdk(): { sdk: MercadoPagoSdk; MercadoPagoConfig: any; Payment: any } {
   const sdk: MercadoPagoSdk = {
@@ -63,10 +63,12 @@ describe('MercadoPagoGateway', () => {
     it('should throw an error when the MP API call fails', async () => {
       mockSdk.sdk.create = vi.fn().mockRejectedValue(new Error('Invalid access token'));
 
-      await expect(gateway.createPixCharge({
-        amount: 50,
-        description: 'Failing charge',
-      })).rejects.toThrow('MercadoPago error: Invalid access token');
+      await expect(
+        gateway.createPixCharge({
+          amount: 50,
+          description: 'Failing charge',
+        }),
+      ).rejects.toThrow('MercadoPago error: Invalid access token');
     });
   });
 
@@ -198,9 +200,7 @@ describe('MercadoPagoGateway', () => {
 
   describe('constructor', () => {
     it('should throw if accessToken is missing', () => {
-      expect(() => new MercadoPagoGateway({ accessToken: '' })).toThrow(
-        'MercadoPago accessToken is required',
-      );
+      expect(() => new MercadoPagoGateway({ accessToken: '' })).toThrow('MercadoPago accessToken is required');
     });
   });
 });

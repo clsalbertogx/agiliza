@@ -5,14 +5,14 @@
  */
 export {
   type Either,
-  success,
   failure,
-  isSuccess,
+  flatMap,
   isFailure,
+  isSuccess,
   map,
   mapError,
-  flatMap,
+  success,
   unwrap,
-  unwrapOr,
   unwrapErr,
+  unwrapOr,
 } from '@/domain/types/either';

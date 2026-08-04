@@ -1,21 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('PII Masking in Logs — SEC-11', () => {
   // PII masking implementation matching the security spec
   const piiPatterns = [
-    { regex: /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, label: 'CPF' },         // CPF
+    { regex: /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, label: 'CPF' }, // CPF
     { regex: /\b\d{2}\.?\d{3}\.?\d{3}\/\d{4}-?\d{2}\b/g, label: 'CNPJ' }, // CNPJ
-    { regex: /\b\d{10,11}\b/g, label: 'Phone' },                           // Phone (10-11 digits)
+    { regex: /\b\d{10,11}\b/g, label: 'Phone' }, // Phone (10-11 digits)
     { regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, label: 'Email' }, // Email
   ];
 
   // Patterns that should NEVER appear in logs
   const CREDIT_CARD_PATTERN = /\b(?:\d{4}[-\s]?){3}\d{4}\b/g;
-  const API_KEY_PATTERNS = [
-    /asaas_(live|test)_[a-zA-Z0-9]+/g,
-    /sk_(live|test)_[a-zA-Z0-9]+/g,
-    /AGILIZA_API_KEY/i,
-  ];
+  const API_KEY_PATTERNS = [/asaas_(live|test)_[a-zA-Z0-9]+/g, /sk_(live|test)_[a-zA-Z0-9]+/g, /AGILIZA_API_KEY/i];
 
   function maskPII(message: string): string {
     let masked = message;
@@ -115,7 +111,7 @@ describe('PII Masking in Logs — SEC-11', () => {
     function strictMask(message: string): string {
       let masked = maskPII(message);
 
-      // Mask common API key patterns  
+      // Mask common API key patterns
       masked = masked.replace(/asaas_(live|test)_[a-zA-Z0-9]+/g, 'asaas_$1_***');
       masked = masked.replace(/sk_(live|test)_[a-zA-Z0-9]+/g, 'sk_$1_***');
       masked = masked.replace(/agiliza_secret_key_[a-zA-Z0-9_]+/g, 'agiliza_secret_key_***');
@@ -157,7 +153,7 @@ describe('PII Masking in Logs — SEC-11', () => {
       userId: 'user-456',
       headers: {
         'content-type': 'application/json',
-        'authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9...',
+        authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9...',
         'x-api-key': 'asaas_live_abc123',
       },
       body: {
@@ -198,9 +194,7 @@ describe('PII Masking in Logs — SEC-11', () => {
       const response: { error: Record<string, unknown> } = {
         error: {
           code: statusCode >= 500 ? 'INTERNAL_ERROR' : error.code || 'UNKNOWN_ERROR',
-          message: statusCode >= 500
-            ? 'An unexpected error occurred'
-            : error.message,
+          message: statusCode >= 500 ? 'An unexpected error occurred' : error.message,
         },
       };
 

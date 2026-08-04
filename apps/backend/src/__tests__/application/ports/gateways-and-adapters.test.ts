@@ -1,15 +1,27 @@
-import { describe, it, expect } from 'vitest';
-import type { PaymentGatewayPort, WebhookVerifierPort, MessageProviderPort } from '@/application/ports/gateways';
-import type { UnitOfWorkPort, EventBusPort } from '@/application/ports/adapters';
+import { describe, expect, it } from 'vitest';
+import type { EventBusPort, UnitOfWorkPort } from '@/application/ports/adapters';
+import type { MessageProviderPort, PaymentGatewayPort, WebhookVerifierPort } from '@/application/ports/gateways';
 
 describe('Gateway Ports', () => {
   describe('PaymentGatewayPort', () => {
     it('should have correct method signatures with Either return types', () => {
       const port: PaymentGatewayPort = {
-        createPixCharge: async () => ({ success: true, value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' } }),
-        createCreditCardCharge: async () => ({ success: true, value: { id: '', status: '', amount: 0, currency: '', paymentMethod: '' } }),
-        createBoletoCharge: async () => ({ success: true, value: { id: '', status: '', amount: 0, currency: '', barcode: '' } }),
-        getCharge: async () => ({ success: true, value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' } }),
+        createPixCharge: async () => ({
+          success: true,
+          value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' },
+        }),
+        createCreditCardCharge: async () => ({
+          success: true,
+          value: { id: '', status: '', amount: 0, currency: '', paymentMethod: '' },
+        }),
+        createBoletoCharge: async () => ({
+          success: true,
+          value: { id: '', status: '', amount: 0, currency: '', barcode: '' },
+        }),
+        getCharge: async () => ({
+          success: true,
+          value: { id: '', qrCode: '', copyPaste: '', expiresAt: new Date(), status: '' },
+        }),
         cancelCharge: async () => ({ success: true, value: undefined }),
         verifyWebhook: async () => true,
         handleWebhook: () => ({ success: true, value: { event: '', paymentId: '', status: '', metadata: {} } }),

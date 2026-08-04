@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { Entity } from '@/domain/entities/base.entity';
 
 class TestEntity extends Entity<{ name: string }> {
@@ -6,7 +6,7 @@ class TestEntity extends Entity<{ name: string }> {
     public readonly props: { name: string },
     id?: string,
     createdAt?: Date,
-    updatedAt?: Date
+    updatedAt?: Date,
   ) {
     super(id!, createdAt, updatedAt);
   }
@@ -43,9 +43,7 @@ describe('Entity Base', () => {
     const before = new Date();
     const entity = new TestEntity({ name: 'Test' });
     const after = new Date();
-    expect(entity.createdAt.getTime()).toBeGreaterThanOrEqual(
-      before.getTime()
-    );
+    expect(entity.createdAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
     expect(entity.createdAt.getTime()).toBeLessThanOrEqual(after.getTime());
   });
 
@@ -59,9 +57,7 @@ describe('Entity Base', () => {
     const before = new Date();
     const entity = new TestEntity({ name: 'Test' });
     const after = new Date();
-    expect(entity.updatedAt.getTime()).toBeGreaterThanOrEqual(
-      before.getTime()
-    );
+    expect(entity.updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
     expect(entity.updatedAt.getTime()).toBeLessThanOrEqual(after.getTime());
   });
 
@@ -85,16 +81,12 @@ describe('Entity Base', () => {
 
     it('should return false when compared to null', () => {
       const entity = new TestEntity({ name: 'Test' });
-      expect(entity.equals(null as unknown as Entity<{ name: string }>)).toBe(
-        false
-      );
+      expect(entity.equals(null as unknown as Entity<{ name: string }>)).toBe(false);
     });
 
     it('should return false when compared to undefined', () => {
       const entity = new TestEntity({ name: 'Test' });
-      expect(
-        entity.equals(undefined as unknown as Entity<{ name: string }>)
-      ).toBe(false);
+      expect(entity.equals(undefined as unknown as Entity<{ name: string }>)).toBe(false);
     });
   });
 

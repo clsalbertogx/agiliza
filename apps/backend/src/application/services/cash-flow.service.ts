@@ -24,7 +24,10 @@ interface RiskDistribution {
   red: { count: number; percentage: number };
 }
 
-import type { AnalyticsInvoiceRepositoryPort, AnalyticsClientRepositoryPort } from '@/application/ports/repositories/analytics.repository.port';
+import type {
+  AnalyticsClientRepositoryPort,
+  AnalyticsInvoiceRepositoryPort,
+} from '@/application/ports/repositories/analytics.repository.port';
 
 export class CashFlowService {
   constructor(
@@ -44,8 +47,8 @@ export class CashFlowService {
 
     // Calculate baseline metrics from history
     const totalHistorical = allInvoices.length;
-    const paidHistorical = allInvoices.filter(i => i.status === 'PAID').length;
-    const overdueHistorical = allInvoices.filter(i => i.status === 'OVERDUE').length;
+    const paidHistorical = allInvoices.filter((i) => i.status === 'PAID').length;
+    const overdueHistorical = allInvoices.filter((i) => i.status === 'OVERDUE').length;
 
     const paymentRate = totalHistorical > 0 ? paidHistorical / totalHistorical : 0.85;
     const defaultRate = totalHistorical > 0 ? overdueHistorical / totalHistorical : 0.12;
@@ -57,10 +60,9 @@ export class CashFlowService {
     });
 
     // Average revenue per client
-    const paidInvoices = allInvoices.filter(i => i.status === 'PAID');
-    const avgRevenue = paidInvoices.length > 0
-      ? paidInvoices.reduce((sum, inv) => sum + inv.amount, 0) / paidInvoices.length
-      : 99.90; // Default average ticket
+    const paidInvoices = allInvoices.filter((i) => i.status === 'PAID');
+    const avgRevenue =
+      paidInvoices.length > 0 ? paidInvoices.reduce((sum, inv) => sum + inv.amount, 0) / paidInvoices.length : 99.9; // Default average ticket
 
     for (let i = 0; i < months; i++) {
       const forecastDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
@@ -105,9 +107,9 @@ export class CashFlowService {
     });
 
     const total = allInvoices.length;
-    const overdueCount = allInvoices.filter(i => i.status === 'OVERDUE').length;
-    const paidCount = allInvoices.filter(i => i.status === 'PAID').length;
-    const pendingCount = allInvoices.filter(i => i.status === 'PENDING').length;
+    const overdueCount = allInvoices.filter((i) => i.status === 'OVERDUE').length;
+    const paidCount = allInvoices.filter((i) => i.status === 'PAID').length;
+    const pendingCount = allInvoices.filter((i) => i.status === 'PENDING').length;
 
     return {
       green: { count: paidCount, percentage: total > 0 ? Math.round((paidCount / total) * 100) : 0 },

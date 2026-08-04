@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { KpiCard } from '@/components/kpi-card';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { AlertTriangle, BarChart3, DollarSign, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
-import { DollarSign, TrendingUp, BarChart3, AlertTriangle } from 'lucide-react';
+import { KpiCard } from '@/components/kpi-card';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
 
 interface Forecast {
   month: string;
@@ -38,7 +38,7 @@ export default function ReportsPage() {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333'}/api/reports/cash-flow?tenantId=demo&months=6`,
-        { headers: { Authorization: 'ApiKey dev-key' } }
+        { headers: { Authorization: 'ApiKey dev-key' } },
       );
       if (!res.ok) {
         throw new Error(`Erro HTTP ${res.status}`);
@@ -46,14 +46,7 @@ export default function ReportsPage() {
       const json = await res.json();
       setData(json.data);
     } catch {
-      const months = [
-        'Agosto 2026',
-        'Setembro 2026',
-        'Outubro 2026',
-        'Novembro 2026',
-        'Dezembro 2026',
-        'Janeiro 2027',
-      ];
+      const months = ['Agosto 2026', 'Setembro 2026', 'Outubro 2026', 'Novembro 2026', 'Dezembro 2026', 'Janeiro 2027'];
       const forecast = months.map((month, i) => ({
         month,
         expectedRevenue: 5000 + i * 200,
@@ -81,15 +74,12 @@ export default function ReportsPage() {
     load();
   }, [load]);
 
-  const fmtCurrency = (v: number) =>
-    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmtCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Previsão de Fluxo de Caixa
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">Previsão de Fluxo de Caixa</h1>
         <LoadingSkeleton variant="page" />
       </div>
     );
@@ -98,14 +88,8 @@ export default function ReportsPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Previsão de Fluxo de Caixa
-        </h1>
-        <ErrorState
-          message={error}
-          details="Verifique sua conexão e tente novamente."
-          onRetry={load}
-        />
+        <h1 className="text-2xl font-bold text-gray-900">Previsão de Fluxo de Caixa</h1>
+        <ErrorState message={error} details="Verifique sua conexão e tente novamente." onRetry={load} />
       </div>
     );
   }
@@ -116,9 +100,7 @@ export default function ReportsPage() {
   if (forecast.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Previsão de Fluxo de Caixa
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">Previsão de Fluxo de Caixa</h1>
         <EmptyState
           icon={<BarChart3 className="w-16 h-16" />}
           title="Nenhum dado disponível"
@@ -133,9 +115,7 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">
-        Previsão de Fluxo de Caixa
-      </h1>
+      <h1 className="text-2xl font-bold text-gray-900">Previsão de Fluxo de Caixa</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
@@ -161,9 +141,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Projeção Mensal
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Projeção Mensal</h2>
         <div className="overflow-x-auto">
           <table className="w-full" role="table">
             <thead>
@@ -192,15 +170,9 @@ export default function ReportsPage() {
               {forecast.map((f) => (
                 <tr key={f.month} className="border-b border-gray-50">
                   <td className="py-3 font-medium capitalize">{f.month}</td>
-                  <td className="py-3 text-success-700">
-                    {fmtCurrency(f.expectedRevenue)}
-                  </td>
-                  <td className="py-3 text-danger-700">
-                    {fmtCurrency(f.expectedDefaults)}
-                  </td>
-                  <td className="py-3 text-warning-700">
-                    {fmtCurrency(f.recoveryEstimate)}
-                  </td>
+                  <td className="py-3 text-success-700">{fmtCurrency(f.expectedRevenue)}</td>
+                  <td className="py-3 text-danger-700">{fmtCurrency(f.expectedDefaults)}</td>
+                  <td className="py-3 text-warning-700">{fmtCurrency(f.recoveryEstimate)}</td>
                   <td className="py-3 font-bold">
                     <span className="inline-flex items-center gap-1.5">
                       <span
@@ -216,9 +188,7 @@ export default function ReportsPage() {
                       {fmtCurrency(f.netForecast)}
                     </span>
                   </td>
-                  <td className="py-3">
-                    {(f.confidence * 100).toFixed(0)}%
-                  </td>
+                  <td className="py-3">{(f.confidence * 100).toFixed(0)}%</td>
                 </tr>
               ))}
             </tbody>

@@ -10,9 +10,10 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "lint": "turbo lint",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "test": "turbo test",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format": "biome format --write .",
     "db:migrate": "cd apps/backend && npx prisma migrate dev",
     "db:generate": "cd apps/backend && npx prisma generate",
     "db:studio": "cd apps/backend && npx prisma studio",
@@ -20,9 +21,9 @@
     "test:e2e:ui": "playwright test --ui --config=e2e/playwright.config.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.6",
     "@playwright/test": "^1.62.0",
     "@vitest/coverage-v8": "^1.6.1",
-    "prettier": "^3.2.0",
     "turbo": "^2.0.0",
     "typescript": "^5.4.0",
     "wait-on": "^8.0.5"

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { createHmac } from 'node:crypto';
+import { describe, expect, it } from 'vitest';
 import { createToken, verifyToken } from '@/infrastructure/auth';
 
 /** Helper: sign header.body with HMAC-SHA256 (mirrors jwt.strategy.ts) */
@@ -39,9 +39,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
       const parts = originalToken.split('.');
 
       // When the header is modified (e.g. change algorithm to "none")
-      const tamperedHeader = Buffer.from(
-        JSON.stringify({ alg: 'none', typ: 'JWT' }),
-      ).toString('base64url');
+      const tamperedHeader = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
       const tamperedToken = `${tamperedHeader}.${parts[1]}.${parts[2]}`;
 
       // Then verification should fail
@@ -120,9 +118,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
   describe('Expiration (exp) Claim Validation', () => {
     it('should reject token with missing exp claim', () => {
       // Given a token with no exp claim in the body
-      const header = Buffer.from(
-        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const bodyNoExp = Buffer.from(
         JSON.stringify({
           tenantId: 'tenant-abc',
@@ -153,9 +149,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
       // the off-by-one behaviour explicitly.
 
       // Test 1: exp is clearly in the past (1 second ago)
-      const header1 = Buffer.from(
-        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header1 = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const body1 = Buffer.from(
         JSON.stringify({
           tenantId: 'tenant-abc',
@@ -170,9 +164,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
 
       // Test 2: exp is exactly equal to now — <= vs < edge case
       // The fixed code uses body.exp <= now, so exp === now IS rejected.
-      const header2 = Buffer.from(
-        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header2 = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const body2 = Buffer.from(
         JSON.stringify({
           tenantId: 'tenant-abc',
@@ -192,9 +184,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
 
     it('should reject token with exp in the past (already expired)', () => {
       // Given a token whose exp is 5 seconds in the past
-      const header = Buffer.from(
-        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const fiveSecondsAgo = Math.floor(Date.now() / 1000) - 5;
       const body = Buffer.from(
         JSON.stringify({
@@ -332,9 +322,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
   describe('Invalid Payload Handling', () => {
     it('should reject token with non-JSON body', () => {
       // Given a token whose body is not valid JSON
-      const header = Buffer.from(
-        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const bodyNotJson = Buffer.from('not-json-content').toString('base64url');
       const signature = sign(header, bodyNotJson, TEST_SECRET);
       const token = `${header}.${bodyNotJson}.${signature}`;
@@ -348,9 +336,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
 
     it('should reject token with non-base64url body part', () => {
       // Given a token whose body contains characters invalid for base64url
-      const header = Buffer.from(
-        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const bodyInvalid = '!!!invalid-base64!!!';
       const signature = sign(header, bodyInvalid, TEST_SECRET);
       const token = `${header}.${bodyInvalid}.${signature}`;
@@ -364,9 +350,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
 
     it('should reject token with missing userId in payload', () => {
       // Given a token missing the userId field
-      const header = Buffer.from(
-        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const bodyMissingUserId = Buffer.from(
         JSON.stringify({
           tenantId: 'tenant-abc',
@@ -388,9 +372,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
 
     it('should reject token with missing tenantId in payload', () => {
       // Given a token missing the tenantId field
-      const header = Buffer.from(
-        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const bodyMissingTenantId = Buffer.from(
         JSON.stringify({
           userId: 'user-xyz',
@@ -412,9 +394,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
 
     it('should reject token with invalid role value', () => {
       // Given a token with an invalid role (not 'owner' or 'user')
-      const header = Buffer.from(
-        JSON.stringify({ alg: 'HS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
       const bodyInvalidRole = Buffer.from(
         JSON.stringify({
           tenantId: 'tenant-abc',
@@ -440,9 +420,7 @@ describe('JWT Signature Verification — SEC-02 / Issue #21', () => {
   describe('Algorithm Confusion Resistance', () => {
     it('should reject token where alg claims RS256 but signature is HS256-style', () => {
       // Given a token claiming RS256 (asymmetric) but actually using symmetric signing
-      const header = Buffer.from(
-        JSON.stringify({ alg: 'RS256', typ: 'JWT' }),
-      ).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
       const body = Buffer.from(
         JSON.stringify({
           tenantId: 'tenant-abc',

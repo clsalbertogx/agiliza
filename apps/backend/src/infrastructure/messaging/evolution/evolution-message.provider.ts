@@ -1,4 +1,8 @@
-import { MessageProviderPort, SendMessageParams, MessageStatusResponse } from '@/application/ports/gateways/message-provider.port';
+import type {
+  MessageProviderPort,
+  MessageStatusResponse,
+  SendMessageParams,
+} from '@/application/ports/gateways/message-provider.port';
 import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 import { EvolutionApiClient } from './evolution-client';
 
@@ -16,12 +20,8 @@ export class EvolutionMessageProvider implements MessageProviderPort {
 
   async sendText(params: SendMessageParams): Promise<MessageStatusResponse> {
     const formattedNumber = params.to.startsWith('55') ? params.to : `55${params.to}`;
-    
-    const result = await this.client.sendText(
-      this.instanceName,
-      `${formattedNumber}@s.whatsapp.net`,
-      params.text
-    );
+
+    const result = await this.client.sendText(this.instanceName, `${formattedNumber}@s.whatsapp.net`, params.text);
 
     return {
       externalId: result.key?.id || result.id || generateUUID(),
@@ -30,17 +30,15 @@ export class EvolutionMessageProvider implements MessageProviderPort {
     };
   }
 
-  async sendTemplate(params: SendMessageParams & { templateName: string; variables: Record<string, string> }): Promise<MessageStatusResponse> {
+  async sendTemplate(
+    params: SendMessageParams & { templateName: string; variables: Record<string, string> },
+  ): Promise<MessageStatusResponse> {
     const formattedNumber = params.to.startsWith('55') ? params.to : `55${params.to}`;
-    
-    const result = await this.client.sendTemplate(
-      this.instanceName,
-      `${formattedNumber}@s.whatsapp.net`,
-      {
-        name: params.templateName,
-        variables: params.variables,
-      }
-    );
+
+    const result = await this.client.sendTemplate(this.instanceName, `${formattedNumber}@s.whatsapp.net`, {
+      name: params.templateName,
+      variables: params.variables,
+    });
 
     return {
       externalId: result.key?.id || result.id || generateUUID(),

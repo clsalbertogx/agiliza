@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { RiskScoreService } from '@/application/services/risk-score.service';
-import { RiskScore, MessageChannel } from '@/domain/entities/client';
+import { MessageChannel, RiskScore } from '@/domain/entities/client';
 
 describe('Risk Score Engine', () => {
   const service = new RiskScoreService();
@@ -108,7 +108,7 @@ describe('Risk Score Engine', () => {
       });
       // Still GREEN, but with a note about low engagement
       expect(result.score).toStrictEqual(RiskScore.GREEN);
-      expect(result.reasons.some(r => r.includes('Baixa'))).toBe(true);
+      expect(result.reasons.some((r) => r.includes('Baixa'))).toBe(true);
     });
   });
 
@@ -135,7 +135,7 @@ describe('Risk Score Engine', () => {
         isNewClient: true,
       });
       expect(result.score).toStrictEqual(RiskScore.GREEN);
-      expect(result.reasons.some(r => r.includes('Cold Start'))).toBe(true);
+      expect(result.reasons.some((r) => r.includes('Cold Start'))).toBe(true);
     });
   });
 
@@ -150,7 +150,7 @@ describe('Risk Score Engine', () => {
         isNewClient: true,
       });
       expect(result.score).toStrictEqual(RiskScore.GREEN);
-      expect(result.reasons.some(r => r.includes('Cold Start'))).toBe(true);
+      expect(result.reasons.some((r) => r.includes('Cold Start'))).toBe(true);
     });
 
     it('should assign YELLOW for new clients with incomplete onboarding', () => {

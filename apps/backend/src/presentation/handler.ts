@@ -1,19 +1,15 @@
-import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
 import { ApplicationError } from '@/application/errors/application.error';
 
-export function errorHandler(
-  error: FastifyError | Error,
-  request: FastifyRequest,
-  reply: FastifyReply
-): void {
+export function errorHandler(error: FastifyError | Error, request: FastifyRequest, reply: FastifyReply): void {
   // 1. Zod validation errors → 400
   if (error instanceof ZodError) {
     reply.status(400).send({
       error: {
         code: 'VALIDATION_ERROR',
         message: 'Input validation failed',
-        details: error.errors.map(e => ({
+        details: error.errors.map((e) => ({
           field: e.path.join('.'),
           message: e.message,
         })),
@@ -47,9 +43,7 @@ export function errorHandler(
   reply.status(500).send({
     error: {
       code: 'INTERNAL_ERROR',
-      message: process.env.NODE_ENV === 'production'
-        ? 'Internal server error'
-        : error.message,
+      message: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message,
     },
   });
 }

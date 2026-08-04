@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockState = vi.hoisted(() => ({
   findUnique: vi.fn(),
@@ -45,11 +45,11 @@ describe('Tenant API Routes', () => {
 
   beforeAll(async () => {
     app = Fastify({ logger: false });
-    
+
     app.decorateRequest('tenantId', undefined);
     app.decorateRequest('userId', undefined);
     app.decorateRequest('authPayload', undefined);
-    
+
     app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
       const authHeader = request.headers.authorization;
       if (!authHeader) {
@@ -58,7 +58,7 @@ describe('Tenant API Routes', () => {
       }
       (request as any).tenantId = TEST_TENANT_ID;
     });
-    
+
     await app.register(tenantRoutes);
     await app.ready();
   });

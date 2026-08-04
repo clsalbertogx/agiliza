@@ -1,10 +1,10 @@
 import type {
-  PaymentGatewayPort,
-  PixChargeResponse,
-  CreditCardChargeInput,
-  CreditCardChargeResponse,
   BoletoChargeInput,
   BoletoChargeResponse,
+  CreditCardChargeInput,
+  CreditCardChargeResponse,
+  PaymentGatewayPort,
+  PixChargeResponse,
 } from '@/application/ports/payment-gateway.port';
 import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 

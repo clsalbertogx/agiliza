@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { PrismaUnitOfWork, getTransaction } from '@/infrastructure/database/unit-of-work';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import { getTransaction, PrismaUnitOfWork } from '@/infrastructure/database/unit-of-work';
 
 /**
  * Integration tests for PrismaUnitOfWork.
@@ -130,7 +130,7 @@ describe('PrismaUnitOfWork Integration', () => {
 
         // Now throw — should roll everything back
         throw new Error('Intentional rollback');
-      })
+      }),
     ).rejects.toThrow('Intentional rollback');
 
     // After the rollback, the tenant should NOT exist in the database

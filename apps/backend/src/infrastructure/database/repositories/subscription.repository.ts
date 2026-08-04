@@ -1,8 +1,11 @@
-import { getPrismaClient } from '@/infrastructure/database/prisma.service';
-import { getTransaction } from '@/infrastructure/database/unit-of-work';
 import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
 import type { Subscription } from '@/domain/entities/subscription';
-import { SubscriptionMapper, type PersistenceSubscription } from '@/infrastructure/database/mappers/subscription.mapper';
+import {
+  type PersistenceSubscription,
+  SubscriptionMapper,
+} from '@/infrastructure/database/mappers/subscription.mapper';
+import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import { getTransaction } from '@/infrastructure/database/unit-of-work';
 
 /**
  * Port-compliant Prisma subscription repository.
@@ -81,11 +84,7 @@ export class PrismaSubscriptionRepository implements SubscriptionRepositoryPort 
     return result.map((r) => this.mapper.toDomain(r as unknown as PersistenceSubscription));
   }
 
-  async getSubscriptionsForAnalytics(
-    tenantId: string,
-    from: Date,
-    to: Date,
-  ): Promise<Subscription[]> {
+  async getSubscriptionsForAnalytics(tenantId: string, from: Date, to: Date): Promise<Subscription[]> {
     const result = await this.txClient.subscription.findMany({
       where: {
         tenantId,

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createDomainEvent, type DomainEventType } from '@/domain/events/domain-events';
 
 describe('Event Collector', () => {
@@ -8,14 +8,14 @@ describe('Event Collector', () => {
         clientId: '00000000-0000-0000-0000-000000000001',
         tenantId: '00000000-0000-0000-0000-000000000002',
         invoiceId: '00000000-0000-0000-0000-000000000003',
-        metadata: { amount: 150.00, method: 'PIX' },
+        metadata: { amount: 150.0, method: 'PIX' },
       });
       expect(event.eventId).toBeDefined();
       expect(event.eventType).toBe('payment.confirmed');
       expect(event.clientId).toBe('00000000-0000-0000-0000-000000000001');
       expect(event.tenantId).toBe('00000000-0000-0000-0000-000000000002');
       expect(event.timestamp).toBeDefined();
-      expect(event.metadata).toEqual({ amount: 150.00, method: 'PIX' });
+      expect(event.metadata).toEqual({ amount: 150.0, method: 'PIX' });
     });
 
     it('should reject event with missing required fields', () => {
@@ -71,7 +71,7 @@ describe('Event Collector', () => {
 
     it('should preserve exact metadata payload as stored', () => {
       const metadata = {
-        amount: 150.00,
+        amount: 150.0,
         method: 'PIX',
         items: ['item1', 'item2'],
         nested: { key: 'value' },
@@ -144,12 +144,14 @@ describe('Event Collector', () => {
     });
 
     it('should paginate event results', () => {
-      const events = Array(10).fill(null).map((_, i) =>
-        createDomainEvent('payment.confirmed', {
-          clientId: `cid-${i}`,
-          tenantId: 'tid',
-        })
-      );
+      const events = Array(10)
+        .fill(null)
+        .map((_, i) =>
+          createDomainEvent('payment.confirmed', {
+            clientId: `cid-${i}`,
+            tenantId: 'tid',
+          }),
+        );
       expect(events.length).toBe(10);
       expect(events[0].eventId).toBeDefined();
     });
@@ -164,17 +166,17 @@ describe('Event Collector', () => {
         metadata: {
           invoiceId: '00000000-0000-0000-0000-000000000003',
           paymentId: 'pay-123',
-          amount: 150.00,
+          amount: 150.0,
           paymentMethod: 'PIX',
           provider: 'asaas',
           providerPaymentId: 'prov_456',
-          fee: 2.50,
-          netAmount: 147.50,
+          fee: 2.5,
+          netAmount: 147.5,
           paidAt: new Date().toISOString(),
         },
       });
       expect(event.eventType).toBe('payment.confirmed');
-      expect(event.metadata.amount).toBe(150.00);
+      expect(event.metadata.amount).toBe(150.0);
       expect(event.metadata.paymentMethod).toBe('PIX');
     });
 
@@ -251,7 +253,9 @@ describe('Event Collector', () => {
     it('should not fail if one handler throws (isolated)', () => {
       const results: string[] = [];
       const safeHandler = (e: any) => results.push('safe');
-      const throwingHandler = (e: any) => { throw new Error('Handler failed'); };
+      const throwingHandler = (e: any) => {
+        throw new Error('Handler failed');
+      };
       const anotherHandler = (e: any) => results.push('another');
 
       const event = createDomainEvent('payment.confirmed', {
@@ -260,8 +264,12 @@ describe('Event Collector', () => {
       });
 
       // Run handlers in try-catch to simulate isolation
-      [throwingHandler, safeHandler, anotherHandler].forEach(handler => {
-        try { handler(event); } catch { /* isolated */ }
+      [throwingHandler, safeHandler, anotherHandler].forEach((handler) => {
+        try {
+          handler(event);
+        } catch {
+          /* isolated */
+        }
       });
       expect(results).toContain('safe');
       expect(results).toContain('another');

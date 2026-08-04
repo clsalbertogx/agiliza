@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { ClientMapper, type PersistenceClient } from '@/infrastructure/database/mappers/client.mapper';
+import { describe, expect, it } from 'vitest';
 import type { Client } from '@/domain/entities/client';
 import { RiskScore } from '@/domain/entities/client';
+import { ClientMapper, type PersistenceClient } from '@/infrastructure/database/mappers/client.mapper';
 
 describe('ClientMapper', () => {
   const mapper = new ClientMapper();

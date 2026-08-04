@@ -54,7 +54,7 @@ export const DEFAULT_JOB_OPTIONS = {
     delay: 1000,
   },
   removeOnComplete: {
-    age: 3600 * 24,     // 1 day
+    age: 3600 * 24, // 1 day
     count: 100,
   },
   removeOnFail: {

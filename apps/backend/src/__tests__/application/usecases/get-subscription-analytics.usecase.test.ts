@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure } from '@/application/types/either';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { isFailure, isSuccess } from '@/application/types/either';
 import { GetSubscriptionAnalyticsUseCase } from '@/application/usecases/get-subscription-analytics.usecase';
-import { Subscription, SubscriptionStatus, BillingCycle } from '@/domain/entities/subscription';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
 
 describe('GetSubscriptionAnalyticsUseCase', () => {
   let useCase: GetSubscriptionAnalyticsUseCase;
@@ -67,11 +67,7 @@ describe('GetSubscriptionAnalyticsUseCase', () => {
         expect(result.value.cancelledCount).toBe(1);
       }
 
-      expect(mockSubscriptionRepo.getSubscriptionsForAnalytics).toHaveBeenCalledWith(
-        TENANT_ID,
-        from,
-        to,
-      );
+      expect(mockSubscriptionRepo.getSubscriptionsForAnalytics).toHaveBeenCalledWith(TENANT_ID, from, to);
     });
 
     it('should default `from` to the start of the current month and `to` to now', async () => {
@@ -82,8 +78,8 @@ describe('GetSubscriptionAnalyticsUseCase', () => {
 
       expect(isSuccess(result)).toBe(true);
 
-      const [tenantId, defaultFrom, defaultTo] =
-        vi.mocked(mockSubscriptionRepo.getSubscriptionsForAnalytics).mock.calls[0];
+      const [tenantId, defaultFrom, defaultTo] = vi.mocked(mockSubscriptionRepo.getSubscriptionsForAnalytics).mock
+        .calls[0];
       expect(tenantId).toBe(TENANT_ID);
       expect(defaultFrom).toBeInstanceOf(Date);
       expect(defaultFrom.getFullYear()).toBe(now.getFullYear());
@@ -108,9 +104,7 @@ describe('GetSubscriptionAnalyticsUseCase', () => {
 
   describe('Repository errors', () => {
     it('should return INTERNAL_ERROR when repository fails', async () => {
-      vi.mocked(mockSubscriptionRepo.getSubscriptionsForAnalytics).mockRejectedValue(
-        new Error('Database error'),
-      );
+      vi.mocked(mockSubscriptionRepo.getSubscriptionsForAnalytics).mockRejectedValue(new Error('Database error'));
 
       const result = await useCase.execute({ tenantId: TENANT_ID, from, to });
 

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import React from 'react';
+import type React from 'react';
 
 // Mock next/navigation
 let mockPathnameValue = '/dashboard';
@@ -9,14 +9,7 @@ vi.mock('next/navigation', () => ({
 
 // Mock next/link
 vi.mock('next/link', () => ({
-  default: ({
-    children,
-    href,
-    ...props
-  }: {
-    children: React.ReactNode;
-    href: string;
-  }) => (
+  default: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
     <a href={href} {...props}>
       {children}
     </a>
@@ -67,9 +60,7 @@ describe('Sidebar', () => {
     it('deve ter role="navigation" com aria-label', () => {
       render(<Sidebar />);
 
-      expect(
-        screen.getByRole('navigation', { name: /navegação principal/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: /navegação principal/i })).toBeInTheDocument();
     });
 
     it('deve renderizar links com href correto', () => {

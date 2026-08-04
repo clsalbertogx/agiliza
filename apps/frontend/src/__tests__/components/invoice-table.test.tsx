@@ -1,27 +1,27 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { InvoiceTable } from '@/components/invoice-table';
-import { describe, it, expect, vi } from 'vitest';
 
 const sampleInvoices = [
   {
     id: 'inv-1',
     clientName: 'João Silva',
-    amount: 149.90,
+    amount: 149.9,
     dueDate: '2026-08-15T00:00:00Z',
     status: 'PAID' as const,
   },
   {
     id: 'inv-2',
     clientName: 'Maria Santos',
-    amount: 99.90,
+    amount: 99.9,
     dueDate: '2026-08-10T00:00:00Z',
     status: 'PENDING' as const,
   },
   {
     id: 'inv-3',
     clientName: 'Carlos Oliveira',
-    amount: 299.70,
+    amount: 299.7,
     dueDate: '2026-07-01T00:00:00Z',
     status: 'OVERDUE' as const,
   },

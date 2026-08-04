@@ -1,11 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('CORS Validation — SEC-07', () => {
   // Simulate the CORS configuration from src/index.ts
-  const ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    process.env.FRONTEND_URL || 'http://localhost:3000',
-  ];
+  const ALLOWED_ORIGINS = ['http://localhost:3000', process.env.FRONTEND_URL || 'http://localhost:3000'];
 
   const ALLOWED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
   const ALLOWED_HEADERS = ['Content-Type', 'Authorization', 'X-API-Key'];
@@ -19,8 +16,8 @@ describe('CORS Validation — SEC-07', () => {
       return { allowed: true };
     }
 
-    const isAllowed = ALLOWED_ORIGINS.some(allowed =>
-      origin === allowed || origin === (process.env.FRONTEND_URL || 'http://localhost:3000')
+    const isAllowed = ALLOWED_ORIGINS.some(
+      (allowed) => origin === allowed || origin === (process.env.FRONTEND_URL || 'http://localhost:3000'),
     );
 
     if (isAllowed) {

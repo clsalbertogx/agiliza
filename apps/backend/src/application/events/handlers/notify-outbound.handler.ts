@@ -1,6 +1,6 @@
-import { DomainEvent } from '@/domain/events/domain-events';
 import { RetryableWebhookHandler } from '@/application/events/handlers/retryable-webhook-handler';
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
+import type { DomainEvent } from '@/domain/events/domain-events';
 
 interface OutboundWebhookPayload {
   eventType: string;
@@ -27,12 +27,7 @@ export class NotifyOutboundHandler extends RetryableWebhookHandler {
   }
 
   async handle(event: DomainEvent): Promise<void> {
-    const eventsToNotify: string[] = [
-      'client.created',
-      'payment.confirmed',
-      'invoice.overdue',
-      'decision.made',
-    ];
+    const eventsToNotify: string[] = ['client.created', 'payment.confirmed', 'invoice.overdue', 'decision.made'];
     if (!eventsToNotify.includes(event.eventType)) return;
     if (!this.webhookUrl || !this.apiKey) return;
 

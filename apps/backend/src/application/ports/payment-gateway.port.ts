@@ -1,7 +1,7 @@
 export interface PixChargeResponse {
   id: string;
-  qrCode: string;       // Base64 QRCode image
-  copyPaste: string;    // PIX Copy & Paste key
+  qrCode: string; // Base64 QRCode image
+  copyPaste: string; // PIX Copy & Paste key
   expiresAt: Date;
   status: string;
 }

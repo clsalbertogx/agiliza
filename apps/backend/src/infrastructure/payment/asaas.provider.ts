@@ -1,10 +1,10 @@
 import type {
-  PaymentGatewayPort,
-  PixChargeResponse,
-  CreditCardChargeInput,
-  CreditCardChargeResponse,
   BoletoChargeInput,
   BoletoChargeResponse,
+  CreditCardChargeInput,
+  CreditCardChargeResponse,
+  PaymentGatewayPort,
+  PixChargeResponse,
 } from '@/application/ports/payment-gateway.port';
 import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 
@@ -20,15 +20,14 @@ export class AsaasPaymentProvider implements PaymentGatewayPort {
 
   constructor(config: AsaasConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = config.environment === 'production'
-      ? 'https://api.asaas.com/v3'
-      : 'https://api-sandbox.asaas.com/v3';
+    this.baseUrl =
+      config.environment === 'production' ? 'https://api.asaas.com/v3' : 'https://api-sandbox.asaas.com/v3';
   }
 
   private getHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
-      'access_token': this.apiKey,
+      access_token: this.apiKey,
     };
   }
 
@@ -46,11 +45,13 @@ export class AsaasPaymentProvider implements PaymentGatewayPort {
 
     return {
       id,
-      qrCode: `data:image/png;base64,${Buffer.from(JSON.stringify({
-        pixKey: 'simulated-pix-key',
-        amount: params.amount,
-        description: params.description,
-      })).toString('base64')}`,
+      qrCode: `data:image/png;base64,${Buffer.from(
+        JSON.stringify({
+          pixKey: 'simulated-pix-key',
+          amount: params.amount,
+          description: params.description,
+        }),
+      ).toString('base64')}`,
       copyPaste: `00020126580014BR.GOV.BCB.PIX0136${id}5204000053039865406${(params.amount * 100).toFixed(0)}5802BR5913AGILIZA6008BRASILIA62070503***6304ABCD`,
       expiresAt,
       status: 'PENDING',
@@ -61,9 +62,9 @@ export class AsaasPaymentProvider implements PaymentGatewayPort {
     return {
       id: providerPaymentId,
       status: 'CONFIRMED',
-      value: 99.90,
-      netValue: 97.90,
-      fee: 2.00,
+      value: 99.9,
+      netValue: 97.9,
+      fee: 2.0,
     };
   }
 
@@ -114,7 +115,7 @@ export class AsaasPaymentProvider implements PaymentGatewayPort {
   handleWebhook(payload: any) {
     const event = payload.event || 'UNKNOWN';
     const paymentId = payload.payment?.id || payload.id;
-    
+
     const statusMap: Record<string, string> = {
       PAYMENT_CONFIRMED: 'confirmed',
       PAYMENT_RECEIVED: 'confirmed',

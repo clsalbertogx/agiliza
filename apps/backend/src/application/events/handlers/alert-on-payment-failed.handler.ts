@@ -1,5 +1,5 @@
-import { DomainEvent } from '@/domain/events/domain-events';
-import { AlertService } from '@/application/services/alert.service';
+import type { AlertService } from '@/application/services/alert.service';
+import type { DomainEvent } from '@/domain/events/domain-events';
 
 export class AlertOnPaymentFailedHandler {
   constructor(private readonly alertService: AlertService) {}

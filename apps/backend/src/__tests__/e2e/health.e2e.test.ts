@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Fastify from 'fastify';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { healthRoutes } from '@/routes/health.routes';
 
 describe('Health Check E2E', () => {

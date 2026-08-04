@@ -1,4 +1,7 @@
-import { PaymentWebhookParserPort, PaymentWebhookData } from '@/application/ports/gateways/payment-webhook-parser.port';
+import type {
+  PaymentWebhookData,
+  PaymentWebhookParserPort,
+} from '@/application/ports/gateways/payment-webhook-parser.port';
 
 export class AsaasWebhookParser implements PaymentWebhookParserPort {
   parse(provider: string, payload: Record<string, unknown>): PaymentWebhookData | null {

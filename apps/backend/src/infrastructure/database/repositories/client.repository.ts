@@ -1,8 +1,8 @@
-import { getPrismaClient } from '@/infrastructure/database/prisma.service';
-import { getTransaction } from '@/infrastructure/database/unit-of-work';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { Client, RiskScore } from '@/domain/entities/client';
 import { ClientMapper, type PersistenceClient } from '@/infrastructure/database/mappers/client.mapper';
+import { getPrismaClient } from '@/infrastructure/database/prisma.service';
+import { getTransaction } from '@/infrastructure/database/unit-of-work';
 
 /**
  * Port-compliant Prisma client repository.
@@ -54,10 +54,7 @@ export class PrismaClientRepository implements ClientRepositoryPort {
     const where: any = { tenantId };
     if (status) where.riskScore = status;
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } },
-      ];
+      where.OR = [{ name: { contains: search, mode: 'insensitive' } }, { phone: { contains: search } }];
     }
     const [data, total] = await Promise.all([
       this.txClient.client.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
@@ -167,7 +164,12 @@ export class PrismaClientRepository implements ClientRepositoryPort {
     }) as Promise<Record<string, unknown>[]>;
   }
 
-  async updateRiskScoreRaw(id: string, riskScore: string, reason: unknown, tenantId?: string): Promise<Record<string, unknown>> {
+  async updateRiskScoreRaw(
+    id: string,
+    riskScore: string,
+    reason: unknown,
+    tenantId?: string,
+  ): Promise<Record<string, unknown>> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
     return this.txClient.client.update({

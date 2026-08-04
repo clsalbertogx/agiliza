@@ -1,5 +1,5 @@
-import { RiskScore, MessageChannel, Client } from '@/domain/entities/client';
-import { Invoice } from '@/domain/entities/invoice';
+import { type Client, MessageChannel, RiskScore } from '@/domain/entities/client';
+import type { Invoice } from '@/domain/entities/invoice';
 
 export interface Decision {
   action: 'send_reminder' | 'suggest_call' | 'send_offer' | 'wait';
@@ -31,18 +31,14 @@ export class DecisionEngineService {
     this.benchmarks = benchmarks ?? DEFAULT_BENCHMARKS;
   }
 
-  decideNextAction(
-    client: Client,
-    invoice: Invoice,
-    niche: string = 'default'
-  ): Decision {
+  decideNextAction(client: Client, invoice: Invoice, niche: string = 'default'): Decision {
     const benchmark = this.benchmarks[niche] ?? this.benchmarks.default;
     const reasoning: string[] = [];
 
     // Determine timing
     const preferredTime = client.preferredTime ?? benchmark.preferredHour;
     const leadDays = client.preferredLeadDays ?? benchmark.leadDays;
-    
+
     const reminderDate = new Date(invoice.dueDate);
     reminderDate.setDate(reminderDate.getDate() - leadDays);
     const [hours, minutes] = preferredTime.split(':').map(Number);

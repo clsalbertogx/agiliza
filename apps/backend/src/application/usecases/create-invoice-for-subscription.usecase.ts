@@ -1,8 +1,8 @@
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { Invoice, InvoiceStatus } from '@/domain/entities/invoice';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
 import { calculateNextBilling, getReferenceMonth } from '@/domain/services/billing-cycle.service';
 
 export interface RecurringInvoiceResult {

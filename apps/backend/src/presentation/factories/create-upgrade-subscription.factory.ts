@@ -1,6 +1,6 @@
 import { UpgradeSubscriptionUseCase } from '@/application/usecases/upgrade-subscription.usecase';
-import { PrismaSubscriptionRepository } from '@/infrastructure/database/repositories/subscription.repository';
 import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
+import { PrismaSubscriptionRepository } from '@/infrastructure/database/repositories/subscription.repository';
 import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 import { UuidV7Generator } from '@/infrastructure/uuid/uuid-v7-generator';
 

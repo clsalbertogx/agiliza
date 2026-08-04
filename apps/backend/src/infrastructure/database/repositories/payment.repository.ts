@@ -1,8 +1,8 @@
 import type { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
 import type { Payment } from '@/domain/entities/payment';
+import { PaymentMapper, type PersistencePayment } from '@/infrastructure/database/mappers/payment.mapper';
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
 import { getTransaction } from '@/infrastructure/database/unit-of-work';
-import { PaymentMapper, type PersistencePayment } from '@/infrastructure/database/mappers/payment.mapper';
 
 /**
  * Port-compliant Prisma payment repository.

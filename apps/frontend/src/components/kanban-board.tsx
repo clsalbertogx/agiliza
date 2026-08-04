@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { RiskBadge } from '@/components/risk-badge';
+import { ScrollArea } from '@radix-ui/react-scroll-area';
+import { ArrowRight, ChevronDown, ChevronRight, GripVertical, LayoutDashboard } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
-import { ScrollArea } from '@radix-ui/react-scroll-area';
-import { GripVertical, ChevronDown, ChevronRight, ArrowRight, LayoutDashboard } from 'lucide-react';
+import { RiskBadge } from '@/components/risk-badge';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export interface KanbanInvoice {
@@ -118,15 +118,9 @@ function InvoiceCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 truncate">
-            {invoice.clientName}
-          </p>
-          <p className="text-base font-bold text-gray-900 tabular-nums mt-0.5">
-            {formatBRL(invoice.amount)}
-          </p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Vence: {formatDate(invoice.dueDate)}
-          </p>
+          <p className="text-sm font-semibold text-gray-900 truncate">{invoice.clientName}</p>
+          <p className="text-base font-bold text-gray-900 tabular-nums mt-0.5">{formatBRL(invoice.amount)}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Vence: {formatDate(invoice.dueDate)}</p>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {invoice.riskScore && <RiskBadge level={invoice.riskScore} />}
             {invoice.paymentMethod && (
@@ -194,11 +188,7 @@ export function KanbanBoard({
 
   if (isLoading) {
     return (
-      <div
-        className="flex flex-col lg:flex-row gap-4"
-        role="status"
-        aria-label="Carregando quadro kanban"
-      >
+      <div className="flex flex-col lg:flex-row gap-4" role="status" aria-label="Carregando quadro kanban">
         {columnStatuses.map((status) => (
           <KanbanColumnSkeleton
             key={status}
@@ -226,8 +216,7 @@ export function KanbanBoard({
     );
   }
 
-  const getColumnInvoices = (status: 'pending' | 'overdue' | 'paid') =>
-    invoices.filter((inv) => inv.status === status);
+  const getColumnInvoices = (status: 'pending' | 'overdue' | 'paid') => invoices.filter((inv) => inv.status === status);
 
   // Mobile: accordion-style
   const renderMobile = () => (
@@ -245,9 +234,7 @@ export function KanbanBoard({
               aria-expanded={isOpen}
             >
               <div className="flex items-center gap-2">
-                <Badge variant={statusToBadgeVariant[status]}>
-                  {labels[status]}
-                </Badge>
+                <Badge variant={statusToBadgeVariant[status]}>{labels[status]}</Badge>
                 <span className="text-sm text-gray-500">({columnInvoices.length})</span>
               </div>
               {isOpen ? (
@@ -294,9 +281,7 @@ export function KanbanBoard({
           >
             <div className="flex items-center gap-2 mb-4">
               <Badge variant={statusToBadgeVariant[status]}>{labels[status]}</Badge>
-              <span className="text-sm text-gray-500 font-medium">
-                ({columnInvoices.length})
-              </span>
+              <span className="text-sm text-gray-500 font-medium">({columnInvoices.length})</span>
             </div>
 
             <ScrollArea className="space-y-3 max-h-[600px] overflow-y-auto">
@@ -321,11 +306,7 @@ export function KanbanBoard({
 
   return (
     <div>
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      >
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
         {invoices.length > 0 ? `${invoices.length} faturas no quadro` : 'Nenhuma fatura'}
       </div>
       {renderMobile()}

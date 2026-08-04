@@ -1,6 +1,6 @@
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import { ApplicationError } from '@/application/errors/application.error';
-import { Either, success, failure } from '@/application/types/either';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
 
 export interface GetInvoiceStatsInput {
   tenantId: string;

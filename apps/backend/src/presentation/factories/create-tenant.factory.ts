@@ -1,10 +1,10 @@
-import { PrismaTenantRepository } from '@/infrastructure/database/repositories/tenant.repository';
+import type { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 import { PrismaEventRepository } from '@/infrastructure/database/repositories/event.repository';
+import { PrismaTenantRepository } from '@/infrastructure/database/repositories/tenant.repository';
 import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 import { PaymentProviderFactory } from '@/infrastructure/payment/payment-provider.factory';
-import type { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
 import { UuidV7Generator } from '@/infrastructure/uuid/uuid-v7-generator';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 export function createTenantRepository(): PrismaTenantRepository {
   return new PrismaTenantRepository();
@@ -22,13 +22,11 @@ export function createIdGenerator(): IdGeneratorPort {
   return new UuidV7Generator();
 }
 
-export function createPaymentProvider(
-  config: {
-    type: 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar';
-    apiKey: string;
-    environment?: 'sandbox' | 'production';
-  },
-): PaymentGatewayPort {
+export function createPaymentProvider(config: {
+  type: 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar';
+  apiKey: string;
+  environment?: 'sandbox' | 'production';
+}): PaymentGatewayPort {
   return PaymentProviderFactory.create(config);
 }
 

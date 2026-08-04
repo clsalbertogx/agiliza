@@ -1,12 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApplicationError } from '@/application/errors/application.error';
 import { AutoPayHandler } from '@/application/events/handlers/auto-pay.handler';
 import type { DomainEvent } from '@/domain/events/domain-events';
-import { Either, success, failure } from '@/domain/types/either';
-import { ApplicationError } from '@/application/errors/application.error';
+import { Either, failure, success } from '@/domain/types/either';
 
-function makeSubscriptionInvoiceCreatedEvent(
-  overrides: Partial<DomainEvent> = {},
-): DomainEvent {
+function makeSubscriptionInvoiceCreatedEvent(overrides: Partial<DomainEvent> = {}): DomainEvent {
   return {
     eventId: 'evt-auto-123',
     eventType: 'subscription.invoice.created',
@@ -85,9 +83,11 @@ describe('AutoPayHandler', () => {
       const { processPayment, renewSubscription } = createMocks();
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
 
-      await handler.handle(makeSubscriptionInvoiceCreatedEvent({
-        metadata: { amount: 99.9, refMonth: '2026-08' },
-      }));
+      await handler.handle(
+        makeSubscriptionInvoiceCreatedEvent({
+          metadata: { amount: 99.9, refMonth: '2026-08' },
+        }),
+      );
 
       expect(processPayment.execute).not.toHaveBeenCalled();
       expect(renewSubscription.execute).not.toHaveBeenCalled();
@@ -99,7 +99,9 @@ describe('AutoPayHandler', () => {
       const { processPayment, renewSubscription } = createMocks();
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
 
-      processPayment.execute.mockResolvedValue(success({ status: 'PENDING', pix: { qrCode: 'qr', copyPaste: 'copy', expiresAt: new Date() } }));
+      processPayment.execute.mockResolvedValue(
+        success({ status: 'PENDING', pix: { qrCode: 'qr', copyPaste: 'copy', expiresAt: new Date() } }),
+      );
       renewSubscription.execute.mockResolvedValue(success({ id: 'sub-123' }));
 
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -114,9 +116,7 @@ describe('AutoPayHandler', () => {
         subscriptionId: 'sub-123',
         tenantId: 'tenant-123',
       });
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[AutoPay] Invoice invoice-123 auto-paid successfully',
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('[AutoPay] Invoice invoice-123 auto-paid successfully');
       consoleSpy.mockRestore();
     });
   });
@@ -150,16 +150,16 @@ describe('AutoPayHandler', () => {
 
       processPayment.execute.mockRejectedValue(new Error('Database connection lost'));
 
-      await expect(handler.handle(makeSubscriptionInvoiceCreatedEvent())).rejects.toThrow(
-        'Database connection lost',
-      );
+      await expect(handler.handle(makeSubscriptionInvoiceCreatedEvent())).rejects.toThrow('Database connection lost');
     });
 
     it('should throw transient errors from renewSubscription so the retry loop in handleWithRetry can catch them', async () => {
       const { processPayment, renewSubscription } = createMocks();
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
 
-      processPayment.execute.mockResolvedValue(success({ status: 'PENDING', pix: { qrCode: 'qr', copyPaste: 'copy', expiresAt: new Date() } }));
+      processPayment.execute.mockResolvedValue(
+        success({ status: 'PENDING', pix: { qrCode: 'qr', copyPaste: 'copy', expiresAt: new Date() } }),
+      );
       renewSubscription.execute.mockRejectedValue(new Error('Failed to renew'));
 
       await expect(handler.handle(makeSubscriptionInvoiceCreatedEvent())).rejects.toThrow('Failed to renew');
@@ -171,15 +171,15 @@ describe('AutoPayHandler', () => {
       const { processPayment, renewSubscription } = createMocks();
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
 
-      processPayment.execute.mockResolvedValue(failure(new ApplicationError('Insufficient funds', 'INSUFFICIENT_FUNDS', 402)));
+      processPayment.execute.mockResolvedValue(
+        failure(new ApplicationError('Insufficient funds', 'INSUFFICIENT_FUNDS', 402)),
+      );
 
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       await handler.handle(makeSubscriptionInvoiceCreatedEvent());
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        '[AutoPay] Invoice invoice-123 auto-pay failed: Insufficient funds',
-      );
+      expect(consoleWarnSpy).toHaveBeenCalledWith('[AutoPay] Invoice invoice-123 auto-pay failed: Insufficient funds');
       consoleWarnSpy.mockRestore();
     });
   });

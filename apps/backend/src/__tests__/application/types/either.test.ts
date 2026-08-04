@@ -1,15 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  success,
   failure,
-  isSuccess,
+  flatMap,
   isFailure,
+  isSuccess,
   map,
   mapError,
-  flatMap,
+  success,
   unwrap,
-  unwrapOr,
   unwrapErr,
+  unwrapOr,
 } from '@/application/types/either';
 
 describe('Either', () => {

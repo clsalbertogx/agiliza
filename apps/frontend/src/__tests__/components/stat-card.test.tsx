@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { StatCard } from '@/components/stat-card';
-import { describe, it, expect } from 'vitest';
 
 describe('StatCard', () => {
   it('deve renderizar título e valor', () => {
@@ -17,13 +17,7 @@ describe('StatCard', () => {
   });
 
   it('deve exibir tendência positiva com seta para cima', () => {
-    render(
-      <StatCard
-        title="Vendas"
-        value="200"
-        trend={{ value: 15, isPositive: true }}
-      />,
-    );
+    render(<StatCard title="Vendas" value="200" trend={{ value: 15, isPositive: true }} />);
 
     const trendElement = screen.getByText((content) => content.includes('↑'));
     expect(trendElement).toHaveTextContent('15');
@@ -31,13 +25,7 @@ describe('StatCard', () => {
   });
 
   it('deve exibir tendência negativa com seta para baixo', () => {
-    render(
-      <StatCard
-        title="Cancelamentos"
-        value="10"
-        trend={{ value: 5, isPositive: false }}
-      />,
-    );
+    render(<StatCard title="Cancelamentos" value="10" trend={{ value: 5, isPositive: false }} />);
 
     const trendElement = screen.getByText((content) => content.includes('↓'));
     expect(trendElement).toHaveTextContent('5');
@@ -45,13 +33,7 @@ describe('StatCard', () => {
   });
 
   it('deve renderizar ícone quando fornecido', () => {
-    render(
-      <StatCard
-        title="Com Ícone"
-        value="99"
-        icon={<span data-testid="test-icon">🔍</span>}
-      />,
-    );
+    render(<StatCard title="Com Ícone" value="99" icon={<span data-testid="test-icon">🔍</span>} />);
 
     expect(screen.getByTestId('test-icon')).toBeInTheDocument();
   });

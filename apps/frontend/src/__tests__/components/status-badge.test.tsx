@@ -69,9 +69,7 @@ describe('StatusBadge', () => {
   describe('status inválido', () => {
     it('deve retornar null para status desconhecido', () => {
       // Passando um status inválido via TS cast
-      const { container } = render(
-        <StatusBadge status={'invalid' as any} />,
-      );
+      const { container } = render(<StatusBadge status={'invalid' as any} />);
 
       expect(container.innerHTML).toBe('');
     });

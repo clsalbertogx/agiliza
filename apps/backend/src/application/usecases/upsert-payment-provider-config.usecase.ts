@@ -1,7 +1,7 @@
-import { Either, success, failure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { EncryptionPort } from '@/application/ports/gateways/encryption.port';
-import { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
+import type { EncryptionPort } from '@/application/ports/gateways/encryption.port';
+import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
 
 export interface UpsertPaymentProviderConfigInput {
   tenantId: string;

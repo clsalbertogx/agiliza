@@ -52,24 +52,13 @@ export function ClientCard({ client, onSelect }: ClientCardProps) {
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900 truncate">
-              {client.name}
-            </h3>
-            <p className="text-sm text-gray-500 mt-1 truncate">
-              {maskPhone(client.phone)}
-            </p>
-            <p className="text-sm text-gray-500 truncate">
-              {client.email}
-            </p>
+            <h3 className="text-base font-semibold text-gray-900 truncate">{client.name}</h3>
+            <p className="text-sm text-gray-500 mt-1 truncate">{maskPhone(client.phone)}</p>
+            <p className="text-sm text-gray-500 truncate">{client.email}</p>
           </div>
           <div className="flex flex-col items-center gap-1 ml-3" aria-label={riskLabel[client.riskScore]}>
-            <span
-              className={`w-3 h-3 rounded-full ${riskDotColors[client.riskScore]}`}
-              aria-hidden="true"
-            />
-            <span className="text-[10px] uppercase font-medium text-gray-400">
-              {client.riskScore}
-            </span>
+            <span className={`w-3 h-3 rounded-full ${riskDotColors[client.riskScore]}`} aria-hidden="true" />
+            <span className="text-[10px] uppercase font-medium text-gray-400">{client.riskScore}</span>
           </div>
         </div>
       </CardContent>

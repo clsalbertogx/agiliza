@@ -7,17 +7,13 @@ describe('ErrorState', () => {
     it('deve exibir "Não foi possível carregar os dados" como título', () => {
       render(<ErrorState message="Erro genérico" />);
 
-      expect(
-        screen.getByText('Não foi possível carregar os dados'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Não foi possível carregar os dados')).toBeInTheDocument();
     });
 
     it('deve exibir a mensagem de erro', () => {
       render(<ErrorState message="Falha na conexão com o servidor" />);
 
-      expect(
-        screen.getByText('Falha na conexão com o servidor'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Falha na conexão com o servidor')).toBeInTheDocument();
     });
 
     it('deve ter role="alert"', () => {
@@ -44,16 +40,9 @@ describe('ErrorState', () => {
 
   describe('detalhes do erro', () => {
     it('deve exibir detalhes quando fornecidos', () => {
-      render(
-        <ErrorState
-          message="Erro ao carregar"
-          details="Tente novamente mais tarde"
-        />,
-      );
+      render(<ErrorState message="Erro ao carregar" details="Tente novamente mais tarde" />);
 
-      expect(
-        screen.getByText('Tente novamente mais tarde'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Tente novamente mais tarde')).toBeInTheDocument();
     });
 
     it('não deve renderizar detalhes quando não fornecidos', () => {
@@ -71,17 +60,13 @@ describe('ErrorState', () => {
     it('deve renderizar botão "Tentar novamente" quando onRetry é fornecido', () => {
       render(<ErrorState message="Erro" onRetry={vi.fn()} />);
 
-      expect(
-        screen.getByRole('button', { name: /tentar novamente/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeInTheDocument();
     });
 
     it('não deve renderizar botão quando onRetry não é fornecido', () => {
       render(<ErrorState message="Erro" />);
 
-      expect(
-        screen.queryByRole('button', { name: /tentar novamente/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /tentar novamente/i })).not.toBeInTheDocument();
     });
 
     it('deve chamar onRetry ao clicar no botão', async () => {
@@ -90,9 +75,7 @@ describe('ErrorState', () => {
 
       render(<ErrorState message="Erro" onRetry={onRetry} />);
 
-      await user.click(
-        screen.getByRole('button', { name: /tentar novamente/i }),
-      );
+      await user.click(screen.getByRole('button', { name: /tentar novamente/i }));
       expect(onRetry).toHaveBeenCalledTimes(1);
     });
   });

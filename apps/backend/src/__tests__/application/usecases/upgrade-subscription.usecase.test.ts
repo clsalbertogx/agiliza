@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure } from '@/application/types/either';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { isFailure, isSuccess } from '@/application/types/either';
 import { UpgradeSubscriptionUseCase } from '@/application/usecases/upgrade-subscription.usecase';
-import { SubscriptionStatus, BillingCycle, type Subscription } from '@/domain/entities/subscription';
-import { InvoiceStatus, type Invoice } from '@/domain/entities/invoice';
+import { type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 describe('UpgradeSubscriptionUseCase', () => {
   let useCase: UpgradeSubscriptionUseCase;
@@ -19,7 +19,7 @@ describe('UpgradeSubscriptionUseCase', () => {
     subscriptionId: '00000000-0000-0000-0000-000000000003',
     tenantId: '00000000-0000-0000-0000-000000000001',
     newPlan: 'Enterprise Plan',
-    newAmount: 199.90,
+    newAmount: 199.9,
   };
 
   const activeSubscription: Subscription = {
@@ -27,7 +27,7 @@ describe('UpgradeSubscriptionUseCase', () => {
     tenantId: '00000000-0000-0000-0000-000000000001',
     clientId: '00000000-0000-0000-0000-000000000002',
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
     status: SubscriptionStatus.ACTIVE,
     nextBilling: new Date('2026-09-01'),
@@ -71,12 +71,7 @@ describe('UpgradeSubscriptionUseCase', () => {
       validate: vi.fn().mockReturnValue(true),
     };
 
-    useCase = new UpgradeSubscriptionUseCase(
-      mockSubscriptionRepo,
-      mockInvoiceRepo,
-      mockEventBus,
-      mockIdGenerator,
-    );
+    useCase = new UpgradeSubscriptionUseCase(mockSubscriptionRepo, mockInvoiceRepo, mockEventBus, mockIdGenerator);
   });
 
   it('should upgrade an active subscription and update plan details', async () => {
@@ -97,7 +92,7 @@ describe('UpgradeSubscriptionUseCase', () => {
     const upgradedSubscription = {
       ...activeSubscription,
       plan: 'Enterprise Plan',
-      amount: 199.90,
+      amount: 199.9,
       updatedAt: new Date(),
     };
     vi.mocked(mockSubscriptionRepo.update).mockResolvedValue(upgradedSubscription);
@@ -107,13 +102,13 @@ describe('UpgradeSubscriptionUseCase', () => {
     expect(isSuccess(result)).toBe(true);
     if (result.success) {
       expect(result.value.plan).toBe('Enterprise Plan');
-      expect(result.value.amount).toBe(199.90);
+      expect(result.value.amount).toBe(199.9);
     }
     expect(mockSubscriptionRepo.update).toHaveBeenCalledWith(
       validInput.subscriptionId,
       expect.objectContaining({
         plan: 'Enterprise Plan',
-        amount: 199.90,
+        amount: 199.9,
       }),
     );
     expect(mockEventBus.publish).toHaveBeenCalledWith(
@@ -140,7 +135,7 @@ describe('UpgradeSubscriptionUseCase', () => {
     const upgradedSubscription = {
       ...activeSubscription,
       plan: 'Enterprise Plan',
-      amount: 199.90,
+      amount: 199.9,
       status: SubscriptionStatus.TRIAL,
       trialDays: 7,
       trialEndsAt: new Date(),

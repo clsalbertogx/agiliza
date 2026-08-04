@@ -1,13 +1,13 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type {
-  PaymentGatewayPort,
-  PixChargeResponse,
-  CreditCardChargeInput,
-  CreditCardChargeResponse,
   BoletoChargeInput,
   BoletoChargeResponse,
+  CreditCardChargeInput,
+  CreditCardChargeResponse,
+  PaymentGatewayPort,
+  PixChargeResponse,
 } from '@/application/ports/payment-gateway.port';
 import { generateUUID } from '@/infrastructure/uuid/uuid.service';
-import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /**
  * Minimal contract surface that the Polar API client must expose.
@@ -256,9 +256,7 @@ export class PolarGateway implements PaymentGatewayPort {
 
   handleWebhook(payload: any) {
     const event = payload?.type || payload?.event || 'UNKNOWN';
-    const paymentId = String(
-      payload?.data?.id ?? payload?.id ?? payload?.checkout?.id ?? '',
-    );
+    const paymentId = String(payload?.data?.id ?? payload?.id ?? payload?.checkout?.id ?? '');
 
     const statusMap: Record<string, string> = {
       'checkout.created': 'pending',

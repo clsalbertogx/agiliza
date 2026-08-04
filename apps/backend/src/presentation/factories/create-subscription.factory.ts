@@ -1,6 +1,6 @@
 import { CreateSubscriptionUseCase } from '@/application/usecases/create-subscription.usecase';
-import { PrismaSubscriptionRepository } from '@/infrastructure/database/repositories/subscription.repository';
 import { PrismaClientRepository } from '@/infrastructure/database/repositories/client.repository';
+import { PrismaSubscriptionRepository } from '@/infrastructure/database/repositories/subscription.repository';
 import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 import { UuidV7Generator } from '@/infrastructure/uuid/uuid-v7-generator';
 

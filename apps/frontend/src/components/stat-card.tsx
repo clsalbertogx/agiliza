@@ -1,4 +1,5 @@
-// @deprecated — not wired yet
+'use client';
+
 interface StatCardProps {
   title: string;
   value: string | number;

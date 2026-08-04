@@ -26,10 +26,7 @@ function TableSkeleton() {
         <Skeleton className="h-5 w-32" />
       </div>
       {[1, 2, 3, 4, 5].map((i) => (
-        <div
-          key={i}
-          className="flex items-center gap-4 p-4 border-b border-gray-50"
-        >
+        <div key={i} className="flex items-center gap-4 p-4 border-b border-gray-50">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-4 w-24" />

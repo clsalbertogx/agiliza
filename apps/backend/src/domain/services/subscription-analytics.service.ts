@@ -1,4 +1,4 @@
-import { Subscription, SubscriptionStatus, BillingCycle } from '@/domain/entities/subscription';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
 
 /**
  * Aggregate revenue/retention metrics computed from subscription snapshots.

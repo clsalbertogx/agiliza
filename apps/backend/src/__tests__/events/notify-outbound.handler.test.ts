@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotifyOutboundHandler } from '@/application/events/handlers/notify-outbound.handler';
 import type { DomainEvent } from '@/domain/events/domain-events';
 
@@ -92,7 +92,7 @@ describe('NotifyOutboundHandler', () => {
           metadata: { amount: 150 },
           timestamp: '2026-07-29T12:00:00.000Z',
         });
-      }
+      },
     );
   });
 
@@ -101,9 +101,7 @@ describe('NotifyOutboundHandler', () => {
       (fetch as any).mockRejectedValue(new Error('Network error'));
       const handler = new NotifyOutboundHandler('https://hooks.example.com/events', 'sk-secret-123');
 
-      await expect(handler.handle(makeEvent('client.created'))).rejects.toThrow(
-        'Network error',
-      );
+      await expect(handler.handle(makeEvent('client.created'))).rejects.toThrow('Network error');
     });
 
     it('should throw HTTP error responses so the retry loop in handleWithRetry can catch them', async () => {

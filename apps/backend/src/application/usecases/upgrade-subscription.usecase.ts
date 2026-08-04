@@ -1,14 +1,14 @@
-import { Either, success, failure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { Subscription, SubscriptionStatus, updateSubscription, startTrial } from '@/domain/entities/subscription';
-import { ProrationService } from '@/domain/services/proration.service';
-import { calculateNextBilling } from '@/domain/services/billing-cycle.service';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
 import { createInvoice, type Invoice } from '@/domain/entities/invoice';
+import { type Subscription, SubscriptionStatus, startTrial, updateSubscription } from '@/domain/entities/subscription';
 import { createDomainEvent } from '@/domain/events/domain-events';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
+import { calculateNextBilling } from '@/domain/services/billing-cycle.service';
+import { ProrationService } from '@/domain/services/proration.service';
 
 export interface UpgradeSubscriptionInput {
   subscriptionId: string;
@@ -37,11 +37,7 @@ export class UpgradeSubscriptionUseCase {
     // 2. Verify subscription is active
     if (subscription.status !== SubscriptionStatus.ACTIVE && subscription.status !== SubscriptionStatus.TRIAL) {
       return failure(
-        new ApplicationError(
-          `Cannot upgrade subscription with status ${subscription.status}`,
-          'INVALID_STATUS',
-          409,
-        ),
+        new ApplicationError(`Cannot upgrade subscription with status ${subscription.status}`, 'INVALID_STATUS', 409),
       );
     }
 
@@ -49,11 +45,7 @@ export class UpgradeSubscriptionUseCase {
     const now = new Date();
     const daysInCycle = this.getDaysInCycle(subscription.billingCycle);
     const daysUsed = this.calculateDaysUsed(subscription.nextBilling, now, subscription.billingCycle);
-    const proratedCredit = ProrationService.calculateProratedAmount(
-      subscription.amount,
-      daysUsed,
-      daysInCycle,
-    );
+    const proratedCredit = ProrationService.calculateProratedAmount(subscription.amount, daysUsed, daysInCycle);
 
     // 4. Calculate next billing date for new plan
     const nextBilling = calculateNextBilling(now, input.billingCycle ?? subscription.billingCycle);
@@ -123,12 +115,18 @@ export class UpgradeSubscriptionUseCase {
 
   private getDaysInCycle(billingCycle: Subscription['billingCycle']): number {
     switch (billingCycle) {
-      case 'MONTHLY': return 30;
-      case 'BIMONTHLY': return 60;
-      case 'QUARTERLY': return 90;
-      case 'SEMIANNUAL': return 180;
-      case 'ANNUAL': return 365;
-      default: return 30;
+      case 'MONTHLY':
+        return 30;
+      case 'BIMONTHLY':
+        return 60;
+      case 'QUARTERLY':
+        return 90;
+      case 'SEMIANNUAL':
+        return 180;
+      case 'ANNUAL':
+        return 365;
+      default:
+        return 30;
     }
   }
 

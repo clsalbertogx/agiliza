@@ -1,6 +1,6 @@
+import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
 import { getTransaction } from '@/infrastructure/database/unit-of-work';
-import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
 
 export class PrismaPaymentProviderConfigRepository implements PaymentProviderConfigRepositoryPort {
   private prisma = getPrismaClient();

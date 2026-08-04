@@ -1,7 +1,7 @@
 import { ReminderService } from '@/application/services/reminder.service';
-import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
 import { PrismaClientRepository } from '@/infrastructure/database/repositories/client.repository';
 import { PrismaEventRepository } from '@/infrastructure/database/repositories/event.repository';
+import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
 import { EvolutionMessageProvider } from '@/infrastructure/messaging/evolution/evolution-message.provider';
 import { getQueue, QueueNames } from '@/infrastructure/queue';
 
@@ -29,11 +29,5 @@ export function createReminderService(): ReminderService {
     instanceName: 'agiliza',
   });
 
-  return new ReminderService(
-    invoiceRepo,
-    clientRepo,
-    eventRepo,
-    queueAdapter,
-    messageProvider,
-  );
+  return new ReminderService(invoiceRepo, clientRepo, eventRepo, queueAdapter, messageProvider);
 }

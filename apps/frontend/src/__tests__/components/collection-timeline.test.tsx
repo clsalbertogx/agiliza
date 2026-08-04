@@ -47,9 +47,7 @@ describe('CollectionTimeline', () => {
     it('deve renderizar lista de eventos com role="list"', () => {
       render(<CollectionTimeline {...defaultProps} />);
 
-      expect(
-        screen.getByRole('list', { name: /linha do tempo de cobrança/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('list', { name: /linha do tempo de cobrança/i })).toBeInTheDocument();
     });
 
     it('deve renderizar label de cada evento', () => {
@@ -149,9 +147,7 @@ describe('CollectionTimeline', () => {
 
       render(<CollectionTimeline {...defaultProps} events={events} />);
 
-      expect(
-        screen.getByLabelText('Falha: Timeout na conexão'),
-      ).toBeInTheDocument();
+      expect(screen.getByLabelText('Falha: Timeout na conexão')).toBeInTheDocument();
     });
   });
 
@@ -159,9 +155,7 @@ describe('CollectionTimeline', () => {
     it('deve renderizar template name quando fornecido', () => {
       render(<CollectionTimeline {...defaultProps} />);
 
-      expect(
-        screen.getByText('Template: lembrete_vencimento'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Template: lembrete_vencimento')).toBeInTheDocument();
     });
 
     it('deve renderizar conteúdo quando fornecido', () => {
@@ -177,9 +171,7 @@ describe('CollectionTimeline', () => {
 
       render(<CollectionTimeline {...defaultProps} events={events} />);
 
-      expect(
-        screen.getByText(/Olá, sua fatura vence amanhã!/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Olá, sua fatura vence amanhã!/)).toBeInTheDocument();
     });
   });
 
@@ -217,50 +209,27 @@ describe('CollectionTimeline', () => {
     it('não deve exibir "Aguardando entrega..." quando evento foi entregue', () => {
       render(<CollectionTimeline {...defaultProps} />);
 
-      expect(
-        screen.queryByText('Aguardando entrega...'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Aguardando entrega...')).not.toBeInTheDocument();
     });
   });
 
   describe('empty state', () => {
     it('deve exibir "Nenhum lembrete enviado" quando não há eventos', () => {
-      render(
-        <CollectionTimeline
-          clientId="client-1"
-          invoiceId="inv-1"
-          events={[]}
-        />,
-      );
+      render(<CollectionTimeline clientId="client-1" invoiceId="inv-1" events={[]} />);
 
       expect(screen.getByText('Nenhum lembrete enviado')).toBeInTheDocument();
     });
 
     it('deve exibir descrição no empty state', () => {
-      render(
-        <CollectionTimeline
-          clientId="client-1"
-          invoiceId="inv-1"
-          events={[]}
-        />,
-      );
+      render(<CollectionTimeline clientId="client-1" invoiceId="inv-1" events={[]} />);
 
-      expect(
-        screen.getByText('Ainda não foram enviados lembretes para esta fatura.'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Ainda não foram enviados lembretes para esta fatura.')).toBeInTheDocument();
     });
   });
 
   describe('loading state', () => {
     it('deve exibir skeleton de carregamento quando isLoading é true', () => {
-      render(
-        <CollectionTimeline
-          clientId="client-1"
-          invoiceId="inv-1"
-          events={baseEvents}
-          isLoading={true}
-        />,
-      );
+      render(<CollectionTimeline clientId="client-1" invoiceId="inv-1" events={baseEvents} isLoading={true} />);
 
       const loading = screen.getByRole('status');
       expect(loading).toBeInTheDocument();
@@ -268,14 +237,7 @@ describe('CollectionTimeline', () => {
     });
 
     it('não deve exibir eventos durante loading', () => {
-      render(
-        <CollectionTimeline
-          clientId="client-1"
-          invoiceId="inv-1"
-          events={baseEvents}
-          isLoading={true}
-        />,
-      );
+      render(<CollectionTimeline clientId="client-1" invoiceId="inv-1" events={baseEvents} isLoading={true} />);
 
       expect(screen.queryByText('Na fila')).not.toBeInTheDocument();
     });
@@ -292,25 +254,15 @@ describe('CollectionTimeline', () => {
         />,
       );
 
-      expect(
-        screen.getByText('Erro ao carregar timeline'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar timeline')).toBeInTheDocument();
     });
 
     it('deve exibir botão "Tentar novamente" quando onRetry é fornecido', () => {
       render(
-        <CollectionTimeline
-          clientId="client-1"
-          invoiceId="inv-1"
-          events={baseEvents}
-          error="Erro"
-          onRetry={vi.fn()}
-        />,
+        <CollectionTimeline clientId="client-1" invoiceId="inv-1" events={baseEvents} error="Erro" onRetry={vi.fn()} />,
       );
 
-      expect(
-        screen.getByRole('button', { name: /tentar novamente/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeInTheDocument();
     });
   });
 });

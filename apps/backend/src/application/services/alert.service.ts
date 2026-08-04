@@ -1,4 +1,4 @@
-import { AlertChannelPort, AlertMessage } from '@/application/ports/gateways/alert-channel.port';
+import { type AlertChannelPort, AlertMessage } from '@/application/ports/gateways/alert-channel.port';
 
 export class AlertService {
   constructor(private readonly channel: AlertChannelPort) {}

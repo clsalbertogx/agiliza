@@ -13,16 +13,9 @@ export enum InvoiceStatusEnum {
  * Maps each status to the list of statuses it can transition to.
  */
 const ALLOWED_TRANSITIONS: Record<InvoiceStatusEnum, InvoiceStatusEnum[]> = {
-  [InvoiceStatusEnum.PENDING]: [
-    InvoiceStatusEnum.PAID,
-    InvoiceStatusEnum.OVERDUE,
-    InvoiceStatusEnum.CANCELLED,
-  ],
+  [InvoiceStatusEnum.PENDING]: [InvoiceStatusEnum.PAID, InvoiceStatusEnum.OVERDUE, InvoiceStatusEnum.CANCELLED],
   [InvoiceStatusEnum.PAID]: [InvoiceStatusEnum.REFUNDED],
-  [InvoiceStatusEnum.OVERDUE]: [
-    InvoiceStatusEnum.PAID,
-    InvoiceStatusEnum.CANCELLED,
-  ],
+  [InvoiceStatusEnum.OVERDUE]: [InvoiceStatusEnum.PAID, InvoiceStatusEnum.CANCELLED],
   [InvoiceStatusEnum.CANCELLED]: [],
   [InvoiceStatusEnum.REFUNDED]: [],
 };
@@ -68,9 +61,7 @@ export class InvoiceStatus {
 
   transitionTo(target: InvoiceStatus): InvoiceStatus {
     if (!this.canTransitionTo(target)) {
-      throw new DomainError(
-        `Cannot transition from ${this.status} to ${target.status}`
-      );
+      throw new DomainError(`Cannot transition from ${this.status} to ${target.status}`);
     }
     return target;
   }
@@ -96,17 +87,11 @@ export class InvoiceStatus {
   }
 
   isTerminal(): boolean {
-    return (
-      this.status === InvoiceStatusEnum.CANCELLED ||
-      this.status === InvoiceStatusEnum.REFUNDED
-    );
+    return this.status === InvoiceStatusEnum.CANCELLED || this.status === InvoiceStatusEnum.REFUNDED;
   }
 
   isActive(): boolean {
-    return (
-      this.status === InvoiceStatusEnum.PENDING ||
-      this.status === InvoiceStatusEnum.OVERDUE
-    );
+    return this.status === InvoiceStatusEnum.PENDING || this.status === InvoiceStatusEnum.OVERDUE;
   }
 
   toString(): string {

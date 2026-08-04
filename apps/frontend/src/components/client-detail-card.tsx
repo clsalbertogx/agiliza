@@ -1,23 +1,23 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { RiskBadge } from '@/components/risk-badge';
-import { StatusBadge } from '@/components/status-badge';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { ErrorState } from '@/components/error-state';
 import {
-  User,
-  Phone,
+  AlertTriangle,
+  Calendar,
+  Clock,
+  Edit3,
   Mail,
   MessageCircle,
-  Clock,
-  Calendar,
-  TrendingUp,
+  Phone,
   TrendingDown,
-  AlertTriangle,
-  Edit3,
+  TrendingUp,
+  User,
 } from 'lucide-react';
+import { ErrorState } from '@/components/error-state';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { RiskBadge } from '@/components/risk-badge';
+import { StatusBadge } from '@/components/status-badge';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 
 export interface RiskFeature {
   name: string;
@@ -105,19 +105,11 @@ function DetailSkeleton() {
   );
 }
 
-export function ClientDetailCard({
-  client,
-  onEdit,
-  isLoading = false,
-  error = null,
-  onRetry,
-}: ClientDetailCardProps) {
+export function ClientDetailCard({ client, onEdit, isLoading = false, error = null, onRetry }: ClientDetailCardProps) {
   if (isLoading) return <DetailSkeleton />;
   if (error) return <ErrorState message={error} onRetry={onRetry} />;
 
-  const riskPercent = client.riskProbability !== undefined
-    ? Math.round(client.riskProbability * 100)
-    : null;
+  const riskPercent = client.riskProbability !== undefined ? Math.round(client.riskProbability * 100) : null;
 
   return (
     <Card>
@@ -234,11 +226,7 @@ export function ClientDetailCard({
                     >
                       <div
                         className={`h-full rounded-full transition-all ${
-                          riskPercent < 33
-                            ? 'bg-success-500'
-                            : riskPercent < 66
-                              ? 'bg-warning-500'
-                              : 'bg-danger-500'
+                          riskPercent < 33 ? 'bg-success-500' : riskPercent < 66 ? 'bg-warning-500' : 'bg-danger-500'
                         }`}
                         style={{ width: `${riskPercent}%` }}
                       />
@@ -260,7 +248,9 @@ export function ClientDetailCard({
                         <span>
                           {feature.label}: {feature.value}
                         </span>
-                        <span className={`text-xs font-medium ${feature.impact > 0 ? 'text-danger-500' : 'text-success-500'}`}>
+                        <span
+                          className={`text-xs font-medium ${feature.impact > 0 ? 'text-danger-500' : 'text-success-500'}`}
+                        >
                           {feature.impact > 0 ? '+' : ''}
                           {feature.impact.toFixed(2)}
                         </span>

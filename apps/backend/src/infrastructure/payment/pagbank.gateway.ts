@@ -1,13 +1,13 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type {
-  PaymentGatewayPort,
-  PixChargeResponse,
-  CreditCardChargeInput,
-  CreditCardChargeResponse,
   BoletoChargeInput,
   BoletoChargeResponse,
+  CreditCardChargeInput,
+  CreditCardChargeResponse,
+  PaymentGatewayPort,
+  PixChargeResponse,
 } from '@/application/ports/payment-gateway.port';
 import { generateUUID } from '@/infrastructure/uuid/uuid.service';
-import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /**
  * Minimal contract surface that the PagBank SDK/client must expose.
@@ -39,9 +39,7 @@ function realPagBankClientFactory(): PagBankClientFactory {
   if (!_realPagBankClientFactory) {
     _realPagBankClientFactory = (token: string, environment: string) => {
       const isSandbox = environment !== 'production';
-      const baseUrl = isSandbox
-        ? 'https://sandbox.api.pagseguro.com'
-        : 'https://api.pagseguro.com';
+      const baseUrl = isSandbox ? 'https://sandbox.api.pagseguro.com' : 'https://api.pagseguro.com';
 
       return {
         async createCharge(body: unknown) {

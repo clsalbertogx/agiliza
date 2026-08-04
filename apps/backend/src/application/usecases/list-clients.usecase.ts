@@ -1,4 +1,4 @@
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { Client } from '@/domain/entities/client';
 
 export interface ListClientsInput {

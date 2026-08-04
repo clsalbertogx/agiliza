@@ -1,30 +1,18 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NotificationBanner } from '@/components/notification-banner';
 
 describe('NotificationBanner', () => {
   describe('variantes de tipo', () => {
     it('deve renderizar banner de sucesso com título e mensagem', () => {
-      render(
-        <NotificationBanner
-          type="success"
-          title="Operação concluída"
-          message="Fatura paga com sucesso"
-        />,
-      );
+      render(<NotificationBanner type="success" title="Operação concluída" message="Fatura paga com sucesso" />);
 
       expect(screen.getByText('Operação concluída')).toBeInTheDocument();
       expect(screen.getByText('Fatura paga com sucesso')).toBeInTheDocument();
     });
 
     it('deve renderizar banner de erro com role="alert"', () => {
-      render(
-        <NotificationBanner
-          type="error"
-          title="Erro ao processar"
-          message="Falha na comunicação"
-        />,
-      );
+      render(<NotificationBanner type="error" title="Erro ao processar" message="Falha na comunicação" />);
 
       const banner = screen.getByRole('alert');
       expect(banner).toBeInTheDocument();
@@ -32,13 +20,7 @@ describe('NotificationBanner', () => {
     });
 
     it('deve renderizar banner de warning com role="alert"', () => {
-      render(
-        <NotificationBanner
-          type="warning"
-          title="Atenção"
-          message="Limite próximo do atingido"
-        />,
-      );
+      render(<NotificationBanner type="warning" title="Atenção" message="Limite próximo do atingido" />);
 
       const banner = screen.getByRole('alert');
       expect(banner).toBeInTheDocument();
@@ -46,13 +28,7 @@ describe('NotificationBanner', () => {
     });
 
     it('deve renderizar banner de info com role="status"', () => {
-      render(
-        <NotificationBanner
-          type="info"
-          title="Informação"
-          message="Atualização disponível"
-        />,
-      );
+      render(<NotificationBanner type="info" title="Informação" message="Atualização disponível" />);
 
       const banner = screen.getByRole('status');
       expect(banner).toBeInTheDocument();
@@ -65,13 +41,7 @@ describe('NotificationBanner', () => {
       const onDismiss = vi.fn();
       const user = userEvent.setup();
 
-      render(
-        <NotificationBanner
-          type="info"
-          title="Notificação"
-          onDismiss={onDismiss}
-        />,
-      );
+      render(<NotificationBanner type="info" title="Notificação" onDismiss={onDismiss} />);
 
       const closeButton = screen.getByRole('button', { name: /fechar notificação/i });
       await user.click(closeButton);
@@ -81,16 +51,9 @@ describe('NotificationBanner', () => {
     });
 
     it('não deve exibir botão de fechar quando onDismiss não é fornecido', () => {
-      render(
-        <NotificationBanner
-          type="success"
-          title="Sem dismiss"
-        />,
-      );
+      render(<NotificationBanner type="success" title="Sem dismiss" />);
 
-      expect(
-        screen.queryByRole('button', { name: /fechar notificação/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /fechar notificação/i })).not.toBeInTheDocument();
     });
   });
 
@@ -106,14 +69,7 @@ describe('NotificationBanner', () => {
     it('deve remover a notificação automaticamente após o tempo especificado', () => {
       const onDismiss = vi.fn();
 
-      render(
-        <NotificationBanner
-          type="success"
-          title="Auto-dismiss"
-          autoDismiss={2000}
-          onDismiss={onDismiss}
-        />,
-      );
+      render(<NotificationBanner type="success" title="Auto-dismiss" autoDismiss={2000} onDismiss={onDismiss} />);
 
       expect(screen.getByText('Auto-dismiss')).toBeInTheDocument();
 
@@ -134,13 +90,7 @@ describe('NotificationBanner', () => {
     });
 
     it('deve exibir barra de progresso quando autoDismiss > 0', () => {
-      render(
-        <NotificationBanner
-          type="info"
-          title="Com progresso"
-          autoDismiss={5000}
-        />,
-      );
+      render(<NotificationBanner type="info" title="Com progresso" autoDismiss={5000} />);
 
       const progressbar = screen.getByRole('progressbar');
       expect(progressbar).toBeInTheDocument();
@@ -148,13 +98,7 @@ describe('NotificationBanner', () => {
     });
 
     it('não deve exibir barra de progresso quando autoDismiss é 0', () => {
-      render(
-        <NotificationBanner
-          type="info"
-          title="Sem progresso"
-          autoDismiss={0}
-        />,
-      );
+      render(<NotificationBanner type="info" title="Sem progresso" autoDismiss={0} />);
 
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
@@ -183,13 +127,7 @@ describe('NotificationBanner', () => {
 
   describe('loading state', () => {
     it('deve exibir "Processando..." e ocultar título original quando isLoading é true', () => {
-      render(
-        <NotificationBanner
-          type="success"
-          title="Título original"
-          isLoading={true}
-        />,
-      );
+      render(<NotificationBanner type="success" title="Título original" isLoading={true} />);
 
       expect(screen.getByText('Processando...')).toBeInTheDocument();
       expect(screen.queryByText('Título original')).not.toBeInTheDocument();
@@ -205,9 +143,7 @@ describe('NotificationBanner', () => {
         />,
       );
 
-      expect(
-        screen.queryByRole('button', { name: 'Tentar' }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Tentar' })).not.toBeInTheDocument();
     });
   });
 });

@@ -1,14 +1,14 @@
-import { generateUUID } from '@/infrastructure/uuid/uuid.service';
-import { PaymentWebhookParserPort } from '@/application/ports/gateways/payment-webhook-parser.port';
-import { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import { ApplicationError } from '@/application/errors/application.error';
-import { Either, success, failure, isFailure } from '@/application/types/either';
-import { updateInvoice, InvoiceStatus } from '@/domain/entities/invoice';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { PaymentWebhookParserPort } from '@/application/ports/gateways/payment-webhook-parser.port';
+import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
+import { type Either, failure, isFailure, success } from '@/application/types/either';
+import { InvoiceStatus, updateInvoice } from '@/domain/entities/invoice';
 import { createPayment, PaymentStatus, updatePayment } from '@/domain/entities/payment';
 import { createDomainEvent } from '@/domain/events/domain-events';
+import { generateUUID } from '@/infrastructure/uuid/uuid.service';
 
 export interface ProcessPaymentWebhookInput {
   provider: string;
@@ -31,16 +31,9 @@ export class ProcessPaymentWebhookUseCase {
     private readonly eventBus: EventBusPort,
   ) {}
 
-  async execute(
-    input: ProcessPaymentWebhookInput,
-  ): Promise<Either<ApplicationError, ProcessPaymentWebhookOutput>> {
+  async execute(input: ProcessPaymentWebhookInput): Promise<Either<ApplicationError, ProcessPaymentWebhookOutput>> {
     // 1. Verify webhook signature
-    const verification = await this.verifier.verify(
-      input.provider,
-      input.rawBody,
-      input.signature,
-      input.tenantId,
-    );
+    const verification = await this.verifier.verify(input.provider, input.rawBody, input.signature, input.tenantId);
 
     if (isFailure(verification)) {
       return failure(verification.value);
@@ -68,10 +61,7 @@ export class ProcessPaymentWebhookUseCase {
     // 3. Process based on status
     if (webhookData.status === 'confirmed' && webhookData.invoiceId) {
       // Find invoice (tenant-scoped)
-      const invoice = await this.invoiceRepo.findById(
-        webhookData.invoiceId,
-        input.tenantId,
-      );
+      const invoice = await this.invoiceRepo.findById(webhookData.invoiceId, input.tenantId);
 
       if (invoice && invoice.status !== InvoiceStatus.PAID) {
         // Update invoice status to PAID using domain function

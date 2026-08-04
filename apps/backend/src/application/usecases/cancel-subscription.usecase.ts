@@ -1,10 +1,10 @@
-import { Either, success, failure } from '@/application/types/either';
 import { ApplicationError } from '@/application/errors/application.error';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { IdGeneratorPort } from '@/domain/ports/id-generator.port';
-import { Subscription, cancelSubscription } from '@/domain/entities/subscription';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { type Either, failure, success } from '@/application/types/either';
+import { cancelSubscription, type Subscription } from '@/domain/entities/subscription';
 import { createDomainEvent } from '@/domain/events/domain-events';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 export interface CancelSubscriptionInput {
   id: string;
@@ -44,15 +44,19 @@ export class CancelSubscriptionUseCase {
     }
 
     // 6. Publish event
-    const event = createDomainEvent('subscription.cancelled', {
-      clientId: subscription.clientId,
-      tenantId: input.tenantId,
-      metadata: {
-        subscriptionId: saved.id,
-        plan: saved.plan,
-        cancelledAt: saved.cancelledAt?.toISOString(),
+    const event = createDomainEvent(
+      'subscription.cancelled',
+      {
+        clientId: subscription.clientId,
+        tenantId: input.tenantId,
+        metadata: {
+          subscriptionId: saved.id,
+          plan: saved.plan,
+          cancelledAt: saved.cancelledAt?.toISOString(),
+        },
       },
-    }, this.idGenerator.generate());
+      this.idGenerator.generate(),
+    );
     this.eventBus.publish(event);
 
     return success(saved);

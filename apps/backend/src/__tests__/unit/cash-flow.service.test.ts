@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CashFlowService } from '@/application/services/cash-flow.service';
 
 function createMocks() {
@@ -20,10 +20,46 @@ describe('CashFlowService', () => {
       const { invoiceRepo, clientRepo } = createMocks();
 
       invoiceRepo.findMany.mockResolvedValue([
-        { id: '1', tenantId: 't1', clientId: 'c1', amount: 100, status: 'PAID', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
-        { id: '2', tenantId: 't1', clientId: 'c1', amount: 200, status: 'PAID', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
-        { id: '3', tenantId: 't1', clientId: 'c1', amount: 150, status: 'OVERDUE', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
-        { id: '4', tenantId: 't1', clientId: 'c1', amount: 50, status: 'PENDING', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
+        {
+          id: '1',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 100,
+          status: 'PAID',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '2',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 200,
+          status: 'PAID',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '3',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 150,
+          status: 'OVERDUE',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '4',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 50,
+          status: 'PENDING',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       ]);
 
       clientRepo.findMany.mockResolvedValue([
@@ -45,9 +81,7 @@ describe('CashFlowService', () => {
       const { invoiceRepo, clientRepo } = createMocks();
 
       invoiceRepo.findMany.mockResolvedValue([]);
-      clientRepo.findMany.mockResolvedValue([
-        { id: 'c1', tenantId: 't1', name: 'Client A', phone: '5511999998888' },
-      ]);
+      clientRepo.findMany.mockResolvedValue([{ id: 'c1', tenantId: 't1', name: 'Client A', phone: '5511999998888' }]);
 
       const service = new CashFlowService(invoiceRepo, clientRepo);
       const result = await service.generateForecast('t1', 3);
@@ -61,7 +95,16 @@ describe('CashFlowService', () => {
       const { invoiceRepo, clientRepo } = createMocks();
 
       invoiceRepo.findMany.mockResolvedValue([
-        { id: '1', tenantId: 't1', clientId: 'c1', amount: 100, status: 'PAID', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
+        {
+          id: '1',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 100,
+          status: 'PAID',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       ]);
       clientRepo.findMany.mockResolvedValue([]);
 
@@ -77,12 +120,28 @@ describe('CashFlowService', () => {
       const { invoiceRepo, clientRepo } = createMocks();
 
       invoiceRepo.findMany.mockResolvedValue([
-        { id: '1', tenantId: 't1', clientId: 'c1', amount: 100, status: 'OVERDUE', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
-        { id: '2', tenantId: 't1', clientId: 'c1', amount: 200, status: 'OVERDUE', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
+        {
+          id: '1',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 100,
+          status: 'OVERDUE',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '2',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 200,
+          status: 'OVERDUE',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       ]);
-      clientRepo.findMany.mockResolvedValue([
-        { id: 'c1', tenantId: 't1', name: 'Client A', phone: '5511999998888' },
-      ]);
+      clientRepo.findMany.mockResolvedValue([{ id: 'c1', tenantId: 't1', name: 'Client A', phone: '5511999998888' }]);
 
       const service = new CashFlowService(invoiceRepo, clientRepo);
       const result = await service.generateForecast('t1', 3);
@@ -96,12 +155,28 @@ describe('CashFlowService', () => {
       const { invoiceRepo, clientRepo } = createMocks();
 
       invoiceRepo.findMany.mockResolvedValue([
-        { id: '1', tenantId: 't1', clientId: 'c1', amount: 100, status: 'PAID', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
-        { id: '2', tenantId: 't1', clientId: 'c1', amount: 200, status: 'PAID', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
+        {
+          id: '1',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 100,
+          status: 'PAID',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '2',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 200,
+          status: 'PAID',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       ]);
-      clientRepo.findMany.mockResolvedValue([
-        { id: 'c1', tenantId: 't1', name: 'Client A', phone: '5511999998888' },
-      ]);
+      clientRepo.findMany.mockResolvedValue([{ id: 'c1', tenantId: 't1', name: 'Client A', phone: '5511999998888' }]);
 
       const service = new CashFlowService(invoiceRepo, clientRepo);
       const result = await service.generateForecast('t1', 12);
@@ -121,9 +196,36 @@ describe('CashFlowService', () => {
       const { invoiceRepo, clientRepo } = createMocks();
 
       invoiceRepo.findMany.mockResolvedValue([
-        { id: '1', tenantId: 't1', clientId: 'c1', amount: 100, status: 'PAID', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
-        { id: '2', tenantId: 't1', clientId: 'c1', amount: 200, status: 'PENDING', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
-        { id: '3', tenantId: 't1', clientId: 'c1', amount: 150, status: 'OVERDUE', dueDate: new Date(), createdAt: new Date(), updatedAt: new Date() },
+        {
+          id: '1',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 100,
+          status: 'PAID',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '2',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 200,
+          status: 'PENDING',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '3',
+          tenantId: 't1',
+          clientId: 'c1',
+          amount: 150,
+          status: 'OVERDUE',
+          dueDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       ]);
 
       const service = new CashFlowService(invoiceRepo, clientRepo);

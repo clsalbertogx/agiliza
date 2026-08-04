@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { UpdateRiskScoreHandler } from '@/application/events/handlers/update-risk-score.handler';
-import { RiskCalculatorService } from '@/application/services/risk-calculator.service';
-import type { DomainEvent } from '@/domain/events/domain-events';
+import type { RiskCalculatorService } from '@/application/services/risk-calculator.service';
 import { RiskScore } from '@/domain/entities/client';
+import type { DomainEvent } from '@/domain/events/domain-events';
 
 function createMocks() {
   const invoiceRepo = {
@@ -49,12 +49,22 @@ function makeEvent(eventType: string, overrides: Partial<DomainEvent> = {}): Dom
 
 describe('UpdateRiskScoreHandler', () => {
   describe('event filtering', () => {
-    const irrelevantEvents = ['invoice.created', 'client.created', 'decision.made', 'message.sent', 'message.delivered'];
+    const irrelevantEvents = [
+      'invoice.created',
+      'client.created',
+      'decision.made',
+      'message.sent',
+      'message.delivered',
+    ];
 
     irrelevantEvents.forEach((eventType) => {
       it(`should ignore ${eventType} events`, async () => {
         const { invoiceRepo, clientRepo, riskCalculator } = createMocks();
-        const handler = new UpdateRiskScoreHandler(clientRepo, invoiceRepo, riskCalculator as unknown as RiskCalculatorService);
+        const handler = new UpdateRiskScoreHandler(
+          clientRepo,
+          invoiceRepo,
+          riskCalculator as unknown as RiskCalculatorService,
+        );
 
         await handler.handle(makeEvent(eventType));
 
@@ -69,7 +79,11 @@ describe('UpdateRiskScoreHandler', () => {
       'should process %s events and update risk score',
       async (eventType) => {
         const { invoiceRepo, clientRepo, riskCalculator } = createMocks();
-        const handler = new UpdateRiskScoreHandler(clientRepo, invoiceRepo, riskCalculator as unknown as RiskCalculatorService);
+        const handler = new UpdateRiskScoreHandler(
+          clientRepo,
+          invoiceRepo,
+          riskCalculator as unknown as RiskCalculatorService,
+        );
 
         riskCalculator.calculate.mockResolvedValue(RiskScore.YELLOW);
 
@@ -77,20 +91,22 @@ describe('UpdateRiskScoreHandler', () => {
 
         expect(riskCalculator.calculate).toHaveBeenCalledWith('client-123', 'tenant-123');
         expect(clientRepo.updateRiskScore).toHaveBeenCalledWith('client-123', RiskScore.YELLOW);
-      }
+      },
     );
   });
 
   describe('error handling', () => {
     it('should throw transient errors so the retry loop in handleWithRetry can catch them', async () => {
       const { invoiceRepo, clientRepo, riskCalculator } = createMocks();
-      const handler = new UpdateRiskScoreHandler(clientRepo, invoiceRepo, riskCalculator as unknown as RiskCalculatorService);
+      const handler = new UpdateRiskScoreHandler(
+        clientRepo,
+        invoiceRepo,
+        riskCalculator as unknown as RiskCalculatorService,
+      );
 
       riskCalculator.calculate.mockRejectedValue(new Error('Risk calculation failed'));
 
-      await expect(handler.handle(makeEvent('payment.confirmed'))).rejects.toThrow(
-        'Risk calculation failed',
-      );
+      await expect(handler.handle(makeEvent('payment.confirmed'))).rejects.toThrow('Risk calculation failed');
     });
   });
 });

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { AlertService } from '@/application/services/alert.service';
+import { describe, expect, it, vi } from 'vitest';
 import type { AlertChannelPort, AlertMessage } from '@/application/ports/gateways/alert-channel.port';
+import { AlertService } from '@/application/services/alert.service';
 
 function createChannelMock() {
   const sendAlert = vi.fn();

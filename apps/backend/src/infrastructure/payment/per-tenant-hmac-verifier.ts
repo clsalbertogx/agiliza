@@ -1,9 +1,9 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { getPrismaClient } from '@/infrastructure/database/prisma.service';
-import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
 import { ApplicationError } from '@/application/errors/application.error';
+import type { WebhookVerifierPort } from '@/application/ports/gateways/webhook-verifier.port';
 import type { Either } from '@/application/types/either';
-import { success, failure } from '@/application/types/either';
+import { failure, success } from '@/application/types/either';
+import { getPrismaClient } from '@/infrastructure/database/prisma.service';
 
 /**
  * Per-tenant HMAC verifier that reads webhook secrets from the database
@@ -31,27 +31,19 @@ export class PerTenantHmacVerifier implements WebhookVerifierPort {
   ): Promise<Either<ApplicationError, boolean>> {
     // Validate inputs before DB lookup (A03 — Injection prevention)
     if (!provider || typeof provider !== 'string') {
-      return failure(
-        ApplicationError.validation('Provider must be a non-empty string'),
-      );
+      return failure(ApplicationError.validation('Provider must be a non-empty string'));
     }
 
     if (!tenantId || typeof tenantId !== 'string') {
-      return failure(
-        ApplicationError.validation('tenantId must be a non-empty string'),
-      );
+      return failure(ApplicationError.validation('tenantId must be a non-empty string'));
     }
 
     if (!signature || typeof signature !== 'string') {
-      return failure(
-        ApplicationError.validation('Signature must be a non-empty string'),
-      );
+      return failure(ApplicationError.validation('Signature must be a non-empty string'));
     }
 
     if (!rawBody || typeof rawBody !== 'string') {
-      return failure(
-        ApplicationError.validation('Raw body must be a non-empty string'),
-      );
+      return failure(ApplicationError.validation('Raw body must be a non-empty string'));
     }
 
     try {
@@ -71,27 +63,18 @@ export class PerTenantHmacVerifier implements WebhookVerifierPort {
       }
 
       // Compute expected HMAC (A02 — SHA-256, not MD5/SHA1)
-      const expected = createHmac('sha256', config.webhookSecret)
-        .update(rawBody)
-        .digest('hex');
+      const expected = createHmac('sha256', config.webhookSecret).update(rawBody).digest('hex');
 
       // Timing-safe comparison prevents side-channel attacks (A02)
       try {
-        const isValid = timingSafeEqual(
-          Buffer.from(signature),
-          Buffer.from(expected),
-        );
+        const isValid = timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
         return success(isValid);
       } catch {
         // Different-length buffers throw in timingSafeEqual — treat as invalid
         return success(false);
       }
     } catch (error) {
-      return failure(
-        ApplicationError.internal(
-          `Failed to verify webhook signature: ${(error as Error).message}`,
-        ),
-      );
+      return failure(ApplicationError.internal(`Failed to verify webhook signature: ${(error as Error).message}`));
     }
   }
 }

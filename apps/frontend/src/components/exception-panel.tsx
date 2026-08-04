@@ -1,25 +1,26 @@
-// @deprecated — not wired yet
+// Available for wire-up — not yet connected to a page.
+// Exported from the barrel; natural home: exceptions/reconciliation view.
 'use client';
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/empty-state';
-import { ErrorState } from '@/components/error-state';
-import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import {
   AlertTriangle,
   CheckCircle,
-  XCircle,
-  RefreshCw,
   ChevronDown,
   ChevronRight,
-  Filter,
   Eye,
   EyeOff,
+  Filter,
+  RefreshCw,
+  XCircle,
 } from 'lucide-react';
+import { useState } from 'react';
+import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
+import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export type ExceptionSeverity = 'critical' | 'high' | 'medium' | 'low';
 
@@ -58,10 +59,7 @@ export interface ExceptionPanelProps {
   onRetryFetch?: () => void;
 }
 
-const severityConfig: Record<
-  ExceptionSeverity,
-  { dot: string; border: string; label: string }
-> = {
+const severityConfig: Record<ExceptionSeverity, { dot: string; border: string; label: string }> = {
   critical: {
     dot: 'bg-danger-500',
     border: 'border-l-danger-500',
@@ -84,10 +82,7 @@ const severityConfig: Record<
   },
 };
 
-const statusBadgeVariant: Record<
-  ExceptionStatus,
-  'danger' | 'warning' | 'success' | 'default'
-> = {
+const statusBadgeVariant: Record<ExceptionStatus, 'danger' | 'warning' | 'success' | 'default'> = {
   open: 'danger',
   in_progress: 'warning',
   resolved: 'success',
@@ -174,9 +169,7 @@ export function ExceptionPanel({
     );
   }
 
-  const pendingCount = exceptions.filter(
-    (e) => e.status !== 'resolved' && e.status !== 'ignored'
-  ).length;
+  const pendingCount = exceptions.filter((e) => e.status !== 'resolved' && e.status !== 'ignored').length;
 
   return (
     <div className="space-y-4">
@@ -231,17 +224,10 @@ export function ExceptionPanel({
                 <div className={`w-2.5 h-2.5 rounded-full ${severity.dot} flex-shrink-0`} aria-hidden="true" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-400 uppercase">
-                      {severity.label}
-                    </span>
-                    <Badge variant={statusBadgeVariant[exception.status]}>
-                      {statusLabel[exception.status]}
-                    </Badge>
+                    <span className="text-xs font-medium text-gray-400 uppercase">{severity.label}</span>
+                    <Badge variant={statusBadgeVariant[exception.status]}>{statusLabel[exception.status]}</Badge>
                   </div>
-                  <h3
-                    id={`exception-title-${exception.id}`}
-                    className="text-sm font-semibold text-gray-900 mt-0.5"
-                  >
+                  <h3 id={`exception-title-${exception.id}`} className="text-sm font-semibold text-gray-900 mt-0.5">
                     {exception.title}
                   </h3>
                   <p className="text-xs text-gray-500 mt-0.5">
@@ -303,20 +289,12 @@ export function ExceptionPanel({
                       {isMaxRetries ? 'Retries esgotados' : 'Tentar novamente'}
                     </Button>
                     {onResolve && exception.status !== 'resolved' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onResolve(exception.id)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => onResolve(exception.id)}>
                         Resolver
                       </Button>
                     )}
                     {onIgnore && exception.status !== 'ignored' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onIgnore(exception.id)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => onIgnore(exception.id)}>
                         Ignorar
                       </Button>
                     )}

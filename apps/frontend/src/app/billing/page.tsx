@@ -1,9 +1,9 @@
 'use client';
 
+import { Check, Copy, CreditCard } from 'lucide-react';
 import { useState } from 'react';
-import { PaymentStatus } from '@/components/payment-status';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { CreditCard, Copy, Check } from 'lucide-react';
+import { PaymentStatus } from '@/components/payment-status';
 
 export default function BillingPage() {
   const [step, setStep] = useState<'view' | 'processing' | 'success'>('view');
@@ -27,19 +27,13 @@ export default function BillingPage() {
       <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-success-50">
         <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 text-center">
           <PaymentStatus status="paid" method="pix" />
-          <h1 className="text-2xl font-bold text-gray-900 mt-4">
-            Pagamento Confirmado!
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Sua fatura foi paga com sucesso.
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 mt-4">Pagamento Confirmado!</h1>
+          <p className="mt-2 text-gray-600">Sua fatura foi paga com sucesso.</p>
           <div className="mt-6 bg-gray-50 rounded-lg p-4 text-left">
             <p className="text-sm text-gray-500">Valor pago</p>
             <p className="text-xl font-bold text-success-700">R$ 99,90</p>
             <p className="mt-2 text-sm text-gray-500">Data</p>
-            <p className="font-medium">
-              {new Date().toLocaleDateString('pt-BR')}
-            </p>
+            <p className="font-medium">{new Date().toLocaleDateString('pt-BR')}</p>
           </div>
           <button className="mt-6 w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-500">
             Baixar Recibo
@@ -66,9 +60,7 @@ export default function BillingPage() {
                 <CreditCard className="w-5 h-5 text-success-600" aria-hidden="true" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">
-                  Fatura Agiliza
-                </h1>
+                <h1 className="text-lg font-semibold text-gray-900">Fatura Agiliza</h1>
                 <p className="text-sm text-gray-500">Premium Mensal</p>
               </div>
             </div>
@@ -82,9 +74,7 @@ export default function BillingPage() {
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-gray-600">Valor</span>
-                <span className="text-2xl font-bold text-gray-900">
-                  R$ 99,90
-                </span>
+                <span className="text-2xl font-bold text-gray-900">R$ 99,90</span>
               </div>
             </div>
 

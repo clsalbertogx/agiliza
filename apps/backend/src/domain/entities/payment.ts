@@ -1,6 +1,6 @@
-import { Money } from '../value-objects/money';
+import { type Either, failure, success } from '@/domain/types/either';
 import { DomainError } from '../errors/domain-error';
-import { Either, success, failure } from '@/domain/types/either';
+import { Money } from '../value-objects/money';
 
 export enum PaymentStatus {
   PENDING = 'PENDING',

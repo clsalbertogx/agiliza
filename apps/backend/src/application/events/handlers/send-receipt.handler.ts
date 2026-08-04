@@ -1,9 +1,9 @@
-import { DomainEvent } from '@/domain/events/domain-events';
 import { RetryableWebhookHandler } from '@/application/events/handlers/retryable-webhook-handler';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { DomainEvent } from '@/domain/events/domain-events';
 
 export class SendReceiptHandler extends RetryableWebhookHandler {
   constructor(

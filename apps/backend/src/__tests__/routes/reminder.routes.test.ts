@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
+import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock ReminderService to avoid EvolutionMessageProvider dependency
 vi.mock('@/application/services/reminder.service', () => {
@@ -20,7 +20,13 @@ const mockState = vi.hoisted(() => ({
 vi.mock('@/infrastructure/database/prisma.service', () => ({
   getPrismaClient: vi.fn(() => ({
     invoice: { findUnique: mockState.findById, findFirst: mockState.findById, findMany: mockState.findMany },
-    event: { findUnique: mockState.findById, findFirst: mockState.findById, findMany: mockState.findMany, create: mockState.create, count: mockState.count },
+    event: {
+      findUnique: mockState.findById,
+      findFirst: mockState.findById,
+      findMany: mockState.findMany,
+      create: mockState.create,
+      count: mockState.count,
+    },
   })),
 }));
 
@@ -34,11 +40,11 @@ describe('Reminder API Routes', () => {
 
   beforeAll(async () => {
     app = Fastify({ logger: false });
-    
+
     app.decorateRequest('tenantId', undefined);
     app.decorateRequest('userId', undefined);
     app.decorateRequest('authPayload', undefined);
-    
+
     app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
       if (!request.headers.authorization) {
         reply.code(401).send({ error: 'Unauthorized' });
@@ -46,7 +52,7 @@ describe('Reminder API Routes', () => {
       }
       (request as any).tenantId = TEST_TENANT_ID;
     });
-    
+
     await app.register(reminderRoutes);
     await app.ready();
   });

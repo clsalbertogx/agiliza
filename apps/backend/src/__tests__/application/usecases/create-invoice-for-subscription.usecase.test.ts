@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
 import { CreateInvoiceForSubscriptionUseCase } from '@/application/usecases/create-invoice-for-subscription.usecase';
-import { Subscription, SubscriptionStatus, BillingCycle } from '@/domain/entities/subscription';
+import { type Client, MessageChannel, RiskScore } from '@/domain/entities/client';
 import { InvoiceStatus } from '@/domain/entities/invoice';
-import { Client, MessageChannel, RiskScore } from '@/domain/entities/client';
+import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
 
 describe('CreateInvoiceForSubscriptionUseCase', () => {
   let useCase: CreateInvoiceForSubscriptionUseCase;
@@ -24,7 +24,7 @@ describe('CreateInvoiceForSubscriptionUseCase', () => {
     tenantId: TENANT_ID,
     clientId: CLIENT_ID,
     plan: 'Premium Plan',
-    amount: 99.90,
+    amount: 99.9,
     billingCycle: BillingCycle.MONTHLY,
     status: SubscriptionStatus.ACTIVE,
     nextBilling: new Date('2026-07-15'),
@@ -118,7 +118,7 @@ describe('CreateInvoiceForSubscriptionUseCase', () => {
           tenantId: TENANT_ID,
           clientId: CLIENT_ID,
           subscriptionId: SUBSCRIPTION_ID,
-          amount: 99.90,
+          amount: 99.9,
           dueDate: mockSubscription.nextBilling,
           status: InvoiceStatus.PENDING,
         }),
@@ -167,7 +167,7 @@ describe('CreateInvoiceForSubscriptionUseCase', () => {
           invoiceId: 'generated-invoice-id',
           metadata: expect.objectContaining({
             subscriptionId: SUBSCRIPTION_ID,
-            amount: 99.90,
+            amount: 99.9,
           }),
         }),
       );
@@ -182,7 +182,7 @@ describe('CreateInvoiceForSubscriptionUseCase', () => {
         tenantId: TENANT_ID,
         clientId: CLIENT_ID,
         subscriptionId: SUBSCRIPTION_ID,
-        amount: 99.90,
+        amount: 99.9,
         dueDate: mockSubscription.nextBilling,
         description: 'Premium Plan - 2026-07',
         status: InvoiceStatus.PENDING,
@@ -224,7 +224,7 @@ describe('CreateInvoiceForSubscriptionUseCase', () => {
       const sub2: Subscription = {
         ...mockSubscription,
         id: 'subscription-2',
-        amount: 199.90,
+        amount: 199.9,
         billingCycle: BillingCycle.ANNUAL,
       };
 

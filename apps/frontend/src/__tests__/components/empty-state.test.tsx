@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EmptyState } from '@/components/empty-state';
 import { Inbox } from 'lucide-react';
+import { EmptyState } from '@/components/empty-state';
 
 describe('EmptyState', () => {
   describe('renderização básica', () => {
@@ -20,16 +20,9 @@ describe('EmptyState', () => {
 
   describe('descrição', () => {
     it('deve renderizar descrição quando fornecida', () => {
-      render(
-        <EmptyState
-          title="Nenhuma fatura"
-          description="Crie uma nova fatura para começar"
-        />,
-      );
+      render(<EmptyState title="Nenhuma fatura" description="Crie uma nova fatura para começar" />);
 
-      expect(
-        screen.getByText('Crie uma nova fatura para começar'),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Crie uma nova fatura para começar')).toBeInTheDocument();
     });
 
     it('não deve renderizar descrição quando não fornecida', () => {
@@ -43,12 +36,7 @@ describe('EmptyState', () => {
 
   describe('ícone', () => {
     it('deve renderizar ícone customizado quando fornecido', () => {
-      render(
-        <EmptyState
-          title="Com ícone"
-          icon={<span data-testid="custom-icon">📭</span>}
-        />,
-      );
+      render(<EmptyState title="Com ícone" icon={<span data-testid="custom-icon">📭</span>} />);
 
       expect(screen.getByTestId('custom-icon')).toBeInTheDocument();
     });
@@ -65,28 +53,16 @@ describe('EmptyState', () => {
 
   describe('botão de ação', () => {
     it('deve renderizar botão de ação quando action é fornecido', () => {
-      render(
-        <EmptyState
-          title="Nenhum cliente"
-          action={{ label: 'Adicionar cliente', onClick: vi.fn() }}
-        />,
-      );
+      render(<EmptyState title="Nenhum cliente" action={{ label: 'Adicionar cliente', onClick: vi.fn() }} />);
 
-      expect(
-        screen.getByRole('button', { name: /adicionar cliente/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /adicionar cliente/i })).toBeInTheDocument();
     });
 
     it('deve chamar onClick do action ao clicar no botão', async () => {
       const onClick = vi.fn();
       const user = userEvent.setup();
 
-      render(
-        <EmptyState
-          title="Vazio"
-          action={{ label: 'Criar', onClick }}
-        />,
-      );
+      render(<EmptyState title="Vazio" action={{ label: 'Criar', onClick }} />);
 
       await user.click(screen.getByRole('button', { name: /criar/i }));
       expect(onClick).toHaveBeenCalledTimes(1);

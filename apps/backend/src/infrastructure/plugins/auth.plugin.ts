@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
-import { verifyToken, AuthPayload } from '@/infrastructure/auth';
+import { type AuthPayload, verifyToken } from '@/infrastructure/auth';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -19,7 +19,7 @@ async function authPlugin(app: FastifyInstance) {
     // /docs (Swagger UI) is public in dev/test — the plugin is only
     // registered there (see src/index.ts). In production it does not exist.
     const publicPaths = ['/api/health', '/api/ready', '/api/webhooks/', '/metrics', '/docs'];
-    if (publicPaths.some(path => request.url.startsWith(path))) {
+    if (publicPaths.some((path) => request.url.startsWith(path))) {
       return;
     }
 

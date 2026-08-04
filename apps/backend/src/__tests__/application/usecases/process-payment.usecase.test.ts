@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { isSuccess, isFailure } from '@/application/types/either';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
-import { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
-import { Invoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
-import { ProcessPaymentUseCase, ProcessPaymentInput } from '@/application/usecases/process-payment.usecase';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
+import type { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
+import { isFailure, isSuccess } from '@/application/types/either';
+import { type ProcessPaymentInput, ProcessPaymentUseCase } from '@/application/usecases/process-payment.usecase';
+import { type Invoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
 
 const mockInvoiceRepo: InvoiceRepositoryPort = {
   findById: vi.fn(),
@@ -68,7 +68,7 @@ describe('ProcessPaymentUseCase', () => {
     id: INVOICE_ID,
     tenantId: TENANT_ID,
     clientId: CLIENT_ID,
-    amount: 150.00,
+    amount: 150.0,
     dueDate: new Date('2026-08-15'),
     description: 'Test invoice',
     status: InvoiceStatus.PENDING,
@@ -93,7 +93,13 @@ describe('ProcessPaymentUseCase', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useCase = new ProcessPaymentUseCase(mockInvoiceRepo, mockClientRepo, mockPaymentRepo, mockPaymentGateway, mockEventBus);
+    useCase = new ProcessPaymentUseCase(
+      mockInvoiceRepo,
+      mockClientRepo,
+      mockPaymentRepo,
+      mockPaymentGateway,
+      mockEventBus,
+    );
   });
 
   describe('Happy Path', () => {
@@ -137,7 +143,7 @@ describe('ProcessPaymentUseCase', () => {
 
       expect(mockPaymentGateway.createPixCharge).toHaveBeenCalledTimes(1);
       expect(mockPaymentGateway.createPixCharge).toHaveBeenCalledWith({
-        amount: 150.00,
+        amount: 150.0,
         description: 'Test invoice',
         externalReference: INVOICE_ID,
       });
@@ -152,7 +158,7 @@ describe('ProcessPaymentUseCase', () => {
       await useCase.execute(validInput);
 
       expect(mockPaymentGateway.createPixCharge).toHaveBeenCalledWith({
-        amount: 150.00,
+        amount: 150.0,
         description: `Invoice ${INVOICE_ID}`,
         externalReference: INVOICE_ID,
       });
@@ -188,9 +194,7 @@ describe('ProcessPaymentUseCase', () => {
 
     it('should handle payment provider errors with message', async () => {
       vi.mocked(mockInvoiceRepo.findById).mockResolvedValue(mockInvoice);
-      vi.mocked(mockPaymentGateway.createPixCharge).mockRejectedValue(
-        new Error('Provider API unavailable'),
-      );
+      vi.mocked(mockPaymentGateway.createPixCharge).mockRejectedValue(new Error('Provider API unavailable'));
 
       const result = await useCase.execute(validInput);
 

@@ -1,9 +1,5 @@
 export class ProrationService {
-  static calculateProratedAmount(
-    currentAmount: number,
-    daysUsed: number,
-    totalDaysInCycle: number,
-  ): number {
+  static calculateProratedAmount(currentAmount: number, daysUsed: number, totalDaysInCycle: number): number {
     if (totalDaysInCycle <= 0) {
       throw new Error('totalDaysInCycle must be positive');
     }

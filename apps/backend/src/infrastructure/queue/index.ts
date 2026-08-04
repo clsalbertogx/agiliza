@@ -1,40 +1,35 @@
-export {
-  getRedis,
-  connectRedis,
-  disconnectRedis,
-} from './redis.service';
-
-export {
-  QueueNames,
-  ReconcilePaymentPayloadSchema,
-  SendNotificationPayloadSchema,
-  ProcessWebhookPayloadSchema,
-  FailedWebhookPayloadSchema,
-  DEFAULT_JOB_OPTIONS,
-  DLQ_JOB_OPTIONS,
-} from './queue-definitions';
+export { BullMQDLQPublisher } from './bullmq-dlq.publisher';
+export { startDeadLetterWorker } from './dead-letter.worker';
 
 export type {
+  FailedWebhookPayload,
+  ProcessWebhookPayload,
   QueueName,
   ReconcilePaymentPayload,
   SendNotificationPayload,
-  ProcessWebhookPayload,
-  FailedWebhookPayload,
 } from './queue-definitions';
-
 export {
-  getQueue,
-  addJob,
+  DEFAULT_JOB_OPTIONS,
+  DLQ_JOB_OPTIONS,
+  FailedWebhookPayloadSchema,
+  ProcessWebhookPayloadSchema,
+  QueueNames,
+  ReconcilePaymentPayloadSchema,
+  SendNotificationPayloadSchema,
+} from './queue-definitions';
+export {
   addFailedWebhookJob,
-  createWorker,
+  addJob,
   closeAllQueues,
+  createWorker,
+  getQueue,
 } from './queue-manager';
-
 export {
-  startReminderWorker,
+  connectRedis,
+  disconnectRedis,
+  getRedis,
+} from './redis.service';
+export {
   closeWorker,
+  startReminderWorker,
 } from './worker';
-
-export { startDeadLetterWorker } from './dead-letter.worker';
-
-export { BullMQDLQPublisher } from './bullmq-dlq.publisher';

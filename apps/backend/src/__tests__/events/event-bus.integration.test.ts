@@ -1,23 +1,20 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
-import type { DomainEvent, DomainEventType } from '@/domain/events/domain-events';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { NotifyOutboundHandler } from '@/application/events/handlers/notify-outbound.handler';
 import { SendReceiptHandler } from '@/application/events/handlers/send-receipt.handler';
 import { UpdateRiskScoreHandler } from '@/application/events/handlers/update-risk-score.handler';
-import { NotifyOutboundHandler } from '@/application/events/handlers/notify-outbound.handler';
+import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
+import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import { RiskCalculatorService } from '@/application/services/risk-calculator.service';
 import { RiskScore } from '@/domain/entities/client';
-import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
-import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
-import type { MessageProviderPort } from '@/application/ports/gateways/message-provider.port';
+import type { DomainEvent, DomainEventType } from '@/domain/events/domain-events';
+import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeEvent(
-  eventType: string,
-  overrides: Partial<DomainEvent> = {},
-): DomainEvent {
+function makeEvent(eventType: string, overrides: Partial<DomainEvent> = {}): DomainEvent {
   return {
     eventId: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     eventType: eventType as DomainEventType,
@@ -176,9 +173,15 @@ describe('InMemoryEventBus — Integration', () => {
       const eventBus = new InMemoryEventBus();
       const calls: string[] = [];
 
-      const handler1 = vi.fn(async () => { calls.push('handler1'); });
-      const handler2 = vi.fn(async () => { throw new Error('Handler 2 failed'); });
-      const handler3 = vi.fn(async () => { calls.push('handler3'); });
+      const handler1 = vi.fn(async () => {
+        calls.push('handler1');
+      });
+      const handler2 = vi.fn(async () => {
+        throw new Error('Handler 2 failed');
+      });
+      const handler3 = vi.fn(async () => {
+        calls.push('handler3');
+      });
 
       eventBus.subscribe('payment.confirmed', handler1);
       eventBus.subscribe('payment.confirmed', handler2);
@@ -204,10 +207,7 @@ describe('InMemoryEventBus — Integration', () => {
       process.off('unhandledRejection', rejectionHandler);
 
       // The error from handler2 should be caught and logged by the event bus
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Handler 2 failed',
-        expect.any(Error),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Handler 2 failed', expect.any(Error));
 
       consoleSpy.mockRestore();
     });
@@ -232,10 +232,7 @@ describe('InMemoryEventBus — Integration', () => {
 
       process.off('unhandledRejection', rejectionHandler);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Unexpected crash',
-        expect.any(Error),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Unexpected crash', expect.any(Error));
 
       consoleSpy.mockRestore();
     });
@@ -268,9 +265,15 @@ describe('InMemoryEventBus — Integration', () => {
       const eventBus = new InMemoryEventBus();
       const executionOrder: number[] = [];
 
-      const handler1 = vi.fn(async () => { executionOrder.push(1); });
-      const handler2 = vi.fn(async () => { executionOrder.push(2); });
-      const handler3 = vi.fn(async () => { executionOrder.push(3); });
+      const handler1 = vi.fn(async () => {
+        executionOrder.push(1);
+      });
+      const handler2 = vi.fn(async () => {
+        executionOrder.push(2);
+      });
+      const handler3 = vi.fn(async () => {
+        executionOrder.push(3);
+      });
 
       eventBus.subscribe('payment.confirmed', handler1);
       eventBus.subscribe('payment.confirmed', handler2);
@@ -330,9 +333,15 @@ describe('InMemoryEventBus — Integration', () => {
       const eventBus = new InMemoryEventBus();
       const calls: string[] = [];
 
-      const paymentHandler = vi.fn(async () => { calls.push('payment'); });
-      const overdueHandler = vi.fn(async () => { calls.push('overdue'); });
-      const failedHandler = vi.fn(async () => { calls.push('failed'); });
+      const paymentHandler = vi.fn(async () => {
+        calls.push('payment');
+      });
+      const overdueHandler = vi.fn(async () => {
+        calls.push('overdue');
+      });
+      const failedHandler = vi.fn(async () => {
+        calls.push('failed');
+      });
 
       eventBus.subscribe('payment.confirmed', paymentHandler);
       eventBus.subscribe('invoice.overdue', overdueHandler);
@@ -356,12 +365,7 @@ describe('InMemoryEventBus — Integration', () => {
   describe('real handler wiring', () => {
     it('should execute all real handlers when publishing payment.confirmed', async () => {
       const eventBus = new InMemoryEventBus();
-      const {
-        invoiceRepo,
-        clientRepo,
-        messageProvider,
-        notifyOutbound,
-      } = wireHandlersWithMocks(eventBus);
+      const { invoiceRepo, clientRepo, messageProvider, notifyOutbound } = wireHandlersWithMocks(eventBus);
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -427,10 +431,7 @@ describe('InMemoryEventBus — Integration', () => {
       const eventBus = new InMemoryEventBus();
 
       // Manually create a configured NotifyOutboundHandler
-      const notifyOutbound = new NotifyOutboundHandler(
-        'https://hooks.example.com/events',
-        'sk-test-key',
-      );
+      const notifyOutbound = new NotifyOutboundHandler('https://hooks.example.com/events', 'sk-test-key');
 
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
       eventBus.subscribe('client.created', (e) => notifyOutbound.handle(e));

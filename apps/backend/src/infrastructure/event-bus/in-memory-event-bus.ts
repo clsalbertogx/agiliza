@@ -1,4 +1,4 @@
-import { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import type { DomainEvent, DomainEventType } from '@/domain/events/domain-events';
 
 export class InMemoryEventBus implements EventBusPort {

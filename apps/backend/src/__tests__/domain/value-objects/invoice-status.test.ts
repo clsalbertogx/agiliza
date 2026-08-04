@@ -1,9 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import {
-  InvoiceStatus,
-  InvoiceStatusEnum,
-} from '@/domain/value-objects/invoice-status';
+import { describe, expect, it } from 'vitest';
 import { DomainError } from '@/domain/errors/domain-error';
+import { InvoiceStatus, InvoiceStatusEnum } from '@/domain/value-objects/invoice-status';
 
 describe('InvoiceStatus Value Object', () => {
   describe('creation', () => {
@@ -129,9 +126,7 @@ describe('InvoiceStatus Value Object', () => {
       });
 
       it('should NOT transition to REFUNDED', () => {
-        expect(() =>
-          status.transitionTo(InvoiceStatus.REFUNDED())
-        ).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.REFUNDED())).toThrow(DomainError);
       });
     });
 
@@ -144,21 +139,15 @@ describe('InvoiceStatus Value Object', () => {
       });
 
       it('should NOT transition back to PENDING', () => {
-        expect(() =>
-          status.transitionTo(InvoiceStatus.PENDING())
-        ).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.PENDING())).toThrow(DomainError);
       });
 
       it('should NOT transition to OVERDUE', () => {
-        expect(() =>
-          status.transitionTo(InvoiceStatus.OVERDUE())
-        ).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.OVERDUE())).toThrow(DomainError);
       });
 
       it('should NOT transition to CANCELLED', () => {
-        expect(() =>
-          status.transitionTo(InvoiceStatus.CANCELLED())
-        ).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.CANCELLED())).toThrow(DomainError);
       });
     });
 
@@ -176,15 +165,11 @@ describe('InvoiceStatus Value Object', () => {
       });
 
       it('should NOT transition to PENDING', () => {
-        expect(() =>
-          status.transitionTo(InvoiceStatus.PENDING())
-        ).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.PENDING())).toThrow(DomainError);
       });
 
       it('should NOT transition to REFUNDED', () => {
-        expect(() =>
-          status.transitionTo(InvoiceStatus.REFUNDED())
-        ).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.REFUNDED())).toThrow(DomainError);
       });
     });
 
@@ -192,18 +177,10 @@ describe('InvoiceStatus Value Object', () => {
       const status = InvoiceStatus.CANCELLED();
 
       it('should NOT transition to any status', () => {
-        expect(() =>
-          status.transitionTo(InvoiceStatus.PENDING())
-        ).toThrow(DomainError);
-        expect(() => status.transitionTo(InvoiceStatus.PAID())).toThrow(
-          DomainError
-        );
-        expect(() =>
-          status.transitionTo(InvoiceStatus.OVERDUE())
-        ).toThrow(DomainError);
-        expect(() =>
-          status.transitionTo(InvoiceStatus.REFUNDED())
-        ).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.PENDING())).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.PAID())).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.OVERDUE())).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.REFUNDED())).toThrow(DomainError);
       });
     });
 
@@ -211,50 +188,30 @@ describe('InvoiceStatus Value Object', () => {
       const status = InvoiceStatus.REFUNDED();
 
       it('should NOT transition to any status', () => {
-        expect(() =>
-          status.transitionTo(InvoiceStatus.PENDING())
-        ).toThrow(DomainError);
-        expect(() => status.transitionTo(InvoiceStatus.PAID())).toThrow(
-          DomainError
-        );
-        expect(() =>
-          status.transitionTo(InvoiceStatus.OVERDUE())
-        ).toThrow(DomainError);
-        expect(() =>
-          status.transitionTo(InvoiceStatus.CANCELLED())
-        ).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.PENDING())).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.PAID())).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.OVERDUE())).toThrow(DomainError);
+        expect(() => status.transitionTo(InvoiceStatus.CANCELLED())).toThrow(DomainError);
       });
     });
   });
 
   describe('canTransitionTo', () => {
     it('should return true for allowed transitions', () => {
-      expect(
-        InvoiceStatus.PENDING().canTransitionTo(InvoiceStatus.PAID())
-      ).toBe(true);
-      expect(
-        InvoiceStatus.PAID().canTransitionTo(InvoiceStatus.REFUNDED())
-      ).toBe(true);
+      expect(InvoiceStatus.PENDING().canTransitionTo(InvoiceStatus.PAID())).toBe(true);
+      expect(InvoiceStatus.PAID().canTransitionTo(InvoiceStatus.REFUNDED())).toBe(true);
     });
 
     it('should return false for disallowed transitions', () => {
-      expect(
-        InvoiceStatus.PENDING().canTransitionTo(InvoiceStatus.REFUNDED())
-      ).toBe(false);
-      expect(
-        InvoiceStatus.CANCELLED().canTransitionTo(InvoiceStatus.PAID())
-      ).toBe(false);
-      expect(
-        InvoiceStatus.REFUNDED().canTransitionTo(InvoiceStatus.PENDING())
-      ).toBe(false);
+      expect(InvoiceStatus.PENDING().canTransitionTo(InvoiceStatus.REFUNDED())).toBe(false);
+      expect(InvoiceStatus.CANCELLED().canTransitionTo(InvoiceStatus.PAID())).toBe(false);
+      expect(InvoiceStatus.REFUNDED().canTransitionTo(InvoiceStatus.PENDING())).toBe(false);
     });
   });
 
   describe('toString', () => {
     it('should return the enum value as string', () => {
-      expect(InvoiceStatus.PENDING().toString()).toBe(
-        InvoiceStatusEnum.PENDING
-      );
+      expect(InvoiceStatus.PENDING().toString()).toBe(InvoiceStatusEnum.PENDING);
       expect(InvoiceStatus.PAID().toString()).toBe(InvoiceStatusEnum.PAID);
     });
   });

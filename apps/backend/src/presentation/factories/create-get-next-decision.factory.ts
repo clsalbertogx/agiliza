@@ -1,7 +1,7 @@
+import { DecisionEngineService } from '@/application/services/decision-engine.service';
 import { GetNextDecisionUseCase } from '@/application/usecases/get-next-decision.usecase';
 import { PrismaClientRepository } from '@/infrastructure/database/repositories/client.repository';
 import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
-import { DecisionEngineService } from '@/application/services/decision-engine.service';
 
 export function createGetNextDecisionUseCase(): GetNextDecisionUseCase {
   const clientRepo = new PrismaClientRepository();
