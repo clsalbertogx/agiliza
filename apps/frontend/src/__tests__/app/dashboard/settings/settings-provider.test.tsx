@@ -199,7 +199,7 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-config', {
+        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
           provider: 'asaas',
           apiKey: 'asaas_test_key',
           environment: 'sandbox',
@@ -225,9 +225,9 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-config', {
+        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
           provider: 'mercadopago',
-          accessToken: 'mp_access_token_123',
+          apiKey: 'mp_access_token_123',
           environment: 'sandbox',
         });
       });
@@ -251,11 +251,9 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-config', {
+        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
           provider: 'stripe',
-          secretKey: 'sk_test_xxx',
-          publishableKey: 'pk_test_xxx',
-          webhookSecret: 'whsec_xxx',
+          apiKey: 'sk_test_xxx',
           environment: 'sandbox',
         });
       });
@@ -277,9 +275,9 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-config', {
+        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
           provider: 'pagbank',
-          accessToken: 'pagbank_token',
+          apiKey: 'pagbank_token',
           environment: 'sandbox',
         });
       });
@@ -301,9 +299,9 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-config', {
+        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
           provider: 'polar',
-          accessToken: 'polar_token',
+          apiKey: 'polar_token',
           environment: 'sandbox',
         });
       });
@@ -325,7 +323,7 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-config', {
+        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
           provider: 'asaas',
           apiKey: 'asaas_key',
           environment: 'production',
@@ -465,14 +463,9 @@ describe('SettingsPage — Multi-Provider', () => {
   });
 
   describe('config loading', () => {
-    it('populates fields from loaded config', async () => {
+    it('sets provider and environment but keeps secret fields empty (API never returns apiKey)', async () => {
       mockGet.mockResolvedValue({
-        data: {
-          provider: 'stripe',
-          secretKey: 'sk_live_loaded',
-          publishableKey: 'pk_live_loaded',
-          environment: 'production',
-        },
+        data: { provider: 'stripe', environment: 'production', hasApiKey: true },
       });
 
       render(<SettingsPage />);
@@ -481,18 +474,19 @@ describe('SettingsPage — Multi-Provider', () => {
         expect(screen.getByLabelText('Secret Key')).toBeInTheDocument();
       });
 
-      expect((screen.getByLabelText('Secret Key') as HTMLInputElement).value).toBe('sk_live_loaded');
-      expect((screen.getByLabelText('Publishable Key') as HTMLInputElement).value).toBe('pk_live_loaded');
+      expect(screen.getByLabelText('Provedor')).toHaveValue('stripe');
       expect(screen.getByLabelText('Ambiente')).toHaveValue('production');
+      expect((screen.getByLabelText('Secret Key') as HTMLInputElement).value).toBe('');
+      expect((screen.getByLabelText('Publishable Key') as HTMLInputElement).value).toBe('');
     });
 
-    it('loads from payment-config endpoint', async () => {
+    it('loads from payment-provider endpoint', async () => {
       mockGet.mockResolvedValue(EMPTY_CONFIG);
 
       render(<SettingsPage />);
 
       await waitFor(() => {
-        expect(mockGet).toHaveBeenCalledWith('/api/tenants/demo/payment-config');
+        expect(mockGet).toHaveBeenCalledWith('/api/tenants/demo/payment-provider');
       });
     });
   });

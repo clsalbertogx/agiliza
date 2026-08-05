@@ -23,7 +23,7 @@ vi.mock('@/infrastructure/database/prisma.service', () => ({
         tenantId: '00000000-0000-0000-0000-000000000001',
         name: 'John Doe',
         phone: '5511999998888',
-        riskScore: 'LOW',
+        riskScore: 'GREEN',
         preferredChannel: 'WHATSAPP',
         preferredLeadDays: 3,
         totalInvoices: 0,

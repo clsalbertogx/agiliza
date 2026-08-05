@@ -30,10 +30,10 @@ describe('Sidebar', () => {
       expect(screen.getByText('Agiliza')).toBeInTheDocument();
     });
 
-    it('deve renderizar a versão "Agiliza v0.1.0"', () => {
+    it('deve renderizar a versão "Agiliza v0.12.0"', () => {
       render(<Sidebar />);
 
-      expect(screen.getByText('Agiliza v0.1.0')).toBeInTheDocument();
+      expect(screen.getByText('Agiliza v0.12.0')).toBeInTheDocument();
     });
   });
 
@@ -41,20 +41,18 @@ describe('Sidebar', () => {
     it('deve renderizar todos os links de navegação', () => {
       render(<Sidebar />);
 
-      const navLinkLabels = [
-        'Dashboard',
-        'Clientes',
-        'Faturas',
-        'Lembretes',
-        'Risco',
-        'Mensagens',
-        'Relatórios',
-        'Configurações',
-      ];
+      const navLinkLabels = ['Dashboard', 'Clientes', 'Faturas', 'Lembretes', 'Risco', 'Relatórios', 'Configurações'];
 
       navLinkLabels.forEach((label) => {
         expect(screen.getByText(label)).toBeInTheDocument();
       });
+    });
+
+    it('não deve renderizar o item "Mensagens"', () => {
+      render(<Sidebar />);
+
+      expect(screen.queryByText('Mensagens')).not.toBeInTheDocument();
+      expect(screen.queryByText('Mensagens')?.closest('a')).toBeUndefined();
     });
 
     it('deve ter role="navigation" com aria-label', () => {

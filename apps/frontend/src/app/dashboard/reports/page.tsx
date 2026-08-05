@@ -6,6 +6,8 @@ import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { KpiCard } from '@/components/kpi-card';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
+import { api } from '@/lib/api';
+import { getTenantId } from '@/lib/tenant';
 
 interface Forecast {
   month: string;
@@ -36,15 +38,12 @@ export default function ReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333'}/api/reports/cash-flow?tenantId=demo&months=6`,
-        { headers: { Authorization: 'ApiKey dev-key' } },
-      );
-      if (!res.ok) {
-        throw new Error(`Erro HTTP ${res.status}`);
-      }
-      const json = await res.json();
-      setData(json.data);
+      const tenantId = getTenantId();
+      const payload = await api.get<{ data: ReportData }>('/api/reports/cash-flow', {
+        tenantId,
+        months: '6',
+      });
+      setData(payload.data);
     } catch {
       const months = ['Agosto 2026', 'Setembro 2026', 'Outubro 2026', 'Novembro 2026', 'Dezembro 2026', 'Janeiro 2027'];
       const forecast = months.map((month, i) => ({

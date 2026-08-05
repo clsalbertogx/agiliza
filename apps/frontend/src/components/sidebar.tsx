@@ -1,15 +1,6 @@
 'use client';
 
-import {
-  AlertTriangle,
-  BarChart3,
-  Bell,
-  FileText,
-  LayoutDashboard,
-  MessageSquare,
-  Settings,
-  Users,
-} from 'lucide-react';
+import { AlertTriangle, BarChart3, Bell, FileText, LayoutDashboard, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -19,7 +10,6 @@ const navItems = [
   { href: '/dashboard/invoices', label: 'Faturas', icon: FileText },
   { href: '/dashboard/reminders', label: 'Lembretes', icon: Bell },
   { href: '/dashboard/risk', label: 'Risco', icon: AlertTriangle },
-  { href: '/dashboard/templates', label: 'Mensagens', icon: MessageSquare },
   { href: '/dashboard/reports', label: 'Relatórios', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
 ];
@@ -56,7 +46,7 @@ export function Sidebar() {
         })}
       </nav>
       <div className="p-4 border-t border-gray-100">
-        <p className="text-xs text-gray-400">Agiliza v0.1.0</p>
+        <p className="text-xs text-gray-400">Agiliza v0.12.0</p>
       </div>
     </aside>
   );

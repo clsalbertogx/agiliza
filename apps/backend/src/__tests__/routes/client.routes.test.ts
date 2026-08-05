@@ -87,7 +87,7 @@ describe('Client API Routes', () => {
     name: 'John Doe',
     phone: '5511999998888',
     email: 'john@example.com',
-    riskScore: 'LOW',
+    riskScore: 'GREEN',
     riskScoreReason: null,
     riskScoreUpdatedAt: null,
     preferredChannel: 'WHATSAPP',
@@ -488,7 +488,7 @@ describe('Client API Routes', () => {
     it('should return risk score with top features and reason', async () => {
       mockState.findById.mockResolvedValue({
         ...mockClient,
-        riskScore: 'LOW',
+        riskScore: 'GREEN',
         riskScoreReason: { reasons: ['Pagamentos em dia'] },
         riskScoreUpdatedAt: new Date(),
       });
@@ -499,7 +499,7 @@ describe('Client API Routes', () => {
         headers: { authorization: validToken },
       });
       expect(res.statusCode).toBe(200);
-      expect(res.json().data.riskScore).toBe('LOW');
+      expect(res.json().data.riskScore).toBe('GREEN');
     });
 
     it('should return 404 for non-existent client', async () => {

@@ -2,7 +2,7 @@ import { type Either, failure, success } from '@/domain/types/either';
 import { DomainError } from '../errors/domain-error';
 import { Email } from '../value-objects/email';
 import { Phone } from '../value-objects/phone';
-import { type RiskLevel, RiskScore } from '../value-objects/risk-score';
+import { RiskScore } from '../value-objects/risk-score';
 import { TaxId } from '../value-objects/tax-id';
 
 export { RiskLevel, RiskScore } from '../value-objects/risk-score';
@@ -151,7 +151,7 @@ export function createClientFromPersistence(data: PersistenceClient): Client {
     preferredChannel: data.preferredChannel as MessageChannel,
     preferredTime: data.preferredTime ?? undefined,
     preferredLeadDays: data.preferredLeadDays,
-    riskScore: RiskScore.create({ level: data.riskScore as RiskLevel, probability: 0.1 }),
+    riskScore: RiskScore.fromClientRiskScore(data.riskScore),
     riskScoreReason: data.riskScoreReason,
     riskScoreUpdatedAt: data.riskScoreUpdatedAt ?? undefined,
     totalInvoices: data.totalInvoices,
@@ -173,7 +173,7 @@ export function clientToPersistence(client: Client): PersistenceClient {
     preferredChannel: client.preferredChannel,
     preferredTime: client.preferredTime ?? null,
     preferredLeadDays: client.preferredLeadDays,
-    riskScore: client.riskScore.levelValue,
+    riskScore: client.riskScore.clientRiskScore,
     riskScoreReason: client.riskScoreReason ?? null,
     riskScoreUpdatedAt: client.riskScoreUpdatedAt ?? null,
     totalInvoices: client.totalInvoices,
@@ -201,7 +201,7 @@ export function clientToViewModel(client: Client): ClientViewModel {
     preferredChannel: client.preferredChannel,
     preferredTime: client.preferredTime,
     preferredLeadDays: client.preferredLeadDays,
-    riskScore: client.riskScore.levelValue,
+    riskScore: client.riskScore.clientRiskScore,
     riskScoreReason: client.riskScoreReason,
     riskScoreUpdatedAt: client.riskScoreUpdatedAt,
     totalInvoices: client.totalInvoices,

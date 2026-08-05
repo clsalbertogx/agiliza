@@ -11,6 +11,7 @@ import { ReportChart } from '@/components/report-chart';
 import { RiskBadge } from '@/components/risk-badge';
 import { StatCard } from '@/components/stat-card';
 import { api } from '@/lib/api';
+import { getTenantId } from '@/lib/tenant';
 
 interface DashboardData {
   totalInvoiced: number;
@@ -83,6 +84,13 @@ interface InvoicesResponse {
   };
 }
 
+interface ClientsResponse {
+  data: Array<{
+    id: string;
+    name: string;
+  }>;
+}
+
 function mapStatsToDashboard(stats: StatsResponse): DashboardData {
   const totalOutstanding = stats.pendingAmount + stats.overdueAmount;
   const overdueRate = stats.total > 0 ? Math.round((stats.overdue / stats.total) * 100) : 0;
@@ -97,13 +105,6 @@ function mapStatsToDashboard(stats: StatsResponse): DashboardData {
     pendingInvoices: stats.pending,
     overdueInvoices: stats.overdue,
   };
-}
-
-function getTenantId(): string {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('tenant_id') || 'demo';
-  }
-  return 'demo';
 }
 
 function buildStatusChartData(data: DashboardData): ChartDataPoint[] {
@@ -139,26 +140,27 @@ export default function DashboardPage() {
     try {
       const tenantId = getTenantId();
 
-      // Fetch stats
-      const statsPayload = await api.get<{ data: StatsResponse }>('/api/invoices/stats', { tenantId });
+      // Fetch stats, recent invoices and clients in parallel
+      const [statsPayload, invoicesPayload, clientsPayload] = await Promise.all([
+        api.get<{ data: StatsResponse }>('/api/invoices/stats', { tenantId }),
+        api.get<InvoicesResponse>('/api/invoices', { tenantId, perPage: '5' }),
+        api.get<ClientsResponse>('/api/clients', { tenantId, perPage: '100' }),
+      ]);
+
       const mapped = mapStatsToDashboard(statsPayload.data);
       setData(mapped);
 
-      // Fetch recent invoices (last 5)
-      const invoicesPayload = await api.get<InvoicesResponse>('/api/invoices', {
-        tenantId,
-        perPage: '5',
-      });
+      const clientNameById = new Map(clientsPayload.data.map((client) => [client.id, client.name]));
       const mappedInvoices: InvoiceRow[] = invoicesPayload.data.map((inv) => ({
         id: inv.id,
-        clientName: inv.clientId,
+        clientName: clientNameById.get(inv.clientId) ?? inv.clientId,
         amount: inv.amount,
         dueDate: inv.dueDate,
         status: inv.status as InvoiceRow['status'],
       }));
       setInvoices(mappedInvoices);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao carregar dados do dashboard');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar dados do dashboard');
     } finally {
       setLoading(false);
     }

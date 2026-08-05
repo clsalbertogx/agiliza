@@ -61,24 +61,37 @@ describe('DashboardPage', () => {
     it('should retry fetch when retry button is clicked', async () => {
       const user = userEvent.setup();
 
-      // First call fails
-      mockGet.mockRejectedValueOnce(new Error('Network error'));
-      // Second call succeeds
-      mockGet.mockResolvedValueOnce({
-        data: {
-          total: 10,
-          paid: 5,
-          pending: 3,
-          overdue: 2,
-          totalAmount: 5000,
-          paidAmount: 2500,
-          pendingAmount: 1500,
-          overdueAmount: 1000,
-        },
-      });
-      mockGet.mockResolvedValueOnce({
-        data: [],
-        meta: { total: 0, page: 1, perPage: 5, totalPages: 0 },
+      // The page fires stats, invoices and clients inside Promise.all
+      // (3 parallel calls per load). Use an endpoint-aware implementation so the
+      // failure is isolated to the first stats attempt and retries succeed.
+      let statsAttempt = 0;
+      mockGet.mockImplementation((endpoint: string) => {
+        if (endpoint === '/api/invoices/stats') {
+          statsAttempt += 1;
+          if (statsAttempt === 1) {
+            return Promise.reject(new Error('Network error'));
+          }
+          return Promise.resolve({
+            data: {
+              total: 10,
+              paid: 5,
+              pending: 3,
+              overdue: 2,
+              totalAmount: 5000,
+              paidAmount: 2500,
+              pendingAmount: 1500,
+              overdueAmount: 1000,
+            },
+          });
+        }
+        if (endpoint === '/api/invoices') {
+          return Promise.resolve({
+            data: [],
+            meta: { total: 0, page: 1, perPage: 5, totalPages: 0 },
+          });
+        }
+        // '/api/clients'
+        return Promise.resolve({ data: [] });
       });
 
       render(<DashboardPage />);
@@ -112,6 +125,9 @@ describe('DashboardPage', () => {
       mockGet.mockResolvedValueOnce({
         data: [],
         meta: { total: 0, page: 1, perPage: 5, totalPages: 0 },
+      });
+      mockGet.mockResolvedValueOnce({
+        data: [],
       });
 
       render(<DashboardPage />);
@@ -149,6 +165,9 @@ describe('DashboardPage', () => {
           },
         ],
         meta: { total: 1, page: 1, perPage: 5, totalPages: 1 },
+      });
+      mockGet.mockResolvedValueOnce({
+        data: [],
       });
 
       render(<DashboardPage />);
@@ -189,6 +208,9 @@ describe('DashboardPage', () => {
         ],
         meta: { total: 1, page: 1, perPage: 5, totalPages: 1 },
       });
+      mockGet.mockResolvedValueOnce({
+        data: [{ id: 'client-1', name: 'Joana Lima' }],
+      });
 
       render(<DashboardPage />);
 
@@ -196,8 +218,9 @@ describe('DashboardPage', () => {
         expect(screen.getByText(/últimas faturas/i)).toBeInTheDocument();
       });
 
-      // Should show the invoice clientId as name placeholder
-      expect(screen.getByText('client-1')).toBeInTheDocument();
+      // clientName should be resolved from the /api/clients map, not the raw clientId
+      expect(screen.getByText('Joana Lima')).toBeInTheDocument();
+      expect(screen.queryByText('client-1')).not.toBeInTheDocument();
     });
   });
 

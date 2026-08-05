@@ -1,3 +1,4 @@
+import { ClientRiskScore } from '../contracts/enums';
 import { DomainError } from '../errors/domain-error';
 
 export enum RiskLevel {
@@ -32,6 +33,25 @@ export class RiskScore {
       throw new DomainError('Probability must be a number between 0 and 1');
     }
     return new RiskScore(props);
+  }
+
+  static fromClientRiskScore(score: string): RiskScore {
+    switch (score) {
+      case ClientRiskScore.GREEN: return RiskScore.GREEN;
+      case ClientRiskScore.YELLOW: return RiskScore.YELLOW;
+      case ClientRiskScore.RED: return RiskScore.RED;
+      default:
+        throw new DomainError(`Invalid client risk score: ${String(score)}`);
+    }
+  }
+
+  get clientRiskScore(): ClientRiskScore {
+    switch (this.level) {
+      case RiskLevel.LOW: return ClientRiskScore.GREEN;
+      case RiskLevel.MEDIUM: return ClientRiskScore.YELLOW;
+      case RiskLevel.HIGH:
+      case RiskLevel.CRITICAL: return ClientRiskScore.RED;
+    }
   }
 
   static fromProbability(probability: number, reason?: string): RiskScore {

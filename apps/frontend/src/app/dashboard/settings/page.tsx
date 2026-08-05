@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/lib/api';
+import { getTenantId } from '@/lib/tenant';
 
 type ProviderField = string;
 
@@ -48,7 +49,7 @@ type FieldValueMap = Record<string, string>;
 interface PaymentConfigResponse {
   provider: string;
   environment: string;
-  [key: string]: unknown;
+  hasApiKey: boolean;
 }
 
 export default function SettingsPage() {
@@ -69,17 +70,12 @@ export default function SettingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<{ data: PaymentConfigResponse }>('/api/tenants/demo/payment-config');
+      const res = await api.get<{ data: PaymentConfigResponse }>(`/api/tenants/${getTenantId()}/payment-provider`);
       if (res.data) {
         setProvider(res.data.provider);
-        const loaded: FieldValueMap = {};
-        for (const [key, value] of Object.entries(res.data)) {
-          if (key === 'provider') continue;
-          if (typeof value === 'string') {
-            loaded[key] = value;
-          }
-        }
-        setConfig(loaded);
+        // The backend never returns secret keys — only hasApiKey. Keep the
+        // credential fields empty so the user re-enters keys (secrets UI).
+        setConfig({ environment: res.data.environment ?? 'sandbox' });
       }
     } catch {
       // No config yet — that's ok
@@ -130,9 +126,12 @@ export default function SettingsPage() {
     setError(null);
     setSaved(false);
     try {
-      await api.put('/api/tenants/demo/payment-config', {
+      // Map per-provider field names to the single `apiKey` the API expects
+      // (asaas→apiKey, mercadopago/pagbank/polar→accessToken, stripe→secretKey).
+      await api.put(`/api/tenants/${getTenantId()}/payment-provider`, {
         provider,
-        ...config,
+        apiKey: config.apiKey ?? config.accessToken ?? config.secretKey ?? '',
+        environment: config.environment ?? 'sandbox',
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);

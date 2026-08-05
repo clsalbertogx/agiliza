@@ -30,15 +30,15 @@ describe('SettingsPage', () => {
   });
 
   describe('config loading', () => {
-    it('loads existing config from payment-config endpoint', async () => {
+    it('loads existing config from payment-provider endpoint', async () => {
       mockGet.mockResolvedValue({
-        data: { provider: 'mercadopago', accessToken: 'mp_token_xxx', environment: 'production' },
+        data: { provider: 'mercadopago', environment: 'production', hasApiKey: true },
       });
 
       render(<SettingsPage />);
 
       await waitFor(() => {
-        expect(mockGet).toHaveBeenCalledWith('/api/tenants/demo/payment-config');
+        expect(mockGet).toHaveBeenCalledWith('/api/tenants/demo/payment-provider');
       });
 
       expect(screen.getByLabelText('Provedor')).toHaveValue('mercadopago');

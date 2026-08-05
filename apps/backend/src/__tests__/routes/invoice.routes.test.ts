@@ -88,7 +88,7 @@ describe('Invoice API Routes', () => {
     preferredChannel: 'WHATSAPP',
     preferredTime: null,
     preferredLeadDays: 3,
-    riskScore: 'LOW',
+    riskScore: 'GREEN',
     riskScoreReason: null,
     riskScoreUpdatedAt: null,
     totalInvoices: 0,

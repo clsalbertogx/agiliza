@@ -1,0 +1,10 @@
+{
+  "name": "Agiliza",
+  "short_name": "Agiliza",
+  "description": "Gestão de Assinaturas e Cobrança Recorrente",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": []
+}

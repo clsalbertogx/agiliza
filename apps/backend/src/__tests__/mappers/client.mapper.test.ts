@@ -16,7 +16,7 @@ describe('ClientMapper', () => {
     preferredChannel: 'WHATSAPP',
     preferredTime: '09:00',
     preferredLeadDays: 3,
-    riskScore: 'LOW',
+    riskScore: 'GREEN',
     riskScoreReason: { factor: 'on_time' },
     riskScoreUpdatedAt: new Date('2026-07-28T10:00:00Z'),
     totalInvoices: 5,

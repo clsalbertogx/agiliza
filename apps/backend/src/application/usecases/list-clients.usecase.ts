@@ -1,5 +1,6 @@
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { Client } from '@/domain/entities/client';
+import type { ClientRiskScore } from '@/domain/contracts/enums';
 
 export interface ListClientsInput {
   tenantId: string;
@@ -20,7 +21,7 @@ export interface ListClientsOutput {
     preferredChannel: string;
     preferredTime?: string;
     preferredLeadDays: number;
-    riskScore: string;
+    riskScore: ClientRiskScore;
     totalInvoices: number;
     paidInvoices: number;
     avgPaymentDelay: number | null;
@@ -41,10 +42,7 @@ function clientToOutput(client: Client): ListClientsOutput['data'][number] {
     preferredChannel: client.preferredChannel,
     preferredTime: client.preferredTime,
     preferredLeadDays: client.preferredLeadDays,
-    riskScore:
-      typeof client.riskScore === 'object' && 'levelValue' in (client.riskScore as object)
-        ? (client.riskScore as { levelValue: string }).levelValue
-        : String(client.riskScore),
+    riskScore: client.riskScore.clientRiskScore,
     totalInvoices: client.totalInvoices,
     paidInvoices: client.paidInvoices,
     avgPaymentDelay: client.avgPaymentDelay,

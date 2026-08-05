@@ -90,7 +90,7 @@ export class PrismaClientRepository implements ClientRepositoryPort {
     await this.txClient.client.update({
       where: { id },
       data: {
-        riskScore: riskScore as any,
+        riskScore: riskScore.clientRiskScore,
         riskScoreUpdatedAt: new Date(),
         ...(riskScoreReason !== undefined ? { riskScoreReason } : {}),
       },
