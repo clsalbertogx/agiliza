@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { createToken } from '@/infrastructure/auth';
 import type { PaymentProvider } from '@/domain/entities/tenant';
 import {
   createGetPaymentProviderConfigUseCase,
@@ -153,8 +154,13 @@ export async function tenantRoutes(app: FastifyInstance) {
         updatedAt: new Date(),
       });
 
+      const token = createToken(
+        { tenantId: tenant.id, userId: 'owner', role: 'owner' },
+        process.env.JWT_SECRET || 'agiliza-dev-secret',
+      );
+
       reply.code(201);
-      return { data: tenant };
+      return { data: { tenant }, token };
     },
   );
 
