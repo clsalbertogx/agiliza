@@ -9,9 +9,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
  * plugin (in-memory store). These replace the earlier simulation-only tests.
  *
  * Tiers verified:
- *   - Global:  100 req/min per tenant (default)
+ *   - Global:  100 req/min per IP (d: the global limiter runs on the default
+ *     onRequest hook, before tenantId is set in preHandler, so per-tenant
+ *     keying is impossible — per-IP is the honest configuration)
  *   - Health:  1000 req/min  (effectively unlimited — monitoring must always reach it)
  *   - Auth:     20 req/min per IP
+ *   - Signup:   20 req/min per IP (POST /api/tenants — public endpoint)
  *   - Webhook:  10 req/s  per provider IP
  */
 describe('Rate Limiting — SEC-03', () => {
@@ -26,7 +29,7 @@ describe('Rate Limiting — SEC-03', () => {
       max: 100,
       timeWindow: '1 minute',
       keyGenerator: (request: FastifyRequest) => {
-        return (request as any).tenantId || request.ip;
+        return request.ip;
       },
     });
 
@@ -60,6 +63,20 @@ describe('Rate Limiting — SEC-03', () => {
       },
     );
 
+    // ── Public signup endpoint (20 req/min per IP — same config as the real
+    //    POST /api/tenants route in tenant.routes.ts) ──
+    app.post(
+      '/api/tenants',
+      {
+        config: {
+          rateLimit: { max: 20, timeWindow: '1 minute' },
+        },
+      },
+      async (_req: FastifyRequest, reply: FastifyReply) => {
+        return reply.status(201).send({ created: true });
+      },
+    );
+
     // ── Webhook endpoint (10 req/s per provider IP) ──
     app.post(
       '/api/webhooks/payment/asaas',
@@ -90,7 +107,7 @@ describe('Rate Limiting — SEC-03', () => {
   });
 
   // ──────────────────────────────────────────────
-  // Global rate limit — 100 req/min per tenant
+  // Global rate limit — 100 req/min per IP
   // ──────────────────────────────────────────────
 
   it('should return 429 after exceeding 100 requests per minute on API endpoints (SEC-03-A)', async () => {
@@ -216,11 +233,11 @@ describe('Rate Limiting — SEC-03', () => {
   });
 
   // ──────────────────────────────────────────────
-  // Independent rate limits per tenant
+  // Independent rate limits per IP
   // ──────────────────────────────────────────────
 
-  it('should have independent rate limits per tenant (SEC-03-E)', async () => {
-    // Simulate tenant A — send 101 requests from its IP
+  it('should have independent rate limits per IP (SEC-03-E)', async () => {
+    // Simulate one client IP — send 101 requests from it
     for (let i = 0; i < 101; i++) {
       await app.inject({
         method: 'GET',
@@ -229,7 +246,7 @@ describe('Rate Limiting — SEC-03', () => {
       });
     }
 
-    // Tenant A is now rate limited
+    // That IP is now rate limited
     const resA = await app.inject({
       method: 'GET',
       url: '/api/clients',
@@ -237,12 +254,47 @@ describe('Rate Limiting — SEC-03', () => {
     });
     expect(resA.statusCode).toBe(429);
 
-    // Tenant B (different IP) should still be allowed
+    // A different IP should still be allowed
     const resB = await app.inject({
       method: 'GET',
       url: '/api/clients',
       remoteAddress: '10.0.2.20',
     });
     expect(resB.statusCode).toBe(200);
+  });
+
+  // ──────────────────────────────────────────────
+  // Public signup endpoint — 20 req/min per IP
+  // ──────────────────────────────────────────────
+
+  it('should rate limit public signup (POST /api/tenants) at 20 req/min per IP (SEC-03-SIGNUP)', async () => {
+    // When sending 21 signup attempts from the same IP
+    const statusCodes: number[] = [];
+
+    for (let i = 0; i < 21; i++) {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tenants',
+        remoteAddress: '10.0.70.1',
+        payload: {},
+      });
+      statusCodes.push(res.statusCode);
+    }
+
+    // Then at least one request should be rate limited
+    const rateLimited = statusCodes.filter((code) => code === 429);
+    expect(rateLimited.length).toBeGreaterThan(0);
+  });
+
+  it('should allow signup requests from different IPs', async () => {
+    for (let i = 0; i < 5; i++) {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/tenants',
+        remoteAddress: `10.0.80.${i + 1}`,
+        payload: {},
+      });
+      expect(res.statusCode).toBe(201);
+    }
   });
 });

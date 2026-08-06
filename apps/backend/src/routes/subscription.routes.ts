@@ -102,7 +102,7 @@ const subscriptionAnalyticsEnvelope = {
 const idParamsSchema = {
   type: 'object',
   required: ['id'],
-  properties: { id: { type: 'string' } },
+  properties: { id: { type: 'string', format: 'uuid' } },
 } as const;
 
 const subscriptionBodySchema = {

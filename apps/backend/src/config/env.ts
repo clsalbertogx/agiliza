@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
-const envSchema = z.object({
+export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   HOST: z.string().default('0.0.0.0'),
   PORT: z.coerce.number().default(3333),
@@ -13,7 +13,10 @@ const envSchema = z.object({
   EVOLUTION_API_URL: z.string().default('http://localhost:8080'),
   EVOLUTION_API_KEY: z.string().default(''),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
-  JWT_SECRET: z.string().default('agiliza-dev-secret-change-in-production'),
+  // Security: JWT_SECRET MUST come from the environment (.env / CI secret).
+  // No default — a deployment without it must fail fast instead of silently
+  // signing tokens with a public constant (JWT forgery).
+  JWT_SECRET: z.string().min(1),
   ENCRYPTION_KEY: z.string().default(''),
   MASTER_API_KEY: z.string().default('agiliza-dev-api-key-change-in-production'),
   PAYMENT_PROVIDER: z.enum(['asaas', 'mercadopago', 'stripe', 'pagbank', 'polar']).default('asaas'),

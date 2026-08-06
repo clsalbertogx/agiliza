@@ -12,13 +12,15 @@ vi.mock('@/lib/api', () => ({
 
 import ClientsPage from '@/app/dashboard/clients/page';
 
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+
 describe('ClientsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     Object.defineProperty(window, 'localStorage', {
       value: {
-        getItem: vi.fn(() => 'demo'),
+        getItem: vi.fn(() => TEST_TENANT_ID),
         setItem: vi.fn(),
       },
       writable: true,
@@ -91,7 +93,7 @@ describe('ClientsPage', () => {
         expect(screen.getByText('João Silva')).toBeInTheDocument();
       });
 
-      expect(mockGet).toHaveBeenCalledWith('/api/clients', expect.objectContaining({ tenantId: 'demo' }));
+      expect(mockGet).toHaveBeenCalledWith('/api/clients', expect.objectContaining({ tenantId: TEST_TENANT_ID }));
 
       expect(screen.getByText('Maria Santos')).toBeInTheDocument();
 

@@ -95,7 +95,9 @@ export class ReminderService {
   }
 
   async sendReminderNow(invoiceId: string, tenantId: string): Promise<any> {
-    const invoice = await this.invoiceRepo.findById(invoiceId);
+    // Scope the invoice lookup to the calling tenant — a tenant must never
+    // trigger a reminder for another tenant's invoice.
+    const invoice = await this.invoiceRepo.findById(invoiceId, tenantId);
     if (!invoice) throw new Error('Invoice not found');
 
     const client = await this.clientRepo.findById(invoice.clientId);

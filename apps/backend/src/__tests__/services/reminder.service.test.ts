@@ -273,7 +273,7 @@ describe('ReminderService', () => {
       expect(result).toBeDefined();
       expect(result.externalId).toBe('ext-456');
 
-      expect(mocks.invoiceRepo.findById).toHaveBeenCalledWith(invoice.id);
+      expect(mocks.invoiceRepo.findById).toHaveBeenCalledWith(invoice.id, 'tenant-123');
       expect(mocks.clientRepo.findById).toHaveBeenCalledWith(client.id);
       expect(mocks.messageProvider.sendTemplate).toHaveBeenCalledWith(
         expect.objectContaining({

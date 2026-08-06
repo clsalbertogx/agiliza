@@ -39,6 +39,7 @@ import { clientRoutes } from '@/routes/client.routes';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const TEST_CLIENT_ID = '00000000-0000-0000-0000-000000000010';
+const UNKNOWN_CLIENT_UUID = '99999999-9999-9999-9999-999999999999';
 const VALID_TOKEN = 'test-valid-token';
 
 describe('Client API Routes', () => {
@@ -411,7 +412,7 @@ describe('Client API Routes', () => {
 
       const res = await app.inject({
         method: 'GET',
-        url: '/api/clients/non-existent-id',
+        url: `/api/clients/${UNKNOWN_CLIENT_UUID}`,
         headers: { authorization: validToken },
       });
       expect(res.statusCode).toBe(404);
@@ -463,7 +464,7 @@ describe('Client API Routes', () => {
 
       const res = await app.inject({
         method: 'PATCH',
-        url: '/api/clients/non-existent-id',
+        url: `/api/clients/${UNKNOWN_CLIENT_UUID}`,
         headers: { authorization: validToken },
         payload: { name: 'Test' },
       });
@@ -507,7 +508,7 @@ describe('Client API Routes', () => {
 
       const res = await app.inject({
         method: 'GET',
-        url: '/api/clients/non-existent-id/risk-score',
+        url: `/api/clients/${UNKNOWN_CLIENT_UUID}/risk-score`,
         headers: { authorization: validToken },
       });
       expect(res.statusCode).toBe(404);

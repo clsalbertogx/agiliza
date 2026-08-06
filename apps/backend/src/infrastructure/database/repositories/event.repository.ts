@@ -75,8 +75,12 @@ export class PrismaEventRepository implements EventRepositoryPort {
   // ── Route query helpers ──────────────────────────────────────────
   // These methods provide raw Prisma query patterns used by route handlers.
 
-  async findByIdRaw(id: string): Promise<Record<string, unknown> | null> {
-    return this.txClient.event.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>;
+  async findByIdRaw(id: string, tenantId?: string): Promise<Record<string, unknown> | null> {
+    const where: Record<string, unknown> = { id };
+    if (tenantId) where.tenantId = tenantId;
+    // findFirst (not findUnique) so the tenantId filter can be applied —
+    // prevents cross-tenant reads via an event id.
+    return this.txClient.event.findFirst({ where }) as Promise<Record<string, unknown> | null>;
   }
 
   async findManyRaw(params: {

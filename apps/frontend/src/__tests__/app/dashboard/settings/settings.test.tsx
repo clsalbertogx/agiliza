@@ -13,9 +13,19 @@ vi.mock('@/lib/api', () => ({
 
 import SettingsPage from '@/app/dashboard/settings/page';
 
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+
 describe('SettingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn(() => TEST_TENANT_ID),
+        setItem: vi.fn(),
+      },
+      writable: true,
+    });
   });
 
   describe('loading state', () => {
@@ -38,7 +48,7 @@ describe('SettingsPage', () => {
       render(<SettingsPage />);
 
       await waitFor(() => {
-        expect(mockGet).toHaveBeenCalledWith('/api/tenants/demo/payment-provider');
+        expect(mockGet).toHaveBeenCalledWith(`/api/tenants/${TEST_TENANT_ID}/payment-provider`);
       });
 
       expect(screen.getByLabelText('Provedor')).toHaveValue('mercadopago');

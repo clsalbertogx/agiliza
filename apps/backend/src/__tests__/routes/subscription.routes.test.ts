@@ -39,6 +39,7 @@ import { subscriptionRoutes } from '@/routes/subscription.routes';
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const TEST_CLIENT_ID = '00000000-0000-0000-0000-000000000002';
 const TEST_SUBSCRIPTION_ID = '00000000-0000-0000-0000-000000000003';
+const UNKNOWN_SUBSCRIPTION_UUID = '99999999-9999-9999-9999-999999999999';
 const VALID_TOKEN = 'test-valid-token';
 
 describe('Subscription API Routes', () => {
@@ -282,7 +283,7 @@ describe('Subscription API Routes', () => {
 
       const res = await app.inject({
         method: 'GET',
-        url: '/api/subscriptions/non-existent-id',
+        url: `/api/subscriptions/${UNKNOWN_SUBSCRIPTION_UUID}`,
         headers: { authorization: validToken },
       });
 
@@ -315,7 +316,7 @@ describe('Subscription API Routes', () => {
 
       const res = await app.inject({
         method: 'DELETE',
-        url: '/api/subscriptions/non-existent-id',
+        url: `/api/subscriptions/${UNKNOWN_SUBSCRIPTION_UUID}`,
         headers: { authorization: validToken },
       });
 
@@ -368,7 +369,7 @@ describe('Subscription API Routes', () => {
 
       const res = await app.inject({
         method: 'PATCH',
-        url: '/api/subscriptions/non-existent-id/trial',
+        url: `/api/subscriptions/${UNKNOWN_SUBSCRIPTION_UUID}/trial`,
         headers: { authorization: validToken },
         payload: {
           trialDays: 7,

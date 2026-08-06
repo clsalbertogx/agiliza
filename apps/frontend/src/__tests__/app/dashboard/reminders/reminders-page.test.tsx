@@ -12,13 +12,15 @@ vi.mock('@/lib/api', () => ({
 
 import RemindersPage from '@/app/dashboard/reminders/page';
 
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+
 describe('RemindersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     Object.defineProperty(window, 'localStorage', {
       value: {
-        getItem: vi.fn(() => 'demo'),
+        getItem: vi.fn(() => TEST_TENANT_ID),
         setItem: vi.fn(),
       },
       writable: true,
@@ -106,7 +108,7 @@ describe('RemindersPage', () => {
         expect(screen.getByText('client-1')).toBeInTheDocument();
       });
 
-      expect(mockGet).toHaveBeenCalledWith('/api/messages', expect.objectContaining({ tenantId: 'demo' }));
+      expect(mockGet).toHaveBeenCalledWith('/api/messages', expect.objectContaining({ tenantId: TEST_TENANT_ID }));
 
       expect(screen.getByText('overdue_reminder')).toBeInTheDocument();
       expect(screen.getByText('WHATSAPP')).toBeInTheDocument();

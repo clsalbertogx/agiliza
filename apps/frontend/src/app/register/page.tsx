@@ -1,9 +1,9 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { type FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api } from '@/lib/api';
@@ -39,6 +39,7 @@ export default function RegisterPage() {
     try {
       const res = await api.post<SignupResponse>('/api/tenants', { name, slug, email });
       localStorage.setItem('auth_token', res.token);
+      localStorage.setItem('tenant_id', res.data.tenant.id);
       router.push('/dashboard');
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Erro ao criar conta. Tente novamente.');
@@ -50,13 +51,19 @@ export default function RegisterPage() {
     <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Criar conta</CardTitle>
+          <h1 className="text-lg font-semibold leading-none tracking-tight text-gray-900">Criar conta</h1>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div className="space-y-2">
               <Label htmlFor="name">Nome</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Sua empresa" required />
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Sua empresa"
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="slug">Slug</Label>
@@ -76,7 +83,14 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.com" required />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="voce@empresa.com"
+                required
+              />
             </div>
             {apiError && (
               <p role="alert" className="text-sm text-red-600">

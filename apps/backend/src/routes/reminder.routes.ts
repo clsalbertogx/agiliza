@@ -54,9 +54,9 @@ export async function reminderRoutes(app: FastifyInstance) {
         return { error: 'Missing tenant context' };
       }
 
-      // Verify invoice exists before scheduling
+      // Verify invoice exists AND belongs to the calling tenant before scheduling
       const invoiceRepo = createInvoiceRepository();
-      const invoice = await invoiceRepo.getInvoiceWithClientRaw(invoiceId);
+      const invoice = await invoiceRepo.getInvoiceWithClientRaw(invoiceId, tenantId);
       if (!invoice?.client) {
         reply.code(404);
         return { error: 'Invoice or client not found' };
@@ -106,6 +106,14 @@ export async function reminderRoutes(app: FastifyInstance) {
       if (!tenantId) {
         reply.code(401);
         return { error: 'Missing tenant context' };
+      }
+
+      // a3: verify the invoice belongs to the calling tenant before sending.
+      const invoiceRepo = createInvoiceRepository();
+      const invoice = await invoiceRepo.getInvoiceWithClientRaw(invoiceId, tenantId);
+      if (!invoice) {
+        reply.code(404);
+        return { error: 'Invoice not found' };
       }
 
       try {
@@ -215,7 +223,9 @@ export async function reminderRoutes(app: FastifyInstance) {
       const { id } = request.params as { id: string };
       const eventRepo = createEventRepository();
 
-      const event = await eventRepo.findByIdRaw(id);
+      // a2: scope the lookup to the calling tenant — a tenant must never read
+      // another tenant's message tracking timeline.
+      const event = await eventRepo.findByIdRaw(id, request.tenantId);
 
       if (!event) {
         reply.code(404);

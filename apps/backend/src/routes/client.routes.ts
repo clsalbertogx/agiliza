@@ -213,7 +213,7 @@ export async function clientRoutes(app: FastifyInstance) {
         params: {
           type: 'object',
           required: ['id'],
-          properties: { id: { type: 'string' } },
+          properties: { id: { type: 'string', format: 'uuid' } },
         },
         response: {
           200: clientSingleEnvelope,
@@ -252,7 +252,7 @@ export async function clientRoutes(app: FastifyInstance) {
         params: {
           type: 'object',
           required: ['id'],
-          properties: { id: { type: 'string' } },
+          properties: { id: { type: 'string', format: 'uuid' } },
         },
         body: {
           type: 'object',
@@ -303,7 +303,7 @@ export async function clientRoutes(app: FastifyInstance) {
         params: {
           type: 'object',
           required: ['id'],
-          properties: { id: { type: 'string' } },
+          properties: { id: { type: 'string', format: 'uuid' } },
         },
         response: {
           200: dataEnvelope,

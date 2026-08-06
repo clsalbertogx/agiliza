@@ -44,26 +44,9 @@ export default function ReportsPage() {
         months: '6',
       });
       setData(payload.data);
-    } catch {
-      const months = ['Agosto 2026', 'Setembro 2026', 'Outubro 2026', 'Novembro 2026', 'Dezembro 2026', 'Janeiro 2027'];
-      const forecast = months.map((month, i) => ({
-        month,
-        expectedRevenue: 5000 + i * 200,
-        expectedDefaults: 600 + i * 50,
-        recoveryEstimate: 180 + i * 15,
-        netForecast: 4580 + i * 165,
-        confidence: Math.max(0.5, 0.95 - i * 0.08),
-      }));
-      setData({
-        forecast,
-        summary: {
-          totalExpectedRevenue: forecast.reduce((s, f) => s + f.expectedRevenue, 0),
-          totalExpectedDefaults: forecast.reduce((s, f) => s + f.expectedDefaults, 0),
-          totalRecoveryEstimate: forecast.reduce((s, f) => s + f.recoveryEstimate, 0),
-          totalNetForecast: forecast.reduce((s, f) => s + f.netForecast, 0),
-          averageConfidence: 0.78,
-        },
-      });
+    } catch (err: unknown) {
+      setData(null);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar relatório');
     } finally {
       setLoading(false);
     }

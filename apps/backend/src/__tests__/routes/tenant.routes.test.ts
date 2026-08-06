@@ -35,6 +35,7 @@ vi.mock('@/infrastructure/database/prisma.service', () => ({
 import { tenantRoutes } from '@/routes/tenant.routes';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+const UNKNOWN_TENANT_UUID = '99999999-9999-9999-9999-999999999999';
 const VALID_TOKEN = 'test-valid-token';
 
 // Ensure encryption key is set for the encryption service used in routes
@@ -57,6 +58,9 @@ describe('Tenant API Routes', () => {
         return;
       }
       (request as any).tenantId = TEST_TENANT_ID;
+      // E3: the auth plugin sets authPayload on every Bearer token; the routes
+      // now require role 'owner' for config mutations.
+      (request as any).authPayload = { tenantId: TEST_TENANT_ID, userId: 'owner', role: 'owner' };
     });
 
     await app.register(tenantRoutes);
@@ -109,15 +113,28 @@ describe('Tenant API Routes', () => {
       expect(res.json().data).toBeDefined();
     });
 
-    it('should return 404 for non-existent tenant', async () => {
+    it('should return 403 for a tenant id that is not the authenticated tenant', async () => {
+      // a1: routes are scoped to the authenticated tenant — any other id is 403
+      // (before any DB lookup), so cross-tenant ids must never resolve to 404/200.
       mockState.findUnique.mockResolvedValue(null);
 
       const res = await app.inject({
         method: 'GET',
-        url: '/api/tenants/non-existent-id/config',
+        url: `/api/tenants/${UNKNOWN_TENANT_UUID}/config`,
         headers: { authorization: validToken },
       });
-      expect(res.statusCode).toBe(404);
+      expect(res.statusCode).toBe(403);
+    });
+
+    it('should return 400 for invalid tenant id format (not a UUID)', async () => {
+      mockState.findUnique.mockResolvedValue(null);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/tenants/not-a-uuid/config',
+        headers: { authorization: validToken },
+      });
+      expect(res.statusCode).toBe(400);
     });
   });
 
@@ -207,6 +224,26 @@ describe('Tenant API Routes', () => {
       const body = res.json();
       expect(body.data.hasApiKey).toBe(true);
       expect(body.data.apiKey).toBeUndefined();
+    });
+
+    it('should return 400 (not 500) for invalid tenant id format on payment-provider', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/tenants/not-a-uuid/payment-provider',
+        headers: { authorization: validToken },
+      });
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should return 403 for an unknown but well-formed tenant uuid on payment-provider', async () => {
+      mockState.findUnique.mockResolvedValue(null);
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/tenants/${UNKNOWN_TENANT_UUID}/payment-provider`,
+        headers: { authorization: validToken },
+      });
+      expect(res.statusCode).toBe(403);
     });
   });
 });

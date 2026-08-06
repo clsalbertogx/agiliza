@@ -11,13 +11,15 @@ vi.mock('@/lib/api', () => ({
 
 import RiskPage from '@/app/dashboard/risk/page';
 
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+
 describe('RiskPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     Object.defineProperty(window, 'localStorage', {
       value: {
-        getItem: vi.fn(() => 'demo'),
+        getItem: vi.fn(() => TEST_TENANT_ID),
         setItem: vi.fn(),
       },
       writable: true,
@@ -56,9 +58,9 @@ describe('RiskPage', () => {
 
       expect(mockGet).toHaveBeenCalledWith(
         '/api/reports/risk-distribution',
-        expect.objectContaining({ tenantId: 'demo' }),
+        expect.objectContaining({ tenantId: TEST_TENANT_ID }),
       );
-      expect(mockGet).toHaveBeenCalledWith('/api/clients', expect.objectContaining({ tenantId: 'demo' }));
+      expect(mockGet).toHaveBeenCalledWith('/api/clients', expect.objectContaining({ tenantId: TEST_TENANT_ID }));
     });
 
     it('should render real distribution counts with percentages and mapped client risk', async () => {
@@ -94,19 +96,22 @@ describe('RiskPage', () => {
     });
   });
 
-  describe('fallback demo data', () => {
-    it('should fall back to demo clients when both API calls fail', async () => {
+  describe('error state', () => {
+    it('should show ErrorState instead of demo fallback when the API calls fail', async () => {
       mockGet.mockRejectedValue(new Error('Network error'));
 
       render(<RiskPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('João Silva')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeInTheDocument();
       });
 
-      // Demo fallback shows the 5 fictional clients
-      expect(screen.getByText('Maria Santos')).toBeInTheDocument();
-      expect(screen.getByText('Carlos Oliveira')).toBeInTheDocument();
+      expect(screen.getByText(/não foi possível carregar os dados/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeInTheDocument();
+
+      // No fabricated demo clients are rendered
+      expect(screen.queryByText('João Silva')).not.toBeInTheDocument();
+      expect(screen.queryByText('Usando dados de demonstração')).not.toBeInTheDocument();
     });
   });
 

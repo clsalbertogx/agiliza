@@ -4,6 +4,8 @@ import { type PersistenceTenant, TenantMapper } from '@/infrastructure/database/
 import { getPrismaClient } from '@/infrastructure/database/prisma.service';
 import { getTransaction } from '@/infrastructure/database/unit-of-work';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Port-compliant Prisma tenant repository.
  * Implements TenantRepositoryPort for use with use cases / factories.
@@ -29,6 +31,11 @@ export class PrismaTenantRepository implements TenantRepositoryPort {
   }
 
   async findById(id: string): Promise<Tenant | null> {
+    // The tenant.id column is a native UUID; a non-UUID string would throw a
+    // Prisma/DB cast error (500). Guard so callers get a clean "not found".
+    if (!UUID_RE.test(id)) {
+      return null;
+    }
     const result = await this.txClient.tenant.findUnique({ where: { id } });
     return result ? this.mapper.toDomain(result as unknown as PersistenceTenant) : null;
   }

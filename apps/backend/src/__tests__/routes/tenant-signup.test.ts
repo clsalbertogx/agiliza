@@ -153,9 +153,14 @@ describe('Tenant Signup API (POST /api/tenants)', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it('mantém GET /api/tenants protegido (401 sem Authorization)', async () => {
-    const res = await app.inject({ method: 'GET', url: '/api/tenants' });
-    expect(res.statusCode).toBe(401);
+  it('não expõe lista de tenants (GET /api/tenants removida — sem rota, 404 mesmo autenticado)', async () => {
+    // a1: a listagem sem escopo foi removida por segurança; a rota não existe mais.
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/tenants',
+      headers: { authorization: validBearer },
+    });
+    expect(res.statusCode).toBe(404);
   });
 
   it('o token retornado no signup acessa um endpoint protegido (GET /api/clients → 200)', async () => {
@@ -178,5 +183,44 @@ describe('Tenant Signup API (POST /api/tenants)', () => {
     });
 
     expect(res.statusCode).toBe(200);
+  });
+
+  it('usa o tenantId do JWT quando a querystring não traz tenantId (GET /api/clients → 200)', async () => {
+    mockClientState.findMany.mockResolvedValue([]);
+    mockClientState.count.mockResolvedValue(0);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/clients',
+      headers: { authorization: validBearer },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(mockClientState.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: TEST_TENANT_ID }),
+      }),
+    );
+  });
+
+  it('o tenantId da querystring não sobrescreve o do JWT (JWT é autoritativo)', async () => {
+    const otherTenant = '99999999-9999-9999-9999-999999999999';
+    mockClientState.findMany.mockResolvedValue([]);
+    mockClientState.count.mockResolvedValue(0);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/clients',
+      headers: { authorization: validBearer },
+      query: { tenantId: otherTenant },
+    });
+
+    expect(res.statusCode).toBe(200);
+    // A consulta deve filtrar pelo tenant do JWT, não pelo tenantId da query
+    expect(mockClientState.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: TEST_TENANT_ID }),
+      }),
+    );
   });
 });

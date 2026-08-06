@@ -77,14 +77,20 @@ async function buildApp() {
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   });
 
-  // Global rate limiting
+  // Global rate limiting.
+  // d: keyGenerator is deliberately per-IP. The plugin runs its global limiter
+  // on the default onRequest hook, which is BEFORE the auth plugin's preHandler
+  // sets request.tenantId — so a tenant-based key could never work here.
+  // Per-IP is the honest, safe choice (and matches the public POST /api/tenants
+  // signup endpoint, which is unauthenticated). Stricter per-route limits
+  // (e.g. signup: 20/min per IP) are configured on the routes themselves.
   await app.register(rateLimit, {
     redis: new Redis(env.REDIS_URL, { maxRetriesPerRequest: null }),
     global: true,
     max: env.RATE_LIMIT_MAX,
     timeWindow: '1 minute',
     keyGenerator: (request) => {
-      return (request as any).tenantId || request.ip;
+      return request.ip;
     },
   });
 

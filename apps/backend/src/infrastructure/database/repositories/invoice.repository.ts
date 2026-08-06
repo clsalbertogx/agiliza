@@ -204,9 +204,13 @@ export class PrismaInvoiceRepository implements InvoiceRepositoryPort {
     }) as Promise<Record<string, unknown>>;
   }
 
-  async getInvoiceWithClientRaw(id: string): Promise<Record<string, unknown> | null> {
-    return this.txClient.invoice.findUnique({
-      where: { id },
+  async getInvoiceWithClientRaw(id: string, tenantId?: string): Promise<Record<string, unknown> | null> {
+    const where: Record<string, unknown> = { id };
+    if (tenantId) where.tenantId = tenantId;
+    // findFirst (not findUnique) so the tenantId filter can be applied —
+    // prevents cross-tenant invoice reads via an invoice id.
+    return this.txClient.invoice.findFirst({
+      where,
       include: { client: true, tenant: true },
     }) as Promise<Record<string, unknown> | null>;
   }

@@ -1,6 +1,6 @@
-export function getTenantId(): string {
+export function getTenantId(): string | null {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('tenant_id') || 'demo';
+    return localStorage.getItem('tenant_id');
   }
-  return 'demo';
+  return null;
 }

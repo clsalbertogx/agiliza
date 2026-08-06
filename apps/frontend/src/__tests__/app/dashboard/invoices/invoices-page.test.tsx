@@ -12,13 +12,15 @@ vi.mock('@/lib/api', () => ({
 
 import InvoicesPage from '@/app/dashboard/invoices/page';
 
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+
 describe('InvoicesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     Object.defineProperty(window, 'localStorage', {
       value: {
-        getItem: vi.fn(() => 'demo'),
+        getItem: vi.fn(() => TEST_TENANT_ID),
         setItem: vi.fn(),
       },
       writable: true,
@@ -158,11 +160,14 @@ describe('InvoicesPage', () => {
       });
 
       expect(mockGet).toHaveBeenCalledTimes(3);
-      expect(mockGet).toHaveBeenCalledWith('/api/invoices/stats', expect.objectContaining({ tenantId: 'demo' }));
-      expect(mockGet).toHaveBeenCalledWith('/api/invoices', expect.objectContaining({ tenantId: 'demo' }));
+      expect(mockGet).toHaveBeenCalledWith(
+        '/api/invoices/stats',
+        expect.objectContaining({ tenantId: TEST_TENANT_ID }),
+      );
+      expect(mockGet).toHaveBeenCalledWith('/api/invoices', expect.objectContaining({ tenantId: TEST_TENANT_ID }));
       expect(mockGet).toHaveBeenCalledWith(
         '/api/clients',
-        expect.objectContaining({ tenantId: 'demo', perPage: '100' }),
+        expect.objectContaining({ tenantId: TEST_TENANT_ID, perPage: '100' }),
       );
 
       expect(screen.getByText('ACME Corp')).toBeInTheDocument();

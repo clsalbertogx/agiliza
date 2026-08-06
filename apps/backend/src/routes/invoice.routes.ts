@@ -226,7 +226,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
         params: {
           type: 'object',
           required: ['id'],
-          properties: { id: { type: 'string' } },
+          properties: { id: { type: 'string', format: 'uuid' } },
         },
         response: {
           200: invoiceSingleEnvelope,
@@ -266,7 +266,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
         params: {
           type: 'object',
           required: ['id'],
-          properties: { id: { type: 'string' } },
+          properties: { id: { type: 'string', format: 'uuid' } },
         },
         response: {
           200: dataEnvelope,
@@ -306,7 +306,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
         params: {
           type: 'object',
           required: ['id'],
-          properties: { id: { type: 'string' } },
+          properties: { id: { type: 'string', format: 'uuid' } },
         },
         response: {
           200: {
@@ -351,7 +351,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
         params: {
           type: 'object',
           required: ['id'],
-          properties: { id: { type: 'string' } },
+          properties: { id: { type: 'string', format: 'uuid' } },
         },
         response: {
           200: dataEnvelope,

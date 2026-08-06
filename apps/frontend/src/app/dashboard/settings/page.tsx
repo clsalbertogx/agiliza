@@ -69,8 +69,14 @@ export default function SettingsPage() {
   const loadConfig = useCallback(async () => {
     setLoading(true);
     setError(null);
+    const tenantId = getTenantId();
+    if (!tenantId) {
+      setError('Sessão inválida: identificador da conta não encontrado. Refaça o login.');
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await api.get<{ data: PaymentConfigResponse }>(`/api/tenants/${getTenantId()}/payment-provider`);
+      const res = await api.get<{ data: PaymentConfigResponse }>(`/api/tenants/${tenantId}/payment-provider`);
       if (res.data) {
         setProvider(res.data.provider);
         // The backend never returns secret keys — only hasApiKey. Keep the
@@ -125,10 +131,16 @@ export default function SettingsPage() {
     setSaving(true);
     setError(null);
     setSaved(false);
+    const tenantId = getTenantId();
+    if (!tenantId) {
+      setError('Sessão inválida: identificador da conta não encontrado. Refaça o login.');
+      setSaving(false);
+      return;
+    }
     try {
       // Map per-provider field names to the single `apiKey` the API expects
       // (asaas→apiKey, mercadopago/pagbank/polar→accessToken, stripe→secretKey).
-      await api.put(`/api/tenants/${getTenantId()}/payment-provider`, {
+      await api.put(`/api/tenants/${tenantId}/payment-provider`, {
         provider,
         apiKey: config.apiKey ?? config.accessToken ?? config.secretKey ?? '',
         environment: config.environment ?? 'sandbox',

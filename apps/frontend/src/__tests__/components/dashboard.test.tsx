@@ -17,6 +17,8 @@ vi.mock('next/navigation', () => ({
 
 import DashboardPage from '@/app/dashboard/page';
 
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+
 describe('DashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -26,7 +28,7 @@ describe('DashboardPage', () => {
     // Mock localStorage
     Object.defineProperty(window, 'localStorage', {
       value: {
-        getItem: vi.fn(() => 'demo'),
+        getItem: vi.fn(() => TEST_TENANT_ID),
         setItem: vi.fn(),
       },
       writable: true,

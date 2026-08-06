@@ -60,7 +60,7 @@ describe('RegisterPage', () => {
     });
   });
 
-  it('armazena o token retornado e redireciona para /dashboard', async () => {
+  it('armazena o token e o tenant_id retornados e redireciona para /dashboard', async () => {
     mockPost.mockResolvedValue({ data: { tenant: { id: 't1' } }, token: 'jwt-token' });
     const user = userEvent.setup();
 
@@ -73,8 +73,17 @@ describe('RegisterPage', () => {
 
     await waitFor(() => {
       expect(mockSetItem).toHaveBeenCalledWith('auth_token', 'jwt-token');
+      expect(mockSetItem).toHaveBeenCalledWith('tenant_id', 't1');
       expect(mockPush).toHaveBeenCalledWith('/dashboard');
     });
+  });
+
+  it('deve renderizar exatamente um h1 "Criar conta"', () => {
+    render(<RegisterPage />);
+
+    const headings = screen.getAllByRole('heading', { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveTextContent('Criar conta');
   });
 
   it('mostra erro de validação client-side para slug inválido e não chama a API', async () => {

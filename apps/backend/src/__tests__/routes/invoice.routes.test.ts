@@ -41,6 +41,7 @@ import { invoiceRoutes } from '@/routes/invoice.routes';
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const TEST_CLIENT_ID = '00000000-0000-0000-0000-000000000010';
 const TEST_INVOICE_ID = '00000000-0000-0000-0000-000000000020';
+const UNKNOWN_INVOICE_UUID = '99999999-9999-9999-9999-999999999999';
 const VALID_TOKEN = 'test-valid-token';
 
 describe('Invoice API Routes', () => {
@@ -338,7 +339,7 @@ describe('Invoice API Routes', () => {
 
       const res = await app.inject({
         method: 'GET',
-        url: '/api/invoices/non-existent-id',
+        url: `/api/invoices/${UNKNOWN_INVOICE_UUID}`,
         headers: { authorization: validToken },
       });
       expect(res.statusCode).toBe(404);

@@ -4,6 +4,7 @@ import { Users } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { ClientCard, type ClientCardClient } from '@/components/client-card';
 import { EmptyState } from '@/components/empty-state';
+import { ErrorState } from '@/components/error-state';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
 import { RiskBadge } from '@/components/risk-badge';
 import { StatCard } from '@/components/stat-card';
@@ -29,14 +30,6 @@ interface Client {
   email: string | null;
   riskScore: string;
 }
-
-const demoClients: ClientCardClient[] = [
-  { name: 'João Silva', phone: '85999990001', email: 'joao@email.com', riskScore: 'green' },
-  { name: 'Maria Santos', phone: '85999990002', email: 'maria@email.com', riskScore: 'yellow' },
-  { name: 'Carlos Oliveira', phone: '85999990003', email: 'carlos@email.com', riskScore: 'red' },
-  { name: 'Ana Costa', phone: '85999990004', email: 'ana@email.com', riskScore: 'green' },
-  { name: 'Pedro Alves', phone: '85999990005', email: 'pedro@email.com', riskScore: 'yellow' },
-];
 
 function deriveDistribution(clients: ClientCardClient[]): RiskDistribution {
   const total = clients.length || 1;
@@ -77,9 +70,8 @@ export default function RiskPage() {
       setDistribution(distPayload.data);
       setClients(clientsPayload.data.map(mapClient));
     } catch (err: unknown) {
-      // Defensive fallback: keep the page functional when the API is unavailable.
-      setClients(demoClients);
-      setDistribution(deriveDistribution(demoClients));
+      setClients(null);
+      setDistribution(null);
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados de risco');
     } finally {
       setLoading(false);
@@ -95,6 +87,15 @@ export default function RiskPage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard de Risco</h1>
         <LoadingSkeleton variant="page" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard de Risco</h1>
+        <ErrorState message={error} details="Verifique sua conexão e tente novamente." onRetry={load} />
       </div>
     );
   }
@@ -128,7 +129,6 @@ export default function RiskPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard de Risco</h1>
-        {error && <span className="text-sm text-gray-400">Usando dados de demonstração</span>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

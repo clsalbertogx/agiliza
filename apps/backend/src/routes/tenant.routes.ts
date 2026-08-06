@@ -1,7 +1,7 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { createToken } from '@/infrastructure/auth';
 import type { PaymentProvider } from '@/domain/entities/tenant';
+import { createToken } from '@/infrastructure/auth';
 import {
   createGetPaymentProviderConfigUseCase,
   createIdGenerator,
@@ -48,6 +48,20 @@ const decisionConfigSchema = z.object({
 
 const tenantRepo = createTenantRepository();
 
+// ── Tenant-scope guards ─────────────────────────────────────────────
+// a1: every /:id route must only act on the authenticated tenant's own
+// record — returning 403 on a mismatched id (never reading tenant B).
+// E3: config mutations additionally require the 'owner' role. Only 'owner'
+// tokens are issued today (signup); multi-role RBAC is future work — this
+// guard means "authenticated + own tenant" is sufficient for now.
+function isOwnTenant(request: FastifyRequest, id: string): boolean {
+  return request.tenantId === id;
+}
+
+function isOwner(request: FastifyRequest): boolean {
+  return request.authPayload?.role === 'owner';
+}
+
 // Pass-through response envelopes for OpenAPI (see client.routes.ts).
 const dataEnvelope = {
   type: 'object',
@@ -57,19 +71,10 @@ const dataEnvelope = {
   additionalProperties: true,
 };
 
-const listEnvelope = {
-  type: 'object',
-  properties: {
-    data: { type: 'array', items: { type: 'object', additionalProperties: true } },
-    meta: { type: 'object', additionalProperties: true },
-  },
-  additionalProperties: true,
-};
-
 const idParamsSchema = {
   type: 'object',
   required: ['id'],
-  properties: { id: { type: 'string' } },
+  properties: { id: { type: 'string', format: 'uuid' } },
 } as const;
 
 const createTenantBodySchema = {
@@ -108,10 +113,14 @@ const decisionConfigBodySchema = {
 } as const;
 
 export async function tenantRoutes(app: FastifyInstance) {
-  // POST /api/tenants — Create tenant
+  // POST /api/tenants — Create tenant (public signup). Stricter per-IP rate
+  // limit than the global one: this endpoint is unauthenticated by design.
   app.post(
     '/api/tenants',
     {
+      config: {
+        rateLimit: { max: 20, timeWindow: '1 minute' },
+      },
       schema: {
         tags: ['Tenants'],
         summary: 'Create a new tenant',
@@ -156,7 +165,9 @@ export async function tenantRoutes(app: FastifyInstance) {
 
       const token = createToken(
         { tenantId: tenant.id, userId: 'owner', role: 'owner' },
-        process.env.JWT_SECRET || 'agiliza-dev-secret',
+        // JWT_SECRET comes from the environment (validated in config/env.ts).
+        // No hardcoded fallback — see auth.plugin.ts.
+        process.env.JWT_SECRET ?? '',
       );
 
       reply.code(201);
@@ -165,43 +176,10 @@ export async function tenantRoutes(app: FastifyInstance) {
   );
 
   // GET /api/tenants — List tenants
-  app.get(
-    '/api/tenants',
-    {
-      schema: {
-        tags: ['Tenants'],
-        summary: 'List tenants',
-        security: [{ bearerAuth: [] }],
-        querystring: {
-          type: 'object',
-          properties: {
-            page: { type: 'integer', minimum: 1 },
-            perPage: { type: 'integer', minimum: 1 },
-            search: { type: 'string' },
-          },
-        },
-        response: {
-          200: listEnvelope,
-        },
-      },
-    },
-    async (request) => {
-      const query = request.query as Record<string, string | undefined>;
-      const page = Math.max(1, parseInt(query.page ?? '', 10) || 1);
-      const perPage = Math.min(100, Math.max(1, parseInt(query.perPage ?? '', 10) || 10));
-      const _skip = (page - 1) * perPage;
-
-      const [data, total] = await Promise.all([
-        tenantRepo.findMany({ page, limit: perPage, search: query.search }),
-        tenantRepo.count(),
-      ]);
-
-      return {
-        data,
-        meta: { total, page, perPage, totalPages: Math.ceil(total / perPage) },
-      };
-    },
-  );
+  // REMOVED (security): it returned every tenant's full record (document,
+  // email, phone, paymentProviderConfig, decisionConfig) to any signed-in
+  // tenant. The frontend never used it, so the route is gone rather than
+  // role-gated. A tenant-scoped equivalent can be reintroduced if needed.
 
   // GET /api/tenants/:id — Get tenant
   app.get(
@@ -219,6 +197,11 @@ export async function tenantRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      if (!isOwnTenant(request, id)) {
+        reply.code(403);
+        return { error: 'Forbidden' };
+      }
+
       const tenant = await tenantRepo.findById(id);
 
       if (!tenant) {
@@ -256,6 +239,10 @@ export async function tenantRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      if (!isOwnTenant(request, id)) {
+        reply.code(403);
+        return { error: 'Forbidden' };
+      }
 
       const existing = await tenantRepo.findById(id);
       if (!existing) {
@@ -293,6 +280,11 @@ export async function tenantRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      if (!isOwnTenant(request, id)) {
+        reply.code(403);
+        return { error: 'Forbidden' };
+      }
+
       const tenant = await tenantRepo.findById(id);
 
       if (!tenant) {
@@ -328,6 +320,10 @@ export async function tenantRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      if (!isOwnTenant(request, id) || !isOwner(request)) {
+        reply.code(403);
+        return { error: 'Forbidden' };
+      }
 
       const existing = await tenantRepo.findById(id);
       if (!existing) {
@@ -357,6 +353,10 @@ export async function tenantRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      if (!isOwnTenant(request, id)) {
+        reply.code(403);
+        return { error: 'Forbidden' };
+      }
 
       // Check tenant exists
       const tenant = await tenantRepo.findById(id);
@@ -405,6 +405,10 @@ export async function tenantRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      if (!isOwnTenant(request, id) || !isOwner(request)) {
+        reply.code(403);
+        return { error: 'Forbidden' };
+      }
 
       const existing = await tenantRepo.findById(id);
       if (!existing) {
@@ -469,6 +473,11 @@ export async function tenantRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      if (!isOwnTenant(request, id)) {
+        reply.code(403);
+        return { error: 'Forbidden' };
+      }
+
       const tenant = await tenantRepo.findById(id);
 
       if (!tenant) {
@@ -497,6 +506,10 @@ export async function tenantRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
+      if (!isOwnTenant(request, id) || !isOwner(request)) {
+        reply.code(403);
+        return { error: 'Forbidden' };
+      }
 
       const existing = await tenantRepo.findById(id);
       if (!existing) {

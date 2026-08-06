@@ -16,9 +16,19 @@ import SettingsPage from '@/app/dashboard/settings/page';
 
 const EMPTY_CONFIG = { data: { provider: 'asaas', environment: 'sandbox' } };
 
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+
 describe('SettingsPage — Multi-Provider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn(() => TEST_TENANT_ID),
+        setItem: vi.fn(),
+      },
+      writable: true,
+    });
   });
 
   describe('provider selector', () => {
@@ -199,7 +209,7 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
+        expect(mockPut).toHaveBeenCalledWith(`/api/tenants/${TEST_TENANT_ID}/payment-provider`, {
           provider: 'asaas',
           apiKey: 'asaas_test_key',
           environment: 'sandbox',
@@ -225,7 +235,7 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
+        expect(mockPut).toHaveBeenCalledWith(`/api/tenants/${TEST_TENANT_ID}/payment-provider`, {
           provider: 'mercadopago',
           apiKey: 'mp_access_token_123',
           environment: 'sandbox',
@@ -251,7 +261,7 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
+        expect(mockPut).toHaveBeenCalledWith(`/api/tenants/${TEST_TENANT_ID}/payment-provider`, {
           provider: 'stripe',
           apiKey: 'sk_test_xxx',
           environment: 'sandbox',
@@ -275,7 +285,7 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
+        expect(mockPut).toHaveBeenCalledWith(`/api/tenants/${TEST_TENANT_ID}/payment-provider`, {
           provider: 'pagbank',
           apiKey: 'pagbank_token',
           environment: 'sandbox',
@@ -299,7 +309,7 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
+        expect(mockPut).toHaveBeenCalledWith(`/api/tenants/${TEST_TENANT_ID}/payment-provider`, {
           provider: 'polar',
           apiKey: 'polar_token',
           environment: 'sandbox',
@@ -323,7 +333,7 @@ describe('SettingsPage — Multi-Provider', () => {
       await user.click(screen.getByRole('button', { name: 'Salvar' }));
 
       await waitFor(() => {
-        expect(mockPut).toHaveBeenCalledWith('/api/tenants/demo/payment-provider', {
+        expect(mockPut).toHaveBeenCalledWith(`/api/tenants/${TEST_TENANT_ID}/payment-provider`, {
           provider: 'asaas',
           apiKey: 'asaas_key',
           environment: 'production',
@@ -486,7 +496,7 @@ describe('SettingsPage — Multi-Provider', () => {
       render(<SettingsPage />);
 
       await waitFor(() => {
-        expect(mockGet).toHaveBeenCalledWith('/api/tenants/demo/payment-provider');
+        expect(mockGet).toHaveBeenCalledWith(`/api/tenants/${TEST_TENANT_ID}/payment-provider`);
       });
     });
   });

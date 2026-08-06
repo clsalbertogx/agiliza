@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type React from 'react';
 
 // Mock next/navigation
@@ -27,7 +28,7 @@ describe('Sidebar', () => {
     it('deve renderizar o nome "Agiliza"', () => {
       render(<Sidebar />);
 
-      expect(screen.getByText('Agiliza')).toBeInTheDocument();
+      expect(screen.getAllByText('Agiliza').length).toBeGreaterThan(0);
     });
 
     it('deve renderizar a versão "Agiliza v0.12.0"', () => {
@@ -113,6 +114,66 @@ describe('Sidebar', () => {
       const aside = container.querySelector('aside');
       expect(aside).toHaveClass('hidden');
       expect(aside).toHaveClass('lg:flex');
+    });
+  });
+
+  describe('navegação mobile (drawer)', () => {
+    it('deve renderizar o botão hamburger com aria-label "Abrir menu"', () => {
+      render(<Sidebar />);
+
+      expect(screen.getByRole('button', { name: /abrir menu/i })).toBeInTheDocument();
+    });
+
+    it('abre o drawer com os 7 links ao clicar no hamburger', async () => {
+      const user = userEvent.setup();
+      render(<Sidebar />);
+
+      await user.click(screen.getByRole('button', { name: /abrir menu/i }));
+
+      const dialog = screen.getByRole('dialog', { name: /menu móvel/i });
+      const navLinkLabels = ['Dashboard', 'Clientes', 'Faturas', 'Lembretes', 'Risco', 'Relatórios', 'Configurações'];
+      navLinkLabels.forEach((label) => {
+        expect(within(dialog).getByRole('link', { name: label })).toBeInTheDocument();
+      });
+    });
+
+    it('fecha o drawer ao clicar em um link de navegação', async () => {
+      const user = userEvent.setup();
+      render(<Sidebar />);
+
+      await user.click(screen.getByRole('button', { name: /abrir menu/i }));
+      expect(screen.getByRole('dialog', { name: /menu móvel/i })).toBeInTheDocument();
+
+      await user.click(
+        within(screen.getByRole('dialog', { name: /menu móvel/i })).getByRole('link', { name: 'Clientes' }),
+      );
+
+      expect(screen.queryByRole('dialog', { name: /menu móvel/i })).not.toBeInTheDocument();
+    });
+
+    it('fecha o drawer ao pressionar Escape', async () => {
+      const user = userEvent.setup();
+      render(<Sidebar />);
+
+      await user.click(screen.getByRole('button', { name: /abrir menu/i }));
+      expect(screen.getByRole('dialog', { name: /menu móvel/i })).toBeInTheDocument();
+
+      await user.keyboard('{Escape}');
+
+      expect(screen.queryByRole('dialog', { name: /menu móvel/i })).not.toBeInTheDocument();
+    });
+
+    it('fecha o drawer ao clicar no backdrop', async () => {
+      const user = userEvent.setup();
+      render(<Sidebar />);
+
+      await user.click(screen.getByRole('button', { name: /abrir menu/i }));
+      expect(screen.getByRole('dialog', { name: /menu móvel/i })).toBeInTheDocument();
+
+      // O primeiro botão "Fechar menu" no DOM é o backdrop sobreposto ao conteúdo.
+      await user.click(screen.getAllByRole('button', { name: /fechar menu/i })[0]);
+
+      expect(screen.queryByRole('dialog', { name: /menu móvel/i })).not.toBeInTheDocument();
     });
   });
 });
