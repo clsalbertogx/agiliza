@@ -1,0 +1,27 @@
+# Root build context is the repo root (see docker/docker-compose.dev.yml).
+# Keep host-only artifacts (incl. glibc node_modules) out of the image —
+# this mirrors the clean checkout CI builds from.
+node_modules
+**/node_modules
+.git
+**/.git
+dist
+**/dist
+.next
+**/.next
+coverage
+**/coverage
+*.tsbuildinfo
+**/*.tsbuildinfo
+*.log
+**/*.log
+.env
+.env.*
+**/.env
+**/.env.*
+e2e
+playwright-report
+test-results
+.turbo
+*.md
+!README.md
