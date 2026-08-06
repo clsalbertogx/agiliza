@@ -1,7 +1,7 @@
 # STATE — Pós-inicialização do projeto (fora de sprint formal)
 
 ## Ticket atual
-Sessão de security fixes + correções de journey CONCLUÍDA e COMMITADA. Re-auditoria de segurança: **APPROVED WITH FINDINGS**. Journey Playwright: **66 PASS / 0 FAIL**. Working tree limpo.
+Consolidação de governança (cadeia de 3 pareceres + autocorreção + specs) CONCLUÍDA e commitada. Backend **1063/103 arquivos** (tenant-isolation 14, auth-plugin 6, signup 8, tenant-openapi 2), frontend **447/33** (sidebar 23, register 8). `tsc --noEmit` 0 erros ambos; biome 0 erros nos arquivos tocados; coverage backend 80.43%, frontend 97.29% (thresholds 70/60).
 
 ## Bloqueios ativos
 Nenhum.
@@ -34,13 +34,24 @@ Decisões de negócio desta sessão (não reabrir sem evidência nova):
 - 403 imediato em id ≠ tenantId (não vaza existência de tenant); 2 testes pré-existentes ajustados 404→403.
 - `JWT_SECRET: z.string().min(1)` (não `.min(32)`) porque CI usa secrets curtos (`ci-test-secret`).
 - Auth plugin lê `process.env.JWT_SECRET` em request-time (padrão dos testes mantém; `tenant-signup.test.ts` seta a env pós-import).
-- Tests novos: `__tests__/security/auth-plugin.test.ts` (6), `__tests__/security/tenant-isolation.test.ts` (13); atualizados: rate-limiting, tenant.routes, tenant-signup, reminder.service, client/invoice/subscription.routes.
+- Tests novos: `__tests__/security/auth-plugin.test.ts` (6), `__tests__/security/tenant-isolation.test.ts` (14); atualizados: rate-limiting, tenant.routes, tenant-signup, reminder.service, client/invoice/subscription.routes.
 - Journey tooling commitado como test tooling: `scripts/user-journey-full.mjs`, `scripts/user-journey-security.mjs`.
 - Webhook NÃO tocado (HMAC per-tenant preservado). `depcruise` não configurado no repo.
 
+## Autocorreção batch (pareceres tech + creative nucleus) — commitado nesta consolidação
+- OpenAPI drift: `POST /api/tenants` agora `security: []` + `description: 'Público — signup sem autenticação'` (era `[{bearerAuth}]` num endpoint público de verdade). Novo `__tests__/routes/tenant-openapi.test.ts` (2) valida o doc OpenAPI via `app.swagger()`. Comportamento de auth intocado.
+- E3 negativo (regression locks): `tenant-isolation.test.ts` +2 — role 'user' `PUT /payment-provider` e `PUT /decision-config` → 403. O guard `!isOwnTenant || !isOwner` já bloqueava ambos (verde de primeira — confirma o parecer).
+- Drawer mobile a11y (`sidebar.tsx`): P2-1 foco entra no dialog ao abrir / retorna ao hamburger ao fechar (Escape, backdrop, X, nav link) + focus trap (Tab/Shift+Tab cicla); P2-2 backdrop virou `<div role="presentation" aria-hidden>` (não-focável, fora da tab order); P3 hamburger `aria-expanded`/`aria-controls`, dialog `id="mobile-menu-dialog"`, `tabIndex={-1}`, body scroll bloqueado. +7 testes em `sidebar.test.tsx`.
+- Register (`register/page.tsx`): `autocomplete` org/email/off; botão "Criando conta..." + disabled durante submit (estado `submitting` já existia). +2 testes.
+- error-state/empty-state h3→h2: **NÃO alterado** — decisão do parecer (padrão pré-existente, 10+ call sites heterogêneos, não riscar o escopo; SKIP explícito permitido).
+
 ## Pareceres já emitidos (não repita a consulta)
-- Re-auditoria de segurança (security-specialist): **APPROVED WITH FINDINGS** — 2 findings não-bloqueantes registrados como tech debt acima.
-- Nenhum parecer formal de nucleus lead nesta sessão (correções de runtime + UI + infra, sem ciclo de feature).
+- security-specialist (re-auditoria): **APPROVED WITH FINDINGS** — 2 findings não-bloqueantes registrados como tech debt acima.
+- Cadeia de 3 pareceres de governança registrada em `pareceres/security-hardening-signup-journey.md`:
+  1. **tech-nucleus-lead** — APROVADO COM RESSALVAS (2 findings low + instrução de autocorreção: OpenAPI drift, gap E3, contagem, demo mode).
+  2. **creative-nucleus-lead** — APROVADO COM RESSALVAS (2 findings P2 a11y no drawer + 7 P3; autocorreção P2 implementada no batch).
+  3. **compliance-auditor** — APROVADO COM RESSALVAS (1 finding média: signup sem AC de spec; instrução de autocorreção executada nesta consolidação).
+- Veredicto consolidado: **APROVADO COM RESSALVAS** (todos não-bloqueantes) — entrega pode prosseguir ao parecer final do CEO.
 
 ## Últimas decisões (não repita a pergunta)
 - RiskScore: canonical wire/storage = ClientRiskScore GREEN/YELLOW/RED; RiskLevel (LOW/MEDIUM/HIGH/CRITICAL) é refinamento interno de domínio; CRITICAL colapsa em RED na fronteira. Mapeamento vive no VO (fromClientRiskScore + clientRiskScore getter). Spec: specs/frontend-ui-consistency-corrections.spec.md

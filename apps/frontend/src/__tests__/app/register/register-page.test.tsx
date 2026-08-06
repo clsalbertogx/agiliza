@@ -113,4 +113,39 @@ describe('RegisterPage', () => {
 
     expect(await screen.findByText(/slug already in use/i)).toBeInTheDocument();
   });
+
+  it('expõe autocomplete semântico nos campos (P3 a11y)', () => {
+    render(<RegisterPage />);
+
+    expect(screen.getByLabelText(/nome/i)).toHaveAttribute('autocomplete', 'organization');
+    expect(screen.getByLabelText(/email/i)).toHaveAttribute('autocomplete', 'email');
+    expect(screen.getByLabelText(/slug/i)).toHaveAttribute('autocomplete', 'off');
+  });
+
+  it('mostra "Criando conta..." e mantém o botão desabilitado durante o submit', async () => {
+    let resolvePost!: (value: { data: { tenant: { id: string } }; token: string }) => void;
+    mockPost.mockImplementation(
+      () =>
+        new Promise<{ data: { tenant: { id: string } }; token: string }>((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+
+    render(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/nome/i), 'Test Tenant');
+    await user.type(screen.getByLabelText(/slug/i), 'test-tenant');
+    await user.type(screen.getByLabelText(/email/i), 'tenant@example.com');
+    await user.click(screen.getByRole('button', { name: /criar conta/i }));
+
+    const submit = screen.getByRole('button', { name: /criando conta/i });
+    expect(submit).toHaveTextContent('Criando conta...');
+    expect(submit).toBeDisabled();
+
+    resolvePost({ data: { tenant: { id: 't1' } }, token: 'jwt-token' });
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/dashboard');
+    });
+  });
 });

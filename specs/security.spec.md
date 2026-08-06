@@ -37,9 +37,9 @@ O Agiliza é multi-tenant (B2B) e processa dados sensíveis (dados de clientes, 
 | AC2 | Bearer JWT inválido/expirado/malformado → 401; JWT assinado com **outro secret** (forja) → 401; algoritmo `none` rejeitado | `auth.test.ts`, `jwt-verification.test.ts` |
 | AC3 | `verifyToken` valida claims obrigatórios (`tenantId`, `userId`, `role`) e `exp`; comparação de assinatura **timing-safe** com fail-fast em tamanho diferente | `jwt-verification.test.ts` |
 | AC4 | ApiKey válida → request autenticado com `tenantId` default (`00000000-0000-0000-0000-000000000000`); ApiKey inválida → 401 | `auth.test.ts` |
-| AC5 | Paths públicos sem auth: `/api/health`, `/api/ready`, `/api/webhooks/`, `/metrics`, `/docs` (dev) | `auth.test.ts`, `__tests__/e2e/health.e2e.test.ts` |
+| AC5 | Paths públicos sem auth: `POST /api/tenants` (signup), `/api/health`, `/api/ready`, `/api/webhooks/`, `/metrics`, `/docs` (dev) | `auth.test.ts`, `__tests__/e2e/health.e2e.test.ts`, `__tests__/routes/tenant-signup.test.ts` |
 | AC6 | **Helmet**: CSP com `default-src 'self'`, HSTS (maxAge 1y, preload), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` | `helmet-headers.test.ts` |
-| AC7 | **Rate limit global**: Redis, `RATE_LIMIT_MAX` (default 100) por minuto, `keyGenerator` por `tenantId` (se autenticado) senão IP; retorna 429 | `rate-limiting.test.ts`, `brute-force.test.ts` |
+| AC7 | **Rate limit global**: Redis, `RATE_LIMIT_MAX` (default 100) por minuto, `keyGenerator` por **IP** (`request.ip` — o limiter roda no hook `onRequest`, antes de o `tenantId` existir no request); retorna 429 | `rate-limiting.test.ts`, `brute-force.test.ts` |
 | AC8 | **Rate limit por rota**: health/ready/metrics 1000/min; webhooks burst 10/s por IP; login (se existir) 20/min | `rate-limiting.test.ts` |
 | AC9 | **Error handler 4 camadas**: (1) `ZodError` → 400 `VALIDATION_ERROR` com detalhes por campo; (2) `ApplicationError` → `statusCode`/`code` (404/409/401/403/400/500); (3) `FastifyError` com statusCode → code próprio; (4) desconhecido → 500 `INTERNAL_ERROR`, **sem stack trace em produção** | `error-handler.test.ts` |
 | AC10 | **Isolamento de tenant**: acesso cross-tenant por ID → 404; listagem retorna só o próprio tenant; `tenantId` de query param é ignorado (derivado do auth); todos os repositórios filtram por `tenantId` | `auth.test.ts` (Tenant Isolation — SEC-08) |
@@ -48,6 +48,7 @@ O Agiliza é multi-tenant (B2B) e processa dados sensíveis (dados de clientes, 
 | AC13 | CORS restrito a `FRONTEND_URL` (origem desconhecida não recebe `Access-Control-Allow-Origin`; webhooks não exigem CORS) | `cors.test.ts` |
 | AC14 | Proteções: SQL/NoSQL injection (Prisma parametrizado + Zod), XSS (CSP + headers), SSRF (sem fetch a URLs arbitrárias), brute-force (lockout) | `sql-injection.test.ts`, `xss.test.ts`, `ssrf.test.ts`, `brute-force.test.ts` |
 | AC15 | Logs/erros não expõem PII, segredos nem stack traces em produção | `audit-logging.test.ts`, `error-handler.test.ts` |
+| AC16 | **Signup público** (`POST /api/tenants`): sem autenticação (público por design), retorna 201 + `{ data: { tenant }, token }` (JWT válido com `tenantId` do tenant criado); `tenantId` de querystring NÃO sobrescreve o do JWT; rate-limited 20/min por IP; slug duplicado → 409; corpo inválido → 400 | `__tests__/routes/tenant-signup.test.ts`, `__tests__/routes/tenant-openapi.test.ts` |
 
 ---
 
@@ -58,7 +59,7 @@ O Agiliza é multi-tenant (B2B) e processa dados sensíveis (dados de clientes, 
 ```typescript
 // infrastructure/plugins/auth.plugin.ts (fastify-plugin)
 // Decora: request.tenantId?, request.userId?, request.authPayload?
-// preHandler: paths públicos → skip; ausência de header → 401; 'Bearer ' → verifyToken; 'ApiKey ' → tenantId default; formato inválido → 401.
+// preHandler: paths públicos → skip (incl. POST /api/tenants — signup); ausência de header → 401; 'Bearer ' → verifyToken; 'ApiKey ' → tenantId default; formato inválido → 401.
 
 // infrastructure/auth/jwt.strategy.ts
 export interface AuthPayload { tenantId: string; userId: string; role: 'owner' | 'user'; }
@@ -78,7 +79,7 @@ export class PerTenantHmacVerifier implements WebhookVerifierPort {
 // src/index.ts — segurança no bootstrap
 app.register(cors, { origin: [env.FRONTEND_URL], credentials: true });
 app.register(helmet, { contentSecurityPolicy: {...}, hsts: {...}, xFrameOptions: 'deny', xContentTypeOptions: true, referrerPolicy: 'strict-origin-when-cross-origin' });
-app.register(rateLimit, { redis, global: true, max: env.RATE_LIMIT_MAX, timeWindow: '1 minute', keyGenerator: req => req.tenantId || req.ip });
+app.register(rateLimit, { redis, global: true, max: env.RATE_LIMIT_MAX, timeWindow: '1 minute', keyGenerator: req => req.ip }); // per-IP: o limiter global roda em onRequest, antes de o tenantId existir
 app.register(authPlugin); // depois de observability, antes das rotas
 app.setErrorHandler(errorHandler); // depois das rotas
 // Swagger UI (/docs) apenas em NODE_ENV !== 'production'
@@ -96,6 +97,7 @@ app.setErrorHandler(errorHandler); // depois das rotas
 
 | Rota | Proteção |
 |------|----------|
+| `POST /api/tenants` (signup) | pública; rate limit 20/min por IP; retorna 201 + `{ data: { tenant }, token }` |
 | `/api/health`, `/api/ready`, `/metrics` | pública; rate limit 1000/min |
 | `/api/webhooks/payment/:provider`, `/api/webhooks/evolution` | pública; burst 10/s por IP; HMAC per-tenant (payment) / `x-api-key` (evolution) |
 | `/api/clients`, `/api/invoices`, `/api/subscriptions`, `/api/payments`, `/api/reminders`, `/api/decision`, `/api/reports`, `/api/onboarding`, `/api/payment-providers/config` | Bearer (JWT) ou ApiKey; tenantId derivado do token |
@@ -127,10 +129,10 @@ app.setErrorHandler(errorHandler); // depois das rotas
 
 ## Definition of Done
 
-- [ ] AC1–AC15 cobertos por testes automatizados (`__tests__/security/*` — 14 arquivos)
-- [ ] `__tests__/e2e/security.e2e.test.ts` verde
-- [ ] Zero violação de camada: verificação de segurança em Infrastructure; contracts em Application Ports; erro formatado na Presentation
-- [ ] Testes negativos de segurança passando (forja de token, cross-tenant, injection, rate-limit, sem header)
+- [x] AC1–AC16 cobertos por testes automatizados (`__tests__/security/*` — 14 arquivos + `__tests__/routes/tenant-signup.test.ts`, `tenant-openapi.test.ts`)
+- [x] `__tests__/e2e/security.e2e.test.ts` verde
+- [x] Zero violação de camada: verificação de segurança em Infrastructure; contracts em Application Ports; erro formatado na Presentation
+- [x] Testes negativos de segurança passando (forja de token, cross-tenant, injection, rate-limit, sem header, role `user` em PATCH/PUT de tenant)
 
 ---
 
@@ -148,3 +150,4 @@ app.setErrorHandler(errorHandler); // depois das rotas
 | AC12 | `__tests__/routes/webhook.routes.test.ts` |
 | AC13 | `__tests__/security/cors.test.ts` |
 | AC14 | `sql-injection.test.ts`, `xss.test.ts`, `ssrf.test.ts`, `brute-force.test.ts` |
+| AC16 | `__tests__/routes/tenant-signup.test.ts`, `tenant-openapi.test.ts` |

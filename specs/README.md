@@ -19,3 +19,7 @@ Especificações de Spec-Driven Development do backend `apps/backend`. Cada spec
 - Specs futuras devem nascer antes da implementação e marcar `Status: Planejado`
 - A rastreabilidade AC → teste aponta para arquivos em `apps/backend/src/__tests__/`
 - Divergências entre código e design (ex: entity `Subscription` como funções puras vs. padrão class) estão anotadas dentro de cada spec — alterar exige ADR
+
+## ADRs registrados
+
+- **Signup público** (2026-08-06): `POST /api/tenants` é público por design (sem auth), retorna 201 + `{ data: { tenant }, token }` e é rate-limited 20/min por IP; `GET /api/tenants` (listagem sem escopo) foi removida. Contratos em `security.spec.md` (AC5/AC16); testes em `tenant-signup.test.ts`.

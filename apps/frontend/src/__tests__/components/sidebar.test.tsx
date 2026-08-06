@@ -176,4 +176,96 @@ describe('Sidebar', () => {
       expect(screen.queryByRole('dialog', { name: /menu móvel/i })).not.toBeInTheDocument();
     });
   });
+
+  describe('acessibilidade mobile (drawer)', () => {
+    it('hamburger expõe aria-controls e aria-expanded', () => {
+      render(<Sidebar />);
+
+      const hamburger = screen.getByRole('button', { name: /abrir menu/i });
+      expect(hamburger).toHaveAttribute('aria-controls', 'mobile-menu-dialog');
+      expect(hamburger).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('ao abrir, hamburger marca aria-expanded=true e dialog tem id estável', async () => {
+      const user = userEvent.setup();
+      render(<Sidebar />);
+
+      const hamburger = screen.getByRole('button', { name: /abrir menu/i });
+      await user.click(hamburger);
+
+      expect(hamburger).toHaveAttribute('aria-expanded', 'true');
+      expect(screen.getByRole('dialog', { name: /menu móvel/i })).toHaveAttribute('id', 'mobile-menu-dialog');
+    });
+
+    it('backdrop não é botão focável nem anunciado', async () => {
+      const user = userEvent.setup();
+      const { container } = render(<Sidebar />);
+
+      await user.click(screen.getByRole('button', { name: /abrir menu/i }));
+
+      // O único botão "Fechar menu" é o X dentro do drawer — o backdrop não é mais um button.
+      expect(screen.getAllByRole('button', { name: /fechar menu/i })).toHaveLength(1);
+
+      const backdrop = container.querySelector('[data-testid="drawer-backdrop"]');
+      expect(backdrop).not.toBeNull();
+      expect(backdrop?.tagName).toBe('DIV');
+      expect(backdrop).toHaveAttribute('aria-hidden', 'true');
+      expect(backdrop).not.toHaveAttribute('tabindex');
+    });
+
+    it('move o foco para dentro do dialog ao abrir', async () => {
+      const user = userEvent.setup();
+      render(<Sidebar />);
+
+      await user.click(screen.getByRole('button', { name: /abrir menu/i }));
+
+      const dialog = screen.getByRole('dialog', { name: /menu móvel/i });
+      expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    });
+
+    it('retorna o foco ao hamburger ao fechar com Escape', async () => {
+      const user = userEvent.setup();
+      render(<Sidebar />);
+
+      const hamburger = screen.getByRole('button', { name: /abrir menu/i });
+      await user.click(hamburger);
+      expect(screen.getByRole('dialog', { name: /menu móvel/i })).toBeInTheDocument();
+
+      await user.keyboard('{Escape}');
+
+      expect(screen.queryByRole('dialog', { name: /menu móvel/i })).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(hamburger);
+    });
+
+    it('bloqueia o scroll do body enquanto aberto e restaura ao fechar', async () => {
+      const user = userEvent.setup();
+      render(<Sidebar />);
+
+      await user.click(screen.getByRole('button', { name: /abrir menu/i }));
+      expect(document.body.style.overflow).toBe('hidden');
+
+      await user.keyboard('{Escape}');
+      expect(document.body.style.overflow).toBe('');
+    });
+
+    it('mantém o foco preso ao dialog (Tab cicla entre primeiro e último)', async () => {
+      const user = userEvent.setup();
+      render(<Sidebar />);
+
+      await user.click(screen.getByRole('button', { name: /abrir menu/i }));
+      const dialog = screen.getByRole('dialog', { name: /menu móvel/i });
+
+      const brandLink = within(dialog).getAllByRole('link')[0];
+      const lastLink = within(dialog).getByRole('link', { name: 'Configurações' });
+      expect(document.activeElement).toBe(brandLink);
+
+      // Shift+Tab no primeiro → wrap para o último.
+      await user.keyboard('{Shift>}{Tab}{/Shift}');
+      expect(document.activeElement).toBe(lastLink);
+
+      // Tab no último → wrap para o primeiro.
+      await user.keyboard('{Tab}');
+      expect(document.activeElement).toBe(brandLink);
+    });
+  });
 });

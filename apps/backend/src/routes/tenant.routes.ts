@@ -124,7 +124,8 @@ export async function tenantRoutes(app: FastifyInstance) {
       schema: {
         tags: ['Tenants'],
         summary: 'Create a new tenant',
-        security: [{ bearerAuth: [] }],
+        description: 'Público — signup sem autenticação',
+        security: [],
         body: createTenantBodySchema,
         response: {
           201: dataEnvelope,

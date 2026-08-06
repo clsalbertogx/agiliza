@@ -158,6 +158,26 @@ describe('a1/E3 — Tenant routes act only on the authenticated tenant', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  it('returns 403 for a non-owner role trying to PUT own payment-provider (E3)', async () => {
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/api/tenants/${TENANT_A}/payment-provider`,
+      headers: { authorization: `Bearer ${tokenFor(TENANT_A, 'user')}` },
+      payload: { provider: 'asaas', apiKey: 'sk-test' },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('returns 403 for a non-owner role trying to PUT own decision-config (E3)', async () => {
+    const res = await app.inject({
+      method: 'PUT',
+      url: `/api/tenants/${TENANT_A}/decision-config`,
+      headers: { authorization: `Bearer ${tokenFor(TENANT_A, 'user')}` },
+      payload: { sendReminders: false, leadDays: 3 },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
   it('allows owner to GET own payment-provider config (regression)', async () => {
     mockState.tenantFindUnique.mockResolvedValue(mockTenantA);
     const res = await app.inject({

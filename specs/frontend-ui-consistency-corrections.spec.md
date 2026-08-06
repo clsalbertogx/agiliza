@@ -44,29 +44,29 @@ de negócio no backend.
 
 ## Critérios de Aceitação (ACs)
 
-- [ ] **AC1 — Rotas resolvem:** navegando a cada rota listada abaixo logado com tenant real, o browser
+- [x] **AC1 — Rotas resolvem:** navegando a cada rota listada abaixo logado com tenant real, o browser
       retorna **200** e renderiza o título esperado (sem página 404):
       `/dashboard`, `/dashboard/clients`, `/dashboard/invoices`, `/dashboard/reminders`,
       `/dashboard/risk`, `/dashboard/reports`, `/dashboard/settings`.
-- [ ] **AC2 — Zero chamada >= 400 autenticada:** logado com tenant real, **nenhuma** requisição das
+- [x] **AC2 — Zero chamada >= 400 autenticada:** logado com tenant real, **nenhuma** requisição das
       páginas acima dispara status `>= 400`. Em particular as chamadas passam a ser:
       `GET /api/clients`, `GET /api/invoices`, `GET /api/invoices/stats`,
       `GET /api/reports/risk-distribution`, `GET /api/reports/cash-flow`, `GET /api/messages` — todos com
       tenant real + `Authorization: Bearer <jwt>`. Deixa de existir qualquer `tenantId=demo`,
       `ApiKey dev-key` ou `GET /api/clients/risk` no frontend.
-- [ ] **AC3 — Risco:** a página `/dashboard/risk` renderiza (a) 3 cards de faixa de risco com **contagem
+- [x] **AC3 — Risco:** a página `/dashboard/risk` renderiza (a) 3 cards de faixa de risco com **contagem
       real** e percentual vindos de `GET /api/reports/risk-distribution` e (b) `ClientCard`s **reais**
       por cliente vindos de `GET /api/clients`. Cards fictícios de demonstração só aparecem como
       fallback quando ambas as chamadas falham (mesmo comportamento defensivo atual).
-- [ ] **AC4 — Footer:** o sidebar exibe `Agiliza v0.12.0`.
-- [ ] **AC5 — Sidebar coerente:** o sidebar lista exatamente os 7 itens que resolvem
+- [x] **AC4 — Footer:** o sidebar exibe `Agiliza v0.12.0`.
+- [x] **AC5 — Sidebar coerente:** o sidebar lista exatamente os 7 itens que resolvem
       (`Dashboard`, `Clientes`, `Faturas`, `Lembretes`, `Risco`, `Relatórios`, `Configurações`) e
       **não** lista `Mensagens`.
-- [ ] **AC6 — Sem erros de console:** nenhum `console.error`/exception não tratada navegando pelas
+- [x] **AC6 — Sem erros de console:** nenhum `console.error`/exception não tratada navegando pelas
       rotas em estado normal (dado vazio e dado populado).
-- [ ] **AC7 — Testes:** suíte de testes do frontend passa na íntegra; o teste do sidebar é atualizado
+- [x] **AC7 — Testes:** suíte de testes do frontend passa na íntegra; o teste do sidebar é atualizado
       para `Agiliza v0.12.0` e para o conjunto de 7 rotas.
-- [ ] **AC8 — Dado vazio:** `Clientes`, `Faturas` e `Lembretes` exibem `EmptyState` coerente quando o
+- [x] **AC8 — Dado vazio:** `Clientes`, `Faturas` e `Lembretes` exibem `EmptyState` coerente quando o
       respectivo `data` retorna `[]` (sem quebrar/erro de runtime).
 
 ## Contratos entre Camadas
@@ -243,9 +243,9 @@ Arquivo: `apps/frontend/src/__tests__/components/sidebar.test.tsx`
 
 ## Definition of Done
 
-- [ ] Todos os ACs (AC1–AC8) cobertos por teste automatizado (unitário Para páginas novas + teste
+- [x] Todos os ACs (AC1–AC8) cobertos por teste automatizado (unitário Para páginas novas + teste
       do sidebar atualizado + auditoria Playwright repetindo os 10 cenários).
-- [ ] Zero violação de contrato: nenhuma string `tenantId=demo`, `ApiKey` ou `/api/clients/risk`
+- [x] Zero violação de contrato: nenhuma string `tenantId=demo`, `ApiKey` ou `/api/clients/risk`
       restante em `apps/frontend/src` (verificável por grep).
-- [ ] `git grep` confirma `Agiliza v0.12.0` no sidebar e ausência de item `Mensagens`.
-- [ ] Suíte de testes do frontend passando.
+- [x] `git grep` confirma `Agiliza v0.12.0` no sidebar e ausência de item `Mensagens`.
+- [x] Suíte de testes do frontend passando.

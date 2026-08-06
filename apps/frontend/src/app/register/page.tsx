@@ -62,6 +62,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Sua empresa"
+                autoComplete="organization"
                 required
               />
             </div>
@@ -72,6 +73,7 @@ export default function RegisterPage() {
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 placeholder="sua-empresa"
+                autoComplete="off"
                 aria-invalid={slugError ? true : undefined}
                 required
               />
@@ -89,6 +91,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="voce@empresa.com"
+                autoComplete="email"
                 required
               />
             </div>
@@ -98,7 +101,7 @@ export default function RegisterPage() {
               </p>
             )}
             <Button type="submit" className="w-full" disabled={submitting}>
-              Criar conta
+              {submitting ? 'Criando conta...' : 'Criar conta'}
             </Button>
           </form>
         </CardContent>
