@@ -1,4 +1,5 @@
 import { type Job, Queue, Worker } from 'bullmq';
+import { logger } from '@/config/logger';
 import { DEFAULT_JOB_OPTIONS, DLQ_JOB_OPTIONS, type QueueName, QueueNames } from './queue-definitions';
 import { getRedis } from './redis.service';
 
@@ -24,7 +25,7 @@ export function getQueue(name: QueueName): Queue {
   });
 
   queue.on('error', (err) => {
-    console.error(`[Queue:${name}] Error:`, err);
+    logger.error({ err }, '[Queue:%s] Error:', name);
   });
 
   queues.set(name, queue);
@@ -75,15 +76,15 @@ export function createWorker<T = unknown>(
   );
 
   worker.on('completed', (job) => {
-    console.log(`[Worker:${queueName}] Job ${job.id} completed`);
+    logger.info('[Worker:%s] Job %s completed', queueName, job.id);
   });
 
   worker.on('failed', (job, err) => {
-    console.error(`[Worker:${queueName}] Job ${job?.id} failed:`, err.message);
+    logger.error({ err }, '[Worker:%s] Job %s failed:', queueName, job?.id);
   });
 
   worker.on('error', (err) => {
-    console.error(`[Worker:${queueName}] Error:`, err);
+    logger.error({ err }, '[Worker:%s] Error:', queueName);
   });
 
   return worker;
@@ -98,7 +99,7 @@ export async function closeAllQueues(): Promise<void> {
   for (const [name, queue] of queues.entries()) {
     closePromises.push(
       queue.close().then(() => {
-        console.log(`[Queue:${name}] Closed`);
+        logger.info('[Queue:%s] Closed', name);
       }),
     );
   }

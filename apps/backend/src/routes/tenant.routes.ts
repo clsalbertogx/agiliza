@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { logger } from '@/config/logger';
 import type { PaymentProvider } from '@/domain/entities/tenant';
 import { createToken } from '@/infrastructure/auth';
 import {
@@ -425,13 +426,13 @@ export async function tenantRoutes(app: FastifyInstance) {
 
       // Test connection before saving
       const testResult = testPaymentProviderConnection({
-        type: parsed.data.provider,
+        type: parsed.data.provider as PaymentProvider,
         apiKey: parsed.data.apiKey,
         environment: parsed.data.environment,
       });
 
       if (!testResult.success) {
-        console.warn('Provider connection test warning:', testResult.error);
+        logger.warn({ error: testResult.error }, 'Provider connection test warning');
       }
 
       // Use the upsert use case to encrypt and persist

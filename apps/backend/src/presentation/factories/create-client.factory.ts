@@ -1,11 +1,11 @@
 import { CreateClientUseCase } from '@/application/usecases/create-client.usecase';
 import { PrismaClientRepository } from '@/infrastructure/database/repositories/client.repository';
-import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
+import { getEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 import { UuidV7Generator } from '@/infrastructure/uuid/uuid-v7-generator';
 
 export function createCreateClientUseCase(): CreateClientUseCase {
   const clientRepo = new PrismaClientRepository();
-  const eventBus = new InMemoryEventBus();
+  const eventBus = getEventBus();
   const idGenerator = new UuidV7Generator();
   return new CreateClientUseCase(clientRepo, eventBus, idGenerator);
 }

@@ -1,13 +1,8 @@
+import { PaymentProvider } from '@/domain/contracts/enums';
 import { type Either, failure, success } from '@/domain/types/either';
 import { DomainError } from '../errors/domain-error';
 
-export enum PaymentProvider {
-  ASAAS = 'ASAAS',
-  MERCADO_PAGO = 'MERCADO_PAGO',
-  STRIPE = 'STRIPE',
-  PAGBANK = 'PAGBANK',
-  POLAR = 'POLAR',
-}
+export { PaymentProvider } from '@/domain/contracts/enums';
 
 export interface Tenant {
   id: string;
@@ -105,7 +100,8 @@ export function createTenantFromPersistence(data: PersistenceTenant): Tenant {
     email: data.email,
     phone: data.phone ?? undefined,
     config: data.config as Record<string, unknown> | undefined,
-    paymentProvider: data.paymentProvider as PaymentProvider,
+    // Normalize legacy UPPERCASE rows to the canonical lowercase wire format.
+    paymentProvider: data.paymentProvider.toLowerCase() as PaymentProvider,
     paymentProviderConfig: data.paymentProviderConfig as Record<string, unknown> | undefined,
     decisionConfig: data.decisionConfig as Record<string, unknown> | undefined,
     createdAt: data.createdAt,

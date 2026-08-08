@@ -1,6 +1,6 @@
 # Agiliza — Gestão de Assinaturas e Cobrança Recorrente com IA Preditiva
 
-> **Status**: MVP (v0.9.0 — Sprint 9: Multi-Provider + Advanced Subscription)
+> **Status**: MVP (v0.12.0 — Sprint 12: Code Quality Hardening + Documentation)
 
 ---
 
@@ -68,10 +68,11 @@ Monorepo (npm workspaces — Turborepo)
 3. **Unit of Work** (AsyncLocalStorage) para transações atômicas entre múltiplos repositórios
 4. **Port/Adapter pattern** — Todo serviço externo (banco, fila, gateway de pagamento, criptografia) atrás de uma interface
 5. **UUID v7** (time-ordered) para todas as entidades — índices eficientes e ordenação temporal implícita
-6. **Event Bus in-process** — Eventos de domínio fire-and-forget (sem broker externo para eventos internos)
+6. **Event Bus in-process** — Eventos de domínio fire-and-forget (sem broker externo para eventos internos); instância única via `getEventBus()` (module-level singleton) — factories e composition root compartilham a MESMA instância para os handlers registrados em `register-event-handlers.ts` receberem os eventos publicados
 7. **Factory pattern para DI** — Sem container de injeção de dependência; fábricas explícitas por Use Case
 8. **Strategy Pattern para múltiplos provedores de pagamento** (Sprint 9) — `PaymentGatewayPort` única; Asaas, Mercado Pago e Stripe são estratégias concretas selecionadas por tenant
 9. **Exponential Backoff + Dead Letter Queue para webhooks** (Sprint 9) — 5 retries com backoff exponencial (2s base), falha permanente vai para DLQ `failed-webhooks` para inspeção manual
+10. **PaymentGatewayResolverPort (F2)** — `ProcessPaymentUseCase` depende da Porta `resolveForTenant(tenantId): Promise<ResolvedPaymentGateway>` (gateway + provider real) em vez de um gateway hardcoded; `PaymentProviderFactory implements` a porta (per-tenant, fallback Asaas env). Seleção por tenant continua Strategy, agora via Port injetável
 
 ---
 
@@ -214,26 +215,27 @@ cp .env.e2e.example e2e/.env.e2e   # (opcional) para testes E2E
 | `NEXT_PUBLIC_API_URL` | URL da API para o frontend | Sim | `http://localhost:3333` |
 | `NEXT_PUBLIC_DEMO_MODE` | Modo demo (desativa autenticação real) | Não | `false` |
 | **JWT** | | | |
-| `JWT_SECRET` | Chave secreta para assinatura JWT (HMAC-SHA256) | Sim | `agiliza-dev-secret-change-in-production` |
+| `JWT_SECRET` | Chave secreta para assinatura JWT (HMAC-SHA256) — sem default, exigida no ambiente | Sim | — |
 | **Encryption** | | | |
 | `ENCRYPTION_KEY` | Chave AES-256-GCM (mín. 32 caracteres) para criptografar credenciais de pagamento em repouso | Sim | `agiliza-encryption-key-change-in-production` |
 | **API Keys** | | | |
-| `MASTER_API_KEY` | Chave mestre para endpoints administrativos | Não | `agiliza-dev-api-key-change-in-production` |
+| `MASTER_API_KEY` | Chave mestre para endpoints administrativos | Sim | — |
 | **Payment Provider (default: Asaas)** | | | |
 | `PAYMENT_PROVIDER` | Provedor de pagamento padrão (`asaas` / `mercadopago` / `stripe`) | Sim | `asaas` |
-| `ASAAS_API_KEY` | API Key do Asaas | Conforme config | — |
+| `ASAAS_API_KEY` | API Key do Asaas | Sim | — |
 | `ASAAS_ENVIRONMENT` | Ambiente Asaas (`sandbox` / `production`) | Conforme config | `sandbox` |
 | **Rate Limiting** | | | |
 | `RATE_LIMIT_MAX` | Máximo de requisições por minuto | Não | `100` |
 | **Webhook Secrets** | | | |
 | `ASAAS_WEBHOOK_SECRET` | Webhook secret para verificação de payloads do Asaas | Conforme config | `asaas-webhook-secret-change-in-production` |
-| `MERCADOPAGO_WEBHOOK_SECRET` | Webhook secret para verificação de payloads do Mercado Pago | Conforme config | `mercadopago-webhook-secret-change-in-production` |
+| `MERCADO_PAGO_WEBHOOK_SECRET` | Webhook secret para verificação de payloads do Mercado Pago | Conforme config | `mercadopago-webhook-secret-change-in-production` |
 | **Outbound Webhook (opcional)** | | | |
 | `OUTBOUND_WEBHOOK_URL` | URL para onde eventos internos são encaminhados | Não | — |
 | `OUTBOUND_WEBHOOK_API_KEY` | API Key para autenticação no outbound webhook | Não | — |
 | **Evolution API (WhatsApp)** | | | |
 | `EVOLUTION_API_URL` | URL da instância Evolution API | Conforme config | `http://localhost:8080` |
-| `EVOLUTION_API_KEY` | API Key da Evolution API | Conforme config | `your-evolution-api-key` |
+| `EVOLUTION_API_KEY` | API Key da Evolution API — **defaults to empty string at schema level**; fail-closed enforced at webhook route `POST /api/webhooks/evolution` (401 quando ausente ou divergente) | Não | `''` |
+| `EVOLUTION_ALLOWED_IPS` | Allowlist de IPs de origem (CSV) para `/api/webhooks/evolution`, aplicada além da API key; vazio = sem allowlist (key check continua) | Não | `''` |
 
 ### Testes
 
@@ -262,6 +264,9 @@ npm run -w apps/frontend typecheck
 
 | Tag | Sprint | Tema |
 |-----|--------|------|
+| **v0.12.0** | 12 | **Code Quality Hardening + Documentation** — Biome lint hardening (0 errors), backfill dos specs SDD (subscription-lifecycle, recurring-billing, multi-provider-payments, observability, security), Playwright/E2E wiring no CI, schemas Swagger revistos, correções UI (sidebar v0.12.0, drawer mobile a11y), auth signup + hardening de segurança (isolação de tenant, enforcement de role) |
+| **v0.11.0** | 11 | **Observability & Analytics Completion** — Alerting proativo (canal Slack em payment failure e DLQ), dashboards Grafana/Prometheus (API, DB, filas), analytics de assinaturas (MRR/churn/LTV), CD de produção com health-check + rollback |
+| **v0.10.0** | 10 | **Core Feature Completion + Operational** — últimos 2 gateways (PagBank, Polar) completando a matriz de 5 provedores, ciclo de vida completo de assinaturas (trial/grace/auto-renew), observabilidade baseline (pino JSON, /metrics, /health, /ready), E2E CI baseline |
 | **v0.9.0** | 9 | **Multi-Provider + Advanced Subscription** — Mercado Pago + Stripe gateways (Strategy Pattern), upgrade/downgrade com prorrogação, webhook retry com exponential backoff (5 tentativas + DLQ), frontend multi-provider com campos dinâmicos por provedor |
 | **v0.8.0** | 8 | **Production Readiness** — Per-tenant payment config criptografado (AES-256-GCM), Swagger UI (/docs, 45 endpoints), CD pipeline GHCR (tag v*.*.*), CI E2E fix, migration baseline, frontend settings UI, 872+ backend tests |
 | **v0.7.0** | 7 | **Recurring Billing** — Geração recorrente de faturas (BullMQ job diário), ciclo de vida de assinaturas (expirar, renovar, pausar, retomar), AutoPayHandler, integration test E2E de cobrança recorrente |

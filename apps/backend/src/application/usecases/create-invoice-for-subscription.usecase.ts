@@ -2,6 +2,7 @@ import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
+import { logger } from '@/config/logger';
 import { type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
 import { calculateNextBilling, getReferenceMonth } from '@/domain/services/billing-cycle.service';
 
@@ -82,7 +83,9 @@ export class CreateInvoiceForSubscriptionUseCase {
 
         created++;
       } catch (error) {
-        console.error(`[CreateInvoiceForSubscription] Error for subscription ${sub.id}:`, error);
+        // Recoverable: a single failing subscription must not abort the batch.
+        // Logged as an error for operator visibility; the count drives alerting.
+        logger.error({ err: error }, `[CreateInvoiceForSubscription] Error for subscription ${sub.id}:`);
         errors++;
       }
     }

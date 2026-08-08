@@ -4,7 +4,8 @@ import { Calendar, DollarSign, Loader2, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ErrorState } from '@/components/error-state';
 import { LoadingSkeleton } from '@/components/loading-skeleton';
-import { RiskBadge } from '@/components/risk-badge';
+import { levelLabel, levelToVariant, RiskBadge } from '@/components/risk-badge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -208,7 +209,10 @@ export function InvoiceForm({
               )}
 
               {showDropdown && filteredClients.length > 0 && (
-                <ul role="listbox" className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                <ul
+                  role="listbox"
+                  className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                >
                   {filteredClients.map((client) => (
                     <li key={client.id}>
                       <button
@@ -221,7 +225,7 @@ export function InvoiceForm({
                           <p className="text-sm font-medium text-gray-900 truncate">{client.name}</p>
                           <p className="text-xs text-gray-500">{client.phone}</p>
                         </div>
-                        <RiskBadge level={client.riskScore} />
+                        <Badge variant={levelToVariant[client.riskScore]}>{levelLabel[client.riskScore]}</Badge>
                       </button>
                     </li>
                   ))}

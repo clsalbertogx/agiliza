@@ -7,6 +7,7 @@ import type { SubscriptionRepositoryPort } from '@/application/ports/repositorie
 import type { RecurringInvoiceResult } from '@/application/usecases/create-invoice-for-subscription.usecase';
 import { CreateInvoiceForSubscriptionUseCase } from '@/application/usecases/create-invoice-for-subscription.usecase';
 import { ExpireSubscriptionUseCase } from '@/application/usecases/expire-subscription.usecase';
+import { logger } from '@/config/logger';
 import { type Client, MessageChannel, RiskScore } from '@/domain/entities/client';
 import { InvoiceStatus } from '@/domain/entities/invoice';
 import { BillingCycle, type Subscription, SubscriptionStatus } from '@/domain/entities/subscription';
@@ -290,7 +291,7 @@ describe('Recurring Billing Flow — Integration', () => {
       };
 
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
 
       await handler.handle(makeSubscriptionInvoiceCreatedEvent());
 
@@ -306,9 +307,9 @@ describe('Recurring Billing Flow — Integration', () => {
         tenantId: TENANT_ID,
       });
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('auto-paid successfully'));
+      expect(loggerInfoSpy).toHaveBeenCalledWith(expect.stringContaining('auto-paid successfully'), 'invoice-123');
 
-      consoleLogSpy.mockRestore();
+      loggerInfoSpy.mockRestore();
     });
   });
 
@@ -328,7 +329,7 @@ describe('Recurring Billing Flow — Integration', () => {
       };
 
       const handler = new AutoPayHandler(processPayment as any, renewSubscription as any);
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       await handler.handle(makeSubscriptionInvoiceCreatedEvent());
 
@@ -339,9 +340,13 @@ describe('Recurring Billing Flow — Integration', () => {
       expect(renewSubscription.execute).not.toHaveBeenCalled();
 
       // Assert warning was logged (not thrown)
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('auto-pay failed'));
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('auto-pay failed'),
+        'invoice-123',
+        'Payment provider declined',
+      );
 
-      consoleWarnSpy.mockRestore();
+      loggerWarnSpy.mockRestore();
     });
 
     it('should propagate thrown errors from processPayment so handleWithRetry can catch them', async () => {

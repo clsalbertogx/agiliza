@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { env } from '@/config/env';
+import { VERSION } from '@/config/version';
 
 export async function healthRoutes(app: FastifyInstance) {
   // Health endpoint has a much higher rate limit (1000/min) so it's effectively
@@ -36,7 +37,7 @@ export async function healthRoutes(app: FastifyInstance) {
         status: 'ok',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        version: '0.8.0',
+        version: VERSION,
       };
     },
   );

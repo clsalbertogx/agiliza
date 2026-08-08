@@ -7,6 +7,7 @@ import type { PaymentRepositoryPort } from '@/application/ports/repositories/pay
 import { isFailure, isSuccess } from '@/application/types/either';
 import { type ProcessPaymentInput, ProcessPaymentUseCase } from '@/application/usecases/process-payment.usecase';
 import { type Invoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 const mockInvoiceRepo: InvoiceRepositoryPort = {
   findById: vi.fn(),
@@ -92,12 +93,18 @@ describe('ProcessPaymentUseCase', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    const idGenerator: IdGeneratorPort = {
+      generate: () => 'fixed-id',
+      validate: () => true,
+    };
     useCase = new ProcessPaymentUseCase(
       mockInvoiceRepo,
       mockClientRepo,
       mockPaymentRepo,
       mockPaymentGateway,
       mockEventBus,
+      undefined, // resolver — fall back to the injected gateway
+      idGenerator,
     );
   });
 

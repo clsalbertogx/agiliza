@@ -1,6 +1,9 @@
+import type { PaymentProvider } from '@/domain/contracts/enums';
 import { type Either, failure, success } from '@/domain/types/either';
 import { DomainError } from '../errors/domain-error';
 import { Money } from '../value-objects/money';
+
+export { PaymentProvider } from '@/domain/contracts/enums';
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
@@ -10,14 +13,6 @@ export enum PaymentStatus {
   REFUNDED = 'REFUNDED',
 }
 
-export enum PaymentProvider {
-  ASAAS = 'ASAAS',
-  MERCADO_PAGO = 'MERCADO_PAGO',
-  STRIPE = 'STRIPE',
-  PAGBANK = 'PAGBANK',
-  POLAR = 'POLAR',
-}
-
 export interface Payment {
   id: string;
   invoiceId: string;
@@ -25,7 +20,7 @@ export interface Payment {
   clientId: string;
   amount: number;
   method: string;
-  provider: PaymentProvider | string;
+  provider: PaymentProvider;
   providerPaymentId?: string;
   status: PaymentStatus;
   fee?: number;
@@ -123,7 +118,8 @@ export function createPaymentFromPersistence(data: PersistencePayment): Payment 
     clientId: data.clientId,
     amount: data.amount,
     method: data.method,
-    provider: data.provider as PaymentProvider,
+    // Normalize legacy UPPERCASE rows (pre-A3 data) to the canonical lowercase wire format.
+    provider: data.provider.toLowerCase() as PaymentProvider,
     providerPaymentId: data.providerPaymentId ?? undefined,
     status: data.status as PaymentStatus,
     fee: data.fee ?? undefined,
@@ -192,7 +188,7 @@ export const paymentSchema = z.object({
   clientId: z.string().uuid(),
   amount: z.number().positive(),
   method: z.string(),
-  provider: z.enum(['ASAAS', 'MERCADO_PAGO', 'STRIPE', 'PAGBANK', 'POLAR']),
+  provider: z.enum(['asaas', 'mercadopago', 'stripe', 'pagbank', 'polar']),
   providerPaymentId: z.string().optional(),
   status: z.enum(['PENDING', 'CONFIRMED', 'FAILED', 'CANCELLED', 'REFUNDED']),
   fee: z.number().optional(),

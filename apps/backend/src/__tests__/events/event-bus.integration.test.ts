@@ -6,6 +6,7 @@ import type { MessageProviderPort } from '@/application/ports/gateways/message-p
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import { RiskCalculatorService } from '@/application/services/risk-calculator.service';
+import { logger } from '@/config/logger';
 import { RiskScore } from '@/domain/entities/client';
 import type { DomainEvent, DomainEventType } from '@/domain/events/domain-events';
 import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
@@ -187,7 +188,7 @@ describe('InMemoryEventBus — Integration', () => {
       eventBus.subscribe('payment.confirmed', handler2);
       eventBus.subscribe('payment.confirmed', handler3);
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
       // Catch unhandled rejection from handler2 so it doesn't pollute the test
       const rejectionHandler = vi.fn();
@@ -207,9 +208,9 @@ describe('InMemoryEventBus — Integration', () => {
       process.off('unhandledRejection', rejectionHandler);
 
       // The error from handler2 should be caught and logged by the event bus
-      expect(consoleSpy).toHaveBeenCalledWith('Handler 2 failed', expect.any(Error));
+      expect(loggerErrorSpy).toHaveBeenCalledWith({ err: expect.any(Error) }, 'Event handler failed');
 
-      consoleSpy.mockRestore();
+      loggerErrorSpy.mockRestore();
     });
 
     it('should catch handler errors and log them without crashing', async () => {
@@ -218,7 +219,7 @@ describe('InMemoryEventBus — Integration', () => {
 
       eventBus.subscribe('payment.confirmed', handler);
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
       const rejectionHandler = vi.fn();
       process.on('unhandledRejection', rejectionHandler);
 
@@ -232,9 +233,9 @@ describe('InMemoryEventBus — Integration', () => {
 
       process.off('unhandledRejection', rejectionHandler);
 
-      expect(consoleSpy).toHaveBeenCalledWith('Unexpected crash', expect.any(Error));
+      expect(loggerErrorSpy).toHaveBeenCalledWith({ err: expect.any(Error) }, 'Event handler failed');
 
-      consoleSpy.mockRestore();
+      loggerErrorSpy.mockRestore();
     });
   });
 
@@ -367,7 +368,7 @@ describe('InMemoryEventBus — Integration', () => {
       const eventBus = new InMemoryEventBus();
       const { invoiceRepo, clientRepo, messageProvider, notifyOutbound } = wireHandlersWithMocks(eventBus);
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
       eventBus.publish(makeEvent('payment.confirmed'));
 
@@ -388,17 +389,17 @@ describe('InMemoryEventBus — Integration', () => {
       });
 
       // NotifyOutboundHandler — not configured (no webhook), returns early
-      // Should not have thrown or produced console errors
-      expect(consoleSpy).not.toHaveBeenCalled();
+      // Should not have thrown or produced error logs
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
 
-      consoleSpy.mockRestore();
+      loggerErrorSpy.mockRestore();
     });
 
     it('should execute UpdateRiskScoreHandler on risk-affecting events', async () => {
       const eventBus = new InMemoryEventBus();
       const { clientRepo } = wireHandlersWithMocks(eventBus);
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
       // payment.failed should trigger UpdateRiskScoreHandler
       eventBus.publish(makeEvent('payment.failed'));
@@ -407,8 +408,8 @@ describe('InMemoryEventBus — Integration', () => {
         expect(clientRepo.updateRiskScore).toHaveBeenCalled();
       });
 
-      expect(consoleSpy).not.toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+      loggerErrorSpy.mockRestore();
     });
 
     it('should not call SendReceiptHandler on non-payment events', async () => {
@@ -436,7 +437,7 @@ describe('InMemoryEventBus — Integration', () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
       eventBus.subscribe('client.created', (e) => notifyOutbound.handle(e));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
       eventBus.publish(makeEvent('client.created'));
 
@@ -444,8 +445,8 @@ describe('InMemoryEventBus — Integration', () => {
         expect(fetch).toHaveBeenCalled();
       });
 
-      expect(consoleSpy).not.toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+      loggerErrorSpy.mockRestore();
       vi.unstubAllGlobals();
     });
   });

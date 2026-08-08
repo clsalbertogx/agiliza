@@ -5,7 +5,7 @@ import type { EventRepositoryPort } from '@/application/ports/repositories/event
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { Client } from '@/domain/entities/client';
 import type { Invoice } from '@/domain/entities/invoice';
-import { generateUUID } from '@/infrastructure/uuid/uuid.service';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 import { type Decision, DecisionEngineService } from './decision-engine.service';
 
 export class ReminderService {
@@ -22,6 +22,7 @@ export class ReminderService {
     eventRepo: EventRepositoryPort,
     queue: QueuePort,
     messageProvider: MessageProviderPort,
+    private readonly idGenerator: IdGeneratorPort,
     decisionEngine?: DecisionEngineService,
   ) {
     this.invoiceRepo = invoiceRepo;
@@ -43,7 +44,9 @@ export class ReminderService {
     const decisions: Decision[] = [];
 
     for (const invoice of pendingInvoices.data) {
-      const client = await this.clientRepo.findById(invoice.clientId);
+      // SEC-10: scope the client lookup to the invoice's tenant — a tenant
+      // must never resolve (or act on) another tenant's client.
+      const client = await this.clientRepo.findById(invoice.clientId, tenantId);
       if (!client) continue;
 
       // Get decision from engine
@@ -80,7 +83,7 @@ export class ReminderService {
 
     // Log decision
     await this.eventRepo.save({
-      eventId: generateUUID(),
+      eventId: this.idGenerator.generate(),
       eventType: 'decision.made',
       clientId: client.id,
       tenantId: client.tenantId,
@@ -100,7 +103,8 @@ export class ReminderService {
     const invoice = await this.invoiceRepo.findById(invoiceId, tenantId);
     if (!invoice) throw new Error('Invoice not found');
 
-    const client = await this.clientRepo.findById(invoice.clientId);
+    // SEC-10: scope the client lookup to the invoice's tenant.
+    const client = await this.clientRepo.findById(invoice.clientId, tenantId);
     if (!client) throw new Error('Client not found');
 
     const result = await this.messageProvider.sendTemplate({

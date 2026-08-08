@@ -1,6 +1,6 @@
 // NOTE: Set env vars BEFORE dynamic import to ensure module reads correct values
 process.env.ASAAS_WEBHOOK_SECRET = 'asaas-test-secret-key';
-process.env.MERCADOPAGO_WEBHOOK_SECRET = 'mp-test-secret-key';
+process.env.MERCADO_PAGO_WEBHOOK_SECRET = 'mp-test-secret-key';
 process.env.EVOLUTION_API_KEY = 'evolution-secret-key-123';
 
 import { createHmac, timingSafeEqual } from 'node:crypto';

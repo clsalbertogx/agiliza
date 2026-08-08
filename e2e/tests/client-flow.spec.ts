@@ -8,7 +8,9 @@ import { expect, test } from '@playwright/test';
  */
 
 const API_URL = process.env.API_URL || 'http://localhost:3333';
-const AUTH_HEADERS = { Authorization: 'ApiKey agiliza-dev-api-key-change-in-production' };
+// The running backend must be configured with the same MASTER_API_KEY.
+const MASTER_API_KEY = process.env.MASTER_API_KEY || 'agiliza-dev-api-key-change-in-production';
+const AUTH_HEADERS = { Authorization: `ApiKey ${MASTER_API_KEY}` };
 
 test.describe('Client Flow E2E', () => {
   test('health endpoint returns 200', async ({ request }) => {

@@ -355,7 +355,7 @@ describe('Invoice API Routes', () => {
           clientId: TEST_CLIENT_ID,
           amount: 150.0,
           method: 'PIX',
-          provider: 'ASAAS',
+          provider: 'asaas',
           providerPaymentId: 'ext_001',
           status: 'CONFIRMED',
           fee: 1.5,

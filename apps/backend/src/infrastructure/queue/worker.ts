@@ -1,5 +1,6 @@
 import { Worker } from 'bullmq';
 import type { ReminderService } from '@/application/services/reminder.service';
+import { logger } from '@/config/logger';
 import { getRedis } from './redis.service';
 
 interface ReminderJobData {
@@ -25,15 +26,15 @@ export function startReminderWorker(reminderService: ReminderService): Worker {
   );
 
   worker.on('completed', (job) => {
-    console.log(`[Worker:reminders] Job ${job.id} completed`);
+    logger.info('[Worker:reminders] Job %s completed', job.id);
   });
 
   worker.on('failed', (job, err) => {
-    console.error(`[Worker:reminders] Job ${job?.id} failed:`, err.message);
+    logger.error({ err }, '[Worker:reminders] Job %s failed:', job?.id);
   });
 
   worker.on('error', (err) => {
-    console.error('[Worker:reminders] Error:', err);
+    logger.error({ err }, '[Worker:reminders] Error:');
   });
 
   return worker;
@@ -45,8 +46,8 @@ export function startReminderWorker(reminderService: ReminderService): Worker {
 export async function closeWorker(worker: Worker): Promise<void> {
   try {
     await worker.close();
-    console.log('[Worker:reminders] Closed');
+    logger.info('[Worker:reminders] Closed');
   } catch (err) {
-    console.error('[Worker:reminders] Error during close:', err);
+    logger.error({ err }, '[Worker:reminders] Error during close:');
   }
 }

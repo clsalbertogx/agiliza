@@ -12,15 +12,24 @@ export const envSchema = z.object({
   REDIS_URL: z.string().default('redis://localhost:6379'),
   EVOLUTION_API_URL: z.string().default('http://localhost:8080'),
   EVOLUTION_API_KEY: z.string().default(''),
+  // Optional: comma-separated source-IP allowlist for /api/webhooks/evolution.
+  // Empty = no allowlist (any IP may call, subject to the API key check).
+  EVOLUTION_ALLOWED_IPS: z.string().default(''),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
   // Security: JWT_SECRET MUST come from the environment (.env / CI secret).
   // No default — a deployment without it must fail fast instead of silently
   // signing tokens with a public constant (JWT forgery).
   JWT_SECRET: z.string().min(1),
   ENCRYPTION_KEY: z.string().default(''),
-  MASTER_API_KEY: z.string().default('agiliza-dev-api-key-change-in-production'),
+  // Security (S1): MASTER_API_KEY MUST come from the environment. No default —
+  // a deployment without it must fail fast instead of accepting the publicly
+  // known dev key (which would let anyone impersonate the null tenant).
+  MASTER_API_KEY: z.string().min(1),
   PAYMENT_PROVIDER: z.enum(['asaas', 'mercadopago', 'stripe', 'pagbank', 'polar']).default('asaas'),
-  ASAAS_API_KEY: z.string().default('sandbox-key'),
+  // CODE-19: ASAAS_API_KEY MUST come from the environment. No default — a
+  // deployment without it must fail fast instead of silently charging against
+  // a sandbox credential that exists in public source control.
+  ASAAS_API_KEY: z.string().min(1),
   ASAAS_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
   ASAAS_WEBHOOK_SECRET: z.string().default(''),
   MERCADO_PAGO_ACCESS_TOKEN: z.string().default(''),

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, type SpyInstance, vi } from 'vitest';
 import { RetryableWebhookHandler } from '@/application/events/handlers/retryable-webhook-handler';
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
+import { logger } from '@/config/logger';
 import type { DomainEvent } from '@/domain/events/domain-events';
 
 /**
@@ -46,8 +47,8 @@ describe('RetryableWebhookHandler', () => {
   let errorSpy: SpyInstance;
 
   beforeEach(() => {
-    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -97,8 +98,8 @@ describe('RetryableWebhookHandler', () => {
 
       // The final exhaustion log fires.
       expect(errorSpy).toHaveBeenCalledWith(
+        { err: expect.any(Error) },
         '[TestableHandler] All retries exhausted, sending to DLQ:',
-        expect.any(Error),
       );
     });
 
@@ -113,8 +114,11 @@ describe('RetryableWebhookHandler', () => {
       // Only the first attempt failed, so only one retry warning.
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(warnSpy).toHaveBeenCalledWith(
-        '[TestableHandler] Attempt 1 failed, retrying in 2000ms:',
-        expect.objectContaining({ message: 'transient' }),
+        { err: expect.objectContaining({ message: 'transient' }) },
+        '[%s] Attempt %d failed, retrying in %dms:',
+        'TestableHandler',
+        1,
+        2000,
       );
     });
 
@@ -152,8 +156,8 @@ describe('RetryableWebhookHandler', () => {
       await expect(handler.handleWithRetry(event)).rejects.toThrow('no dlq adapter');
 
       expect(handler.handleCallCount.value).toBe(6);
-      // The fallback console.error from sendToDLQ fires once after exhaustion.
-      expect(errorSpy).toHaveBeenCalledWith('[DLQ] Event evt-dlq-123 sent to DLQ:', 'no dlq adapter');
+      // The fallback logger.error from sendToDLQ fires once after exhaustion.
+      expect(errorSpy).toHaveBeenCalledWith({ err: expect.any(Error) }, '[DLQ] Event evt-dlq-123 sent to DLQ:');
     });
   });
 

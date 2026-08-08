@@ -136,12 +136,11 @@ export async function invoiceRoutes(app: FastifyInstance) {
       schema: {
         tags: ['Invoices'],
         summary: 'List invoices',
-        description: 'Paginated invoice list, filtered by the authenticated tenant unless a tenantId is passed.',
+        description: 'Paginated invoice list, filtered by the authenticated tenant (JWT).',
         security: [{ bearerAuth: [] }],
         querystring: {
           type: 'object',
           properties: {
-            tenantId: { type: 'string', format: 'uuid' },
             page: { type: 'integer', minimum: 1 },
             perPage: { type: 'integer', minimum: 1 },
             status: { type: 'string' },
@@ -155,7 +154,8 @@ export async function invoiceRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const query = request.query as Record<string, string | undefined>;
-      const tenantId = request.tenantId || query.tenantId;
+      // A6: the JWT is the authoritative tenant source.
+      const tenantId = request.tenantId;
 
       if (!tenantId) {
         reply.code(401);
@@ -185,9 +185,7 @@ export async function invoiceRoutes(app: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         querystring: {
           type: 'object',
-          properties: {
-            tenantId: { type: 'string', format: 'uuid' },
-          },
+          properties: {},
         },
         response: {
           200: dataEnvelope,
@@ -195,8 +193,8 @@ export async function invoiceRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const query = request.query as Record<string, string | undefined>;
-      const tenantId = request.tenantId || query.tenantId;
+      // A6: the JWT is the authoritative tenant source.
+      const tenantId = request.tenantId;
 
       if (!tenantId) {
         reply.code(401);

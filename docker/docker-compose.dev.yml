@@ -60,6 +60,11 @@ services:
       NODE_ENV: development
       HOST: 0.0.0.0
       PORT: 3333
+      # SEC-11: required env vars (fail-closed schema) — pass through from the host .env.
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      MASTER_API_KEY: ${MASTER_API_KEY}
+      ASAAS_API_KEY: ${ASAAS_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy

@@ -9,13 +9,13 @@ interface RiskBadgeProps {
   reason?: string;
 }
 
-const levelToVariant: Record<string, 'success' | 'warning' | 'danger'> = {
+export const levelToVariant: Record<string, 'success' | 'warning' | 'danger'> = {
   green: 'success',
   yellow: 'warning',
   red: 'danger',
 };
 
-const levelLabel: Record<string, string> = {
+export const levelLabel: Record<string, string> = {
   green: 'Baixo Risco',
   yellow: 'Médio Risco',
   red: 'Alto Risco',

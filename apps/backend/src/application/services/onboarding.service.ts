@@ -2,7 +2,7 @@ import type { MessageProviderPort } from '@/application/ports/gateways/message-p
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { EventRepositoryPort } from '@/application/ports/repositories/event.repository.port';
 import { MessageChannel } from '@/domain/entities/client';
-import { generateUUID } from '@/infrastructure/uuid/uuid.service';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 interface OnboardingState {
   clientId: string;
@@ -22,10 +22,22 @@ export class OnboardingService {
   private readonly messageProvider: MessageProviderPort;
   private onboardingStates = new Map<string, OnboardingState>();
 
-  constructor(clientRepo: ClientRepositoryPort, eventRepo: EventRepositoryPort, messageProvider: MessageProviderPort) {
+  constructor(
+    clientRepo: ClientRepositoryPort,
+    eventRepo: EventRepositoryPort,
+    messageProvider: MessageProviderPort,
+    private readonly idGenerator: IdGeneratorPort,
+  ) {
     this.clientRepo = clientRepo;
     this.eventRepo = eventRepo;
     this.messageProvider = messageProvider;
+  }
+
+  /** Check if a client needs onboarding (no preferred channel AND no preferred time). */
+  async needsOnboarding(clientId: string): Promise<boolean> {
+    const client = await this.clientRepo.findById(clientId);
+    if (!client) return false;
+    return !client.preferredChannel && !client.preferredTime;
   }
 
   async startOnboarding(clientId: string, tenantId: string): Promise<void> {
@@ -176,7 +188,7 @@ export class OnboardingService {
     });
 
     await this.eventRepo.save({
-      eventId: generateUUID(),
+      eventId: this.idGenerator.generate(),
       eventType: 'client.risk.updated',
       clientId,
       tenantId: state.tenantId,

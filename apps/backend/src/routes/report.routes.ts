@@ -18,12 +18,11 @@ export async function reportRoutes(app: FastifyInstance) {
       schema: {
         tags: ['Reports'],
         summary: 'Cash flow forecast',
-        description: 'Generates a cash flow forecast for the given number of months.',
+        description: 'Generates a cash flow forecast for the given number of months (authenticated tenant from JWT).',
         security: [{ bearerAuth: [] }],
         querystring: {
           type: 'object',
           properties: {
-            tenantId: { type: 'string', format: 'uuid' },
             months: { type: 'integer', minimum: 1, maximum: 12 },
           },
         },
@@ -37,7 +36,8 @@ export async function reportRoutes(app: FastifyInstance) {
       },
     },
     async (request) => {
-      const tenantId = request.tenantId || request.query.tenantId;
+      // A6: the JWT is the authoritative tenant source.
+      const tenantId = request.tenantId;
       const months = Math.min(12, Math.max(1, parseInt(request.query.months || '6', 10) || 6));
 
       if (!tenantId) {
@@ -60,9 +60,7 @@ export async function reportRoutes(app: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         querystring: {
           type: 'object',
-          properties: {
-            tenantId: { type: 'string', format: 'uuid' },
-          },
+          properties: {},
         },
         response: {
           200: {
@@ -74,7 +72,8 @@ export async function reportRoutes(app: FastifyInstance) {
       },
     },
     async (request) => {
-      const tenantId = request.tenantId || request.query.tenantId;
+      // A6: the JWT is the authoritative tenant source.
+      const tenantId = request.tenantId;
 
       if (!tenantId) {
         return { error: 'tenantId is required' };
@@ -97,9 +96,7 @@ export async function reportRoutes(app: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         querystring: {
           type: 'object',
-          properties: {
-            tenantId: { type: 'string', format: 'uuid' },
-          },
+          properties: {},
         },
         response: {
           200: {
@@ -111,7 +108,8 @@ export async function reportRoutes(app: FastifyInstance) {
       },
     },
     async (request) => {
-      const tenantId = request.tenantId || request.query.tenantId;
+      // A6: the JWT is the authoritative tenant source.
+      const tenantId = request.tenantId;
 
       if (!tenantId) {
         return { error: 'tenantId is required' };

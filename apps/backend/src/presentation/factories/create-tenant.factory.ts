@@ -1,8 +1,10 @@
+import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
 import type { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
+import type { PaymentProvider } from '@/domain/contracts/enums';
 import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 import { PrismaEventRepository } from '@/infrastructure/database/repositories/event.repository';
 import { PrismaTenantRepository } from '@/infrastructure/database/repositories/tenant.repository';
-import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
+import { getEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 import { PaymentProviderFactory } from '@/infrastructure/payment/payment-provider.factory';
 import { UuidV7Generator } from '@/infrastructure/uuid/uuid-v7-generator';
 
@@ -14,8 +16,8 @@ export function createEventRepository(): PrismaEventRepository {
   return new PrismaEventRepository();
 }
 
-export function createEventBus(): InMemoryEventBus {
-  return new InMemoryEventBus();
+export function createEventBus(): EventBusPort {
+  return getEventBus();
 }
 
 export function createIdGenerator(): IdGeneratorPort {
@@ -23,7 +25,7 @@ export function createIdGenerator(): IdGeneratorPort {
 }
 
 export function createPaymentProvider(config: {
-  type: 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar';
+  type: PaymentProvider;
   apiKey: string;
   environment?: 'sandbox' | 'production';
 }): PaymentGatewayPort {
@@ -31,7 +33,7 @@ export function createPaymentProvider(config: {
 }
 
 export function testPaymentProviderConnection(config: {
-  type: 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar';
+  type: PaymentProvider;
   apiKey: string;
   environment?: 'sandbox' | 'production';
 }): { success: boolean; error?: string } {

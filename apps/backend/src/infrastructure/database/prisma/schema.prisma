@@ -88,7 +88,9 @@ model Tenant {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
+  @@index([email]) // auth/signup lookup by email
+
   // Relations
   clients              Client[]
   invoices             Invoice[]
@@ -186,6 +188,7 @@ model Invoice {
   @@index([tenantId, status])
   @@index([clientId])
   @@index([dueDate])
+  @@index([subscriptionId]) // FK join column — most-queried
   @@map("invoices")
 }
 
@@ -219,6 +222,7 @@ model Subscription {
 
   @@index([tenantId, status])
   @@index([clientId])
+  @@index([nextBilling]) // worker picks subscriptions by nextBilling due
   @@map("subscriptions")
 }
 

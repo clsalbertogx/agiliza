@@ -1,5 +1,6 @@
 import { Queue, Worker } from 'bullmq';
 import type { CreateInvoiceForSubscriptionUseCase } from '@/application/usecases/create-invoice-for-subscription.usecase';
+import { logger } from '@/config/logger';
 import { getRedis } from './redis.service';
 
 const RECURRING_INVOICE_QUEUE = 'recurring-invoices';
@@ -34,16 +35,19 @@ export function startRecurringInvoiceWorker(useCase: CreateInvoiceForSubscriptio
     async (job) => {
       if (job.name === JOB_NAME) {
         const result = await useCase.execute();
-        console.log(
-          `[RecurringInvoice] Created: ${result.created}, Skipped: ${result.skipped}, Errors: ${result.errors}`,
+        logger.info(
+          '[RecurringInvoice] Created: %d, Skipped: %d, Errors: %d',
+          result.created,
+          result.skipped,
+          result.errors,
         );
       }
     },
     { connection: getRedis() },
   );
 
-  worker.on('completed', (job) => console.log(`[RecurringInvoice] Job ${job?.id} completed`));
-  worker.on('failed', (job, err) => console.error(`[RecurringInvoice] Job ${job?.id} failed:`, err));
+  worker.on('completed', (job) => logger.info('[RecurringInvoice] Job %s completed', job?.id));
+  worker.on('failed', (job, err) => logger.error({ err }, '[RecurringInvoice] Job %s failed:', job?.id));
 
   return worker;
 }

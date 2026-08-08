@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PaymentProvider } from '@/domain/contracts/enums';
 import type { Payment } from '@/domain/entities/payment';
 import { PaymentMapper, type PersistencePayment } from '@/infrastructure/database/mappers/payment.mapper';
 
@@ -30,7 +31,7 @@ describe('PaymentMapper', () => {
     clientId: '00000000-0000-0000-0000-000000000004',
     amount: 150.5,
     method: 'PIX' as Payment['method'],
-    provider: 'asaas',
+    provider: PaymentProvider.ASAAS,
     providerPaymentId: 'pay_123',
     status: 'confirmed' as Payment['status'],
     fee: 3.5,

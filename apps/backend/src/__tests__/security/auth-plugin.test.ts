@@ -99,3 +99,32 @@ describe('E2 — JWT secret must come from the environment (no hardcoded fallbac
     }
   });
 });
+
+describe('S1 — MASTER_API_KEY must come from the environment (no hardcoded default)', () => {
+  it('env schema has no default for MASTER_API_KEY (missing value is a validation error)', () => {
+    const result = envSchema.safeParse({ JWT_SECRET: 'x', ASAAS_API_KEY: 'y' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.path.join('.') === 'MASTER_API_KEY')).toBe(true);
+    }
+  });
+
+  it('accepts a valid configured MASTER_API_KEY', () => {
+    const result = envSchema.safeParse({
+      JWT_SECRET: 'x',
+      MASTER_API_KEY: 'some-configured-key',
+      ASAAS_API_KEY: 'y',
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('CODE-19 — ASAAS_API_KEY must come from the environment (no sandbox-key default)', () => {
+  it('env schema has no default for ASAAS_API_KEY (missing value is a validation error)', () => {
+    const result = envSchema.safeParse({ JWT_SECRET: 'x', MASTER_API_KEY: 'y' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.path.join('.') === 'ASAAS_API_KEY')).toBe(true);
+    }
+  });
+});

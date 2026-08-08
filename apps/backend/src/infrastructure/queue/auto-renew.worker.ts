@@ -1,6 +1,7 @@
 import { Queue, Worker } from 'bullmq';
 import type { SubscriptionRepositoryPort } from '@/application/ports/repositories/subscription.repository.port';
 import type { AutoRenewSubscriptionUseCase } from '@/application/usecases/auto-renew-subscription.usecase';
+import { logger } from '@/config/logger';
 import { getRedis } from './redis.service';
 
 const AUTO_RENEW_QUEUE = 'auto-renew';
@@ -59,7 +60,7 @@ export async function renewDueSubscriptions(
     }
   }
 
-  console.log(`[AutoRenew] Renewed: ${renewed}, Skipped: ${skipped}, Total due: ${dueSubscriptions.length}`);
+  logger.info('[AutoRenew] Renewed: %d, Skipped: %d, Total due: %d', renewed, skipped, dueSubscriptions.length);
   return { renewed, skipped, total: dueSubscriptions.length };
 }
 
@@ -72,15 +73,15 @@ export function startAutoRenewWorker(
     async (job) => {
       if (job.name === JOB_NAME) {
         await renewDueSubscriptions(useCase, subscriptionRepo);
-        console.log('[AutoRenew] Subscription renewal check completed');
+        logger.info('[AutoRenew] Subscription renewal check completed');
       }
     },
     { connection: getRedis() },
   );
 
-  worker.on('completed', (job) => console.log(`[AutoRenew] Job ${job?.id} completed`));
-  worker.on('failed', (job, err) => console.error(`[AutoRenew] Job ${job?.id} failed:`, err));
-  worker.on('error', (err) => console.error('[AutoRenew] Worker error:', err));
+  worker.on('completed', (job) => logger.info('[AutoRenew] Job %s completed', job?.id));
+  worker.on('failed', (job, err) => logger.error({ err }, '[AutoRenew] Job %s failed:', job?.id));
+  worker.on('error', (err) => logger.error({ err }, '[AutoRenew] Worker error:'));
 
   return worker;
 }

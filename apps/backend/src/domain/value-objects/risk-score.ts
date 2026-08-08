@@ -37,9 +37,12 @@ export class RiskScore {
 
   static fromClientRiskScore(score: string): RiskScore {
     switch (score) {
-      case ClientRiskScore.GREEN: return RiskScore.GREEN;
-      case ClientRiskScore.YELLOW: return RiskScore.YELLOW;
-      case ClientRiskScore.RED: return RiskScore.RED;
+      case ClientRiskScore.GREEN:
+        return RiskScore.GREEN;
+      case ClientRiskScore.YELLOW:
+        return RiskScore.YELLOW;
+      case ClientRiskScore.RED:
+        return RiskScore.RED;
       default:
         throw new DomainError(`Invalid client risk score: ${String(score)}`);
     }
@@ -47,10 +50,15 @@ export class RiskScore {
 
   get clientRiskScore(): ClientRiskScore {
     switch (this.level) {
-      case RiskLevel.LOW: return ClientRiskScore.GREEN;
-      case RiskLevel.MEDIUM: return ClientRiskScore.YELLOW;
+      case RiskLevel.LOW:
+        return ClientRiskScore.GREEN;
+      case RiskLevel.MEDIUM:
+        return ClientRiskScore.YELLOW;
       case RiskLevel.HIGH:
-      case RiskLevel.CRITICAL: return ClientRiskScore.RED;
+      case RiskLevel.CRITICAL:
+        return ClientRiskScore.RED;
+      default:
+        return ClientRiskScore.RED;
     }
   }
 

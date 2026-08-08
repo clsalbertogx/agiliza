@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApplicationError } from '@/application/errors/application.error';
 import { AutoPayHandler } from '@/application/events/handlers/auto-pay.handler';
+import { logger } from '@/config/logger';
 import type { DomainEvent } from '@/domain/events/domain-events';
 import { failure, success } from '@/domain/types/either';
 
@@ -104,7 +105,7 @@ describe('AutoPayHandler', () => {
       );
       renewSubscription.execute.mockResolvedValue(success({ id: 'sub-123' }));
 
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
 
       await handler.handle(makeSubscriptionInvoiceCreatedEvent());
 
@@ -116,8 +117,8 @@ describe('AutoPayHandler', () => {
         subscriptionId: 'sub-123',
         tenantId: 'tenant-123',
       });
-      expect(consoleSpy).toHaveBeenCalledWith('[AutoPay] Invoice invoice-123 auto-paid successfully');
-      consoleSpy.mockRestore();
+      expect(loggerInfoSpy).toHaveBeenCalledWith('[AutoPay] Invoice %s auto-paid successfully', 'invoice-123');
+      loggerInfoSpy.mockRestore();
     });
   });
 
@@ -130,16 +131,18 @@ describe('AutoPayHandler', () => {
         failure(new ApplicationError('Payment provider declined', 'PAYMENT_DECLINED', 402)),
       );
 
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       await expect(handler.handle(makeSubscriptionInvoiceCreatedEvent())).resolves.toBeUndefined();
 
       expect(processPayment.execute).toHaveBeenCalledTimes(1);
       expect(renewSubscription.execute).not.toHaveBeenCalled();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        '[AutoPay] Invoice invoice-123 auto-pay failed: Payment provider declined',
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        '[AutoPay] Invoice %s auto-pay failed: %s',
+        'invoice-123',
+        'Payment provider declined',
       );
-      consoleWarnSpy.mockRestore();
+      loggerWarnSpy.mockRestore();
     });
   });
 
@@ -175,12 +178,16 @@ describe('AutoPayHandler', () => {
         failure(new ApplicationError('Insufficient funds', 'INSUFFICIENT_FUNDS', 402)),
       );
 
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       await handler.handle(makeSubscriptionInvoiceCreatedEvent());
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith('[AutoPay] Invoice invoice-123 auto-pay failed: Insufficient funds');
-      consoleWarnSpy.mockRestore();
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        '[AutoPay] Invoice %s auto-pay failed: %s',
+        'invoice-123',
+        'Insufficient funds',
+      );
+      loggerWarnSpy.mockRestore();
     });
   });
 });

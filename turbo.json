@@ -1,7 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
-  "globalPassThroughEnv": ["API_URL", "E2E_FRONTEND_URL"],
+  "globalPassThroughEnv": ["API_URL", "E2E_FRONTEND_URL", "MASTER_API_KEY"],
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],

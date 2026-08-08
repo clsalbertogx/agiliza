@@ -16,7 +16,7 @@ Cada tenant escolhe seu **provedor de pagamento** (Asaas, Mercado Pago, Stripe, 
 ### Incluído
 - `PaymentGatewayPort` (PIX, cartão de crédito, boleto, getCharge, cancelCharge, verifyWebhook, handleWebhook)
 - 5 estratégias: `AsaasPaymentProvider`, `MercadoPagoGateway`, `StripeGateway`, `PagBankGateway`, `PolarGateway`
-- `PaymentProviderFactory` — `create` (direto), `createForTenant` (per-tenant com fallback env), `createForTenantAndProvider` (onboarding)
+- `PaymentGatewayResolverPort` + `PaymentProviderFactory implements PaymentGatewayResolverPort` — `resolveForTenant(tenantId)`, `resolveForTenantAndProvider(tenantId, provider)`, `static create(config)` (direto); antigos `createForTenant*` deprecated (delegam para os `resolveFor*`)
 - `EncryptionPort` + `AesEncryptionService` (AES-256-GCM) para credenciais em repouso
 - `PaymentProviderConfigRepositoryPort` + entidade `PaymentProviderConfig` + use cases `UpsertPaymentProviderConfig` / `GetPaymentProviderConfig`
 - `ProcessPaymentUseCase` (criar PIX), `ProcessPaymentWebhookUseCase` + `AsaasWebhookParser`, `PerTenantHmacVerifier`
@@ -26,7 +26,7 @@ Cada tenant escolhe seu **provedor de pagamento** (Asaas, Mercado Pago, Stripe, 
 - Ciclo de vida de assinaturas / geração recorrente — ver specs `subscription-lifecycle` e `recurring-billing`
 - Pagamentos via `BillingSchedule` (modelo Prisma sem use case)
 - Conciliação financeira automatizada / recebimento de `PaymentEvent` (feed de atividades) — fora do backfill
-- Testes E2E de conexão real com provedores (as gateways usam SDKs reais com factory injetável para teste)
+- Testes E2E de conexão real com provedores (as gateways usam SDKs reais com factory injetável para teste) — chamadas HTTP reais ao Asaas seguem **simuladas** em testes (deferido: COD-16 → backlog v0.13.0+)
 
 ---
 
@@ -37,18 +37,18 @@ Cada tenant escolhe seu **provedor de pagamento** (Asaas, Mercado Pago, Stripe, 
 | AC1 | `PaymentGatewayPort` define `createPixCharge`, `createCreditCardCharge`, `createBoletoCharge`, `getCharge`, `cancelCharge`, `verifyWebhook`, `handleWebhook` | `application/ports/gateways/payment-gateway.port.ts` |
 | AC2 | **5 implementações** da porta existem: `AsaasPaymentProvider`, `MercadoPagoGateway`, `StripeGateway`, `PagBankGateway`, `PolarGateway` | `infrastructure/payment/*.gateway.ts` + `asaas.provider.ts` |
 | AC3 | **Strategy Pattern**: `PaymentProviderFactory.create(config)` constrói a gateway certa por `ProviderType`; Use Case nunca faz `switch` por provedor | `infrastructure/payment/payment-provider.factory.ts`, `__tests__/application/ports/gateways-and-adapters.test.ts` |
-| AC4 | `createForTenant(tenantId)` percorre `PROVIDER_FALLBACK_ORDER = [asaas, mercadopago, stripe, pagbank, polar]`, usa a primeira config ativa do tenant, e **cai para Asaas com credenciais de env** se nada configurado | `payment-provider.factory.ts` |
+| AC4 | **Port (F2)**: `PaymentGatewayResolverPort.{resolveForTenant(tenantId): Promise<ResolvedPaymentGateway>, resolveForTenantAndProvider(...)}` é a porta injetada no `ProcessPaymentUseCase`; `PaymentProviderFactory implements PaymentGatewayResolverPort` — percorre `PROVIDER_FALLBACK_ORDER = [asaas, mercadopago, stripe, pagbank, polar]`, usa a primeira config ativa do tenant (credencial descriptografada) e **cai para Asaas com credenciais de env** se nada configurado | `payment-gateway-resolver.port.ts`, `payment-provider.factory.ts`, `multi-provider-resolution.test.ts` |
 | AC5 | `PaymentProviderFactory.create` para provider desconhecido lança `Error` (default case) | `payment-provider.factory.ts` |
 | AC6 | **Encryption**: `AesEncryptionService` usa AES-256-GCM (chave hex de 32 bytes / 64 chars, IV 16B, tag 16B); `encrypt` retorna JSON `{ciphertext, iv, tag}`; `decrypt` falha com chave errada | `__tests__/security/encryption.test.ts` |
 | AC7 | `UpsertPaymentProviderConfigUseCase` valida `tenantId`/`provider`/`apiKey`, criptografa a API key e faz `upsert` per-tenant; `GetPaymentProviderConfigUseCase` lê a config | `upsert-payment-provider-config.usecase.ts`, `get-payment-provider-config.usecase.ts` |
 | AC8 | `PaymentProviderConfig` (domain) tem `apiKeyEncrypted`, `environment`, `webhookSecret`, `isActive`; schema Prisma `payment_provider_configs` com `@@unique([tenantId, provider])` | `domain/entities/payment-provider-config.ts`, `schema.prisma` |
-| AC9 | `ProcessPaymentUseCase` resolve gateway per-tenant (repo + encryption + `PaymentGatewayFactory`), cria PIX com `externalReference = invoiceId`, atualiza invoice com PIX data, registra `Payment` PENDING e retorna `{status: 'PENDING', pix}` | `process-payment.usecase.test.ts`, `process-payment-with-repo.test.ts` |
+| AC9 | `ProcessPaymentUseCase` resolve gateway per-tenant via `PaymentGatewayResolverPort` (`resolveForTenant`), com fallback para o gateway injetado, cria PIX com `externalReference = invoiceId`, atualiza invoice com PIX data, registra `Payment` PENDING — `provider` gravado = gateway **realmente usado** (`resolvedProvider`, fallback `asaas`) — e retorna `{status: 'PENDING', pix}` | `process-payment.usecase.ts`, `process-payment.usecase.test.ts`, `process-payment-provider-resolution.test.ts` |
 | AC10 | `ProcessPaymentUseCase` retorna `ALREADY_PAID` (400) se invoice já `PAID`, `NOT_FOUND` se invoice não pertence ao tenant, `PAYMENT_PROVIDER_ERROR` (502) se o gateway lança | `process-payment.usecase.test.ts` |
 | AC11 | `ProcessPaymentWebhookUseCase` verifica HMAC (`WebhookVerifierPort`), parseia via `PaymentWebhookParserPort`, marca invoice `PAID`, cria payment `CONFIRMED`, publica `payment.confirmed`; assinatura inválida → `UNAUTHORIZED` 401; evento não-parseável → ack 200 | `process-payment-webhook.usecase.test.ts`, `__tests__/security/webhook.test.ts` |
 | AC12 | `AsaasWebhookParser` mapeia `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED` → `status:'confirmed'`, `PAYMENT_FAILED` → `failed`, `PAYMENT_REFUNDED` → `refunded`; `invoiceId` vem de `payment.externalReference`; payload não-Asaas retorna `null` | `infrastructure/payment/asaas-webhook-parser.ts` |
 | AC13 | `PerTenantHmacVerifier` busca `webhookSecret` por `tenantId+provider` no DB, valida inputs antes da lookup (injection prevention), HMAC-SHA256 com `timingSafeEqual` | `__tests__/security/webhook.test.ts` |
 | AC14 | Rota webhook: header de assinatura por provedor (`asaas-signature`, `x-signature`, `x-pagbank-signature`, `webhook-signature`); provedor desconhecido → 400; sem assinatura → 401; sem `tenantId` no payload → 400; rate limit burst 10 req/s por IP | `webhook.routes.ts`, `__tests__/security/rate-limiting.test.ts` |
-| AC15 | `PaymentProvider` enum do domínio (`domain/entities/payment.ts`) inclui `ASAAS, MERCADO_PAGO, STRIPE, PAGBANK, POLAR` | `domain/entities/payment.ts` (zod schema idem) |
+| AC15 | `PaymentProvider` enum **canônico** em `domain/contracts/enums.ts` (valores lowercase): `ASAAS='asaas'`, `MERCADO_PAGO='mercadopago'`, `STRIPE='stripe'`, `PAGBANK='pagbank'`, `POLAR='polar'`; re-exportado por `domain/entities/payment.ts` e `domain/entities/tenant.ts` (zod schema idem, lowercase) | `domain/contracts/enums.ts` (re-export em `payment.ts`/`tenant.ts`), `multi-provider-resolution.test.ts` |
 | AC16 | Retry/DLQ: falha transitória em webhook → `RetryableWebhookHandler.handleWithRetry` (3 tentativas, backoff exp) → DLQ `failed-webhooks` + alerta | `__tests__/events/retryable-webhook-handler.test.ts`, `alert-on-payment-failed.handler.test.ts` |
 
 ---
@@ -102,24 +102,37 @@ export interface PaymentProviderConfigRepositoryPort {
 ```
 
 ```typescript
+// application/ports/gateways/payment-gateway-resolver.port.ts — porta canônica (F2)
+export interface ResolvedPaymentGateway {
+  gateway: PaymentGatewayPort;
+  provider: PaymentProvider;
+}
+export interface PaymentGatewayResolverPort {
+  resolveForTenant(tenantId: string): Promise<ResolvedPaymentGateway>;
+  resolveForTenantAndProvider(tenantId: string, provider: PaymentProvider): Promise<ResolvedPaymentGateway | null>;
+}
+// Injetada em ProcessPaymentUseCase; PaymentProviderFactory (Infrastructure) a implementa.
+```
+
+```typescript
 // application/usecases/process-payment.usecase.ts
 export interface ProcessPaymentInput { invoiceId: string; tenantId: string; }
 export interface ProcessPaymentOutput { status: string; pix: { qrCode: string; copyPaste: string; expiresAt: Date }; }
-export type PaymentGatewayFactory = (config: { apiKey: string; environment: string }) => PaymentGatewayPort;
 
 export class ProcessPaymentUseCase {
   constructor(
     invoiceRepo: InvoiceRepositoryPort,
     clientRepo: ClientRepositoryPort,
     paymentRepo: PaymentRepositoryPort,
-    paymentGateway: PaymentGatewayPort,            // gateway injetado (fallback)
+    paymentGateway: PaymentGatewayPort,          // gateway injetado (fallback)
     eventBus: EventBusPort,
-    paymentProviderConfigRepo?: PaymentProviderConfigRepositoryPort,  // opcional → resolve per-tenant
-    encryption?: EncryptionPort,
-    gatewayFactory?: PaymentGatewayFactory,
+    resolver?: PaymentGatewayResolverPort,       // opcional → resolve per-tenant (F2)
+    idGenerator: IdGeneratorPort,
   ) {}
   async execute(input: ProcessPaymentInput): Promise<Either<ApplicationError, ProcessPaymentOutput>>;
 }
+// Resolução: resolver?.resolveForTenant(tenantId) → { gateway, provider }; sem resolver → gateway injetado (Asaas).
+// provider gravado no Payment = provider REAL usado (resolvedProvider) ou ASAAS (fallback).
 ```
 
 ```typescript
@@ -150,8 +163,9 @@ export interface PaymentProviderConfig {
   id: string; tenantId: string; provider: string; apiKeyEncrypted: string | null;
   environment: string; webhookSecret: string | null; isActive: boolean; createdAt: Date; updatedAt: Date;
 }
-// domain/entities/payment.ts
-export enum PaymentProvider { ASAAS = 'ASAAS', MERCADO_PAGO = 'MERCADO_PAGO', STRIPE = 'STRIPE', PAGBANK = 'PAGBANK', POLAR = 'POLAR' }
+// domain/contracts/enums.ts — enum CANÔNICO (valores lowercase)
+export enum PaymentProvider { ASAAS = 'asaas', MERCADO_PAGO = 'mercadopago', STRIPE = 'stripe', PAGBANK = 'pagbank', POLAR = 'polar' }
+// domain/entities/payment.ts e domain/entities/tenant.ts re-exportam: `export { PaymentProvider } from '@/domain/contracts/enums'`
 // domain/entities/invoice.ts — updateInvoice(invoice, { status, paidAt, externalPaymentId, pix* })
 ```
 
@@ -159,12 +173,13 @@ export enum PaymentProvider { ASAAS = 'ASAAS', MERCADO_PAGO = 'MERCADO_PAGO', ST
 
 ```typescript
 // infrastructure/payment/payment-provider.factory.ts
-export type ProviderType = 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar';
+export type ProviderType = PaymentProvider; // 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar'
 export interface ProviderConfig { type: ProviderType; apiKey: string; environment?: 'sandbox' | 'production'; publicKey?: string; publishableKey?: string; webhookSecret?: string; }
-export class PaymentProviderFactory {
-  static create(config: ProviderConfig): PaymentGatewayPort;       // switch por type → new *Gateway (Strategy)
-  async createForTenant(tenantId: string): Promise<PaymentGatewayPort>;          // fallback: env asaas
-  async createForTenantAndProvider(tenantId: string, provider: ProviderType): Promise<PaymentGatewayPort | null>; // onboarding
+export class PaymentProviderFactory implements PaymentGatewayResolverPort {
+  static create(config: ProviderConfig): PaymentGatewayPort;   // switch por type → new *Gateway (Strategy)
+  async resolveForTenant(tenantId: string): Promise<ResolvedPaymentGateway>;      // fallback: env asaas
+  async resolveForTenantAndProvider(tenantId: string, provider: ProviderType): Promise<ResolvedPaymentGateway | null>; // onboarding
+  // @deprecated — createForTenant / createForTenantAndProvider delegam aos resolveFor*
 }
 // Order: asaas → mercadopago → stripe → pagbank → polar
 ```
@@ -224,7 +239,7 @@ Status codes: 400 (provider desconhecido / payload inválido / sem tenantId), 40
 | Padrão | Onde Aplicado | Justificativa |
 |--------|---------------|---------------|
 | **Strategy** | `PaymentGatewayPort` + `AsaasPaymentProvider`/`MercadoPagoGateway`/`StripeGateway`/`PagBankGateway`/`PolarGateway` | Provedor intercambiável sem `if/else` no Use Case — seleção centralizada na `PaymentProviderFactory` |
-| **Factory** | `PaymentProviderFactory` (static + per-tenant) | Resolução do gateway ativo por tenant com fallback env |
+| **Factory** | `PaymentProviderFactory` (static `create` + implementa `PaymentGatewayResolverPort`) | Resolução do gateway ativo por tenant com fallback env; injetável direto no Use Case (F2) |
 | **Adapter / Port** | `EncryptionPort`, `WebhookVerifierPort`, `PaymentWebhookParserPort`, `PaymentGatewayPort` | Infrastructure trocável (SDK real vs stub) |
 | **Repository** | `PaymentProviderConfigRepositoryPort` + `PrismaPaymentProviderConfigRepository` | Persistência per-tenant desacoplada |
 | **DLQ / Retry** | `RetryableWebhookHandler` + BullMQ `failed-webhooks` | Falhas transitórias não se perdem |
@@ -233,8 +248,8 @@ Status codes: 400 (provider desconhecido / payload inválido / sem tenantId), 40
 
 ## Definition of Done
 
-- [ ] AC1–AC16 cobertos por testes automatizados (ver coluna de verificação)
-- [ ] Zero menção a provedor específico no Domain/Application (exceto enum `PaymentProvider` no domínio de pagamento)
+- [x] AC1–AC16 cobertos por testes automatizados (ver coluna de verificação; conexão real com provedores é fora de escopo — COD-16 deferido no backlog v0.13.0+)
+- [x] Zero menção a provedor específico no Domain/Application (exceto enum canônico `PaymentProvider` em `domain/contracts/enums.ts`)
 - [ ] `__tests__/security/encryption.test.ts` e `__tests__/security/webhook.test.ts` verdes
 - [ ] `__tests__/routes/payment.routes.test.ts` e `__tests__/routes/webhook.routes.test.ts` verdes
 
@@ -247,8 +262,10 @@ Status codes: 400 (provider desconhecido / payload inválido / sem tenantId), 40
 | AC1 | `__tests__/application/ports/ports.contract.test.ts`, `gateways-and-adapters.test.ts` |
 | AC2 | `gateways-and-adapters.test.ts`, `__tests__/application/ports/repositories.test.ts` |
 | AC3 | `gateways-and-adapters.test.ts`; impl em `payment-provider.factory.ts` |
+| AC4–AC5 | `__tests__/infrastructure/payment/payment-provider.factory.test.ts`, `__tests__/integration/multi-provider-resolution.test.ts` |
 | AC6 | `__tests__/security/encryption.test.ts` |
-| AC9–AC10 | `process-payment.usecase.test.ts`, `process-payment-with-repo.test.ts` |
+| AC9–AC10 | `process-payment.usecase.test.ts`, `process-payment-with-repo.test.ts`, `__tests__/application/usecases/process-payment-provider-resolution.test.ts` |
+| AC15 | `__tests__/integration/multi-provider-resolution.test.ts` (enum canônico lowercase + resolução MP/fallback Asaas) |
 | AC11 | `process-payment-webhook.usecase.test.ts`, `__tests__/security/webhook.test.ts` |
 | AC13 | `__tests__/security/webhook.test.ts`, `__tests__/application/ports/webhook-verifier.contract.test.ts` |
 | AC14 | `__tests__/routes/webhook.routes.test.ts`, `__tests__/security/rate-limiting.test.ts` |

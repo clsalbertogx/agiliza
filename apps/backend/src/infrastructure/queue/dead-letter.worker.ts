@@ -1,5 +1,6 @@
 import { Worker } from 'bullmq';
 import type { AlertService } from '@/application/services/alert.service';
+import { logger } from '@/config/logger';
 import { QueueNames } from './queue-definitions';
 import { getRedis } from './redis.service';
 
@@ -19,7 +20,7 @@ export function startDeadLetterWorker(alertService?: AlertService): Worker {
   const worker = new Worker(
     QueueNames.FAILED_WEBHOOKS,
     async (job) => {
-      console.error('[DLQ] Failed webhook:', job.data);
+      logger.error({ data: job.data }, '[DLQ] Failed webhook:');
 
       await alertService?.alertWebhookDrained({
         eventId: job.id,
@@ -30,15 +31,15 @@ export function startDeadLetterWorker(alertService?: AlertService): Worker {
   );
 
   worker.on('completed', (job) => {
-    console.log(`[Worker:${QueueNames.FAILED_WEBHOOKS}] Job ${job.id} completed`);
+    logger.info('[Worker:%s] Job %s completed', QueueNames.FAILED_WEBHOOKS, job.id);
   });
 
   worker.on('failed', (job, err) => {
-    console.error(`[Worker:${QueueNames.FAILED_WEBHOOKS}] Job ${job?.id} failed:`, err.message);
+    logger.error({ err }, '[Worker:%s] Job %s failed:', QueueNames.FAILED_WEBHOOKS, job?.id);
   });
 
   worker.on('error', (err) => {
-    console.error(`[Worker:${QueueNames.FAILED_WEBHOOKS}] Error:`, err);
+    logger.error({ err }, '[Worker:%s] Error:', QueueNames.FAILED_WEBHOOKS);
   });
 
   return worker;

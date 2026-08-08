@@ -104,6 +104,16 @@ app.setErrorHandler(errorHandler); // depois das rotas
 
 ---
 
+### Env fail-closed contracts (bootstrap)
+
+- `JWT_SECRET`, `MASTER_API_KEY`, `ASAAS_API_KEY`: **`z.string().min(1)` — sem default** em `config/env.ts`. Um ambiente sem essas vars falha **na inicialização** (env validation → `process.exit(1)`), nunca com default público conhecido — previne forja de JWT, impersonação do null-tenant e cobrança contra sandbox de conhecimento público (CODE-19).
+- `EVOLUTION_API_KEY`: **schema-level default `''`** (não bloqueia boot) — o **fail-closed é na rota**: `POST /api/webhooks/evolution` retorna **401 `Invalid API key` quando a env está ausente OU `x-api-key` não confere** (S4 — webhook não configurado nunca aceita tráfego silenciosamente). Fábrica `create-evolution-message-provider` também lança se `EVOLUTION_API_URL` configurada sem key.
+- `EVOLUTION_ALLOWED_IPS`: allowlist de IPs de origem (CSV) para `/api/webhooks/evolution`, aplicada **em cima** da API key (401 `IP not allowed`); vazio = sem allowlist (key check continua valendo).
+- `POST /api/tenants` permanece **público** (signup deliberado) com rate limit 20/min por IP — exceção documentada no AC16.
+- Verificação: `src/config/env.ts`; `routes/webhook.routes.ts` (S4); `presentation/factories/create-evolution-message-provider.factory.ts`.
+
+---
+
 ## Requisitos Não-Funcionais
 
 | ID | Requisito | Detalhe |

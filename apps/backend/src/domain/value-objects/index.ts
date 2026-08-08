@@ -3,7 +3,6 @@ export * from './invoice-status';
 export * from './message-channel';
 export * from './money';
 export * from './payment-method';
-export * from './payment-provider';
 export * from './phone';
 export * from './risk-score';
 export * from './tax-id';

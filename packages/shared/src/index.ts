@@ -3,9 +3,10 @@
 // Types are defined in apps/backend/src/domain/contracts/ — this file re-exports them.
 // This eliminates duplication between the frontend API contract and backend domain model.
 //
-// Wire format convention: UPPERCASE values (e.g. "PENDING", "PIX", "GREEN").
-// This matches the backend domain enums, the Prisma persistence layer, and the
-// JSON API responses.
+// Wire format convention: lowercase enum values are canonical since A3
+// (e.g. PaymentProvider is "asaas"/"mercadopago" — never "ASAAS"). Legacy
+// UPPERCASE aliases are normalized at the persistence layer and are not part
+// of the API contract.
 
 // ──────────────────────────────────────────────
 //  Enums (API Contract)

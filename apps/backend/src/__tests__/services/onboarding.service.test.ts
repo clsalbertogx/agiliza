@@ -60,7 +60,10 @@ describe('OnboardingService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks = createMocks();
-    service = new OnboardingService(mocks.clientRepo, mocks.eventRepo, mocks.messageProvider);
+    service = new OnboardingService(mocks.clientRepo, mocks.eventRepo, mocks.messageProvider, {
+      generate: () => 'fixed-id',
+      validate: () => true,
+    });
   });
 
   describe('startOnboarding', () => {

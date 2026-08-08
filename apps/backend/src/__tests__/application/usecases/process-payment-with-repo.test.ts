@@ -16,6 +16,7 @@ import {
   ProcessPaymentWebhookUseCase,
 } from '@/application/usecases/process-payment-webhook.usecase';
 import { type Invoice, InvoiceStatus, PaymentMethod } from '@/domain/entities/invoice';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 // ── ProcessPaymentUseCase mocks ──────────────────────────────────────
 
@@ -136,12 +137,18 @@ describe('ProcessPaymentUseCase — Payment Recording', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    const idGenerator: IdGeneratorPort = {
+      generate: () => 'fixed-id',
+      validate: () => true,
+    };
     processPayment = new ProcessPaymentUseCase(
       mockInvoiceRepo,
       mockClientRepo,
       mockPaymentRepo,
       mockPaymentGateway,
       mockEventBus,
+      undefined, // resolver — fallback to the injected gateway
+      idGenerator,
     );
   });
 
@@ -191,12 +198,17 @@ describe('ProcessPaymentWebhookUseCase — Payment Recording', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    const idGenerator: IdGeneratorPort = {
+      generate: () => 'fixed-id',
+      validate: () => true,
+    };
     processWebhook = new ProcessPaymentWebhookUseCase(
       mockVerifier,
       mockParser,
       mockInvoiceRepo,
       mockPaymentRepo,
       mockEventBus,
+      idGenerator,
     );
   });
 

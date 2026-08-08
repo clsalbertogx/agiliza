@@ -4,6 +4,7 @@ import { AlertTriangle, BarChart3, Bell, FileText, LayoutDashboard, Menu, Settin
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { VERSION } from '@/lib/version';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -132,7 +133,7 @@ export function Sidebar() {
           <NavLinks pathname={pathname} />
         </nav>
         <div className="p-4 border-t border-gray-100">
-          <p className="text-xs text-gray-400">Agiliza v0.12.0</p>
+          <p className="text-xs text-gray-400">Agiliza v{VERSION}</p>
         </div>
       </aside>
 
@@ -189,7 +190,7 @@ export function Sidebar() {
               <NavLinks pathname={pathname} onNavigate={closeMenu} />
             </nav>
             <div className="p-4 border-t border-gray-100">
-              <p className="text-xs text-gray-400">Agiliza v0.12.0</p>
+              <p className="text-xs text-gray-400">Agiliza v{VERSION}</p>
             </div>
           </div>
         </div>

@@ -2,8 +2,9 @@ import { ReminderService } from '@/application/services/reminder.service';
 import { PrismaClientRepository } from '@/infrastructure/database/repositories/client.repository';
 import { PrismaEventRepository } from '@/infrastructure/database/repositories/event.repository';
 import { PrismaInvoiceRepository } from '@/infrastructure/database/repositories/invoice.repository';
-import { EvolutionMessageProvider } from '@/infrastructure/messaging/evolution/evolution-message.provider';
 import { getQueue, QueueNames } from '@/infrastructure/queue';
+import { UuidV7Generator } from '@/infrastructure/uuid/uuid-v7-generator';
+import { createEvolutionMessageProvider } from './create-evolution-message-provider.factory';
 
 /**
  * Adapter that wraps the infrastructure queue as a QueuePort.
@@ -23,11 +24,8 @@ export function createReminderService(): ReminderService {
   const invoiceRepo = new PrismaInvoiceRepository();
   const clientRepo = new PrismaClientRepository();
   const eventRepo = new PrismaEventRepository();
-  const messageProvider = new EvolutionMessageProvider({
-    baseUrl: process.env.EVOLUTION_API_URL || 'http://localhost:8080',
-    apiKey: process.env.EVOLUTION_API_KEY || 'dev-key',
-    instanceName: 'agiliza',
-  });
+  // S3: throws when EVOLUTION_API_KEY is missing — never defaults a credential.
+  const messageProvider = createEvolutionMessageProvider();
 
-  return new ReminderService(invoiceRepo, clientRepo, eventRepo, queueAdapter, messageProvider);
+  return new ReminderService(invoiceRepo, clientRepo, eventRepo, queueAdapter, messageProvider, new UuidV7Generator());
 }

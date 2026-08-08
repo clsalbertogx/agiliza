@@ -2,6 +2,7 @@ import { RetryableWebhookHandler } from '@/application/events/handlers/retryable
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
 import type { ProcessPaymentUseCase } from '@/application/usecases/process-payment.usecase';
 import type { RenewSubscriptionUseCase } from '@/application/usecases/renew-subscription.usecase';
+import { logger } from '@/config/logger';
 import type { DomainEvent } from '@/domain/events/domain-events';
 
 export class AutoPayHandler extends RetryableWebhookHandler {
@@ -28,7 +29,7 @@ export class AutoPayHandler extends RetryableWebhookHandler {
     });
 
     if (paymentResult.success) {
-      console.log(`[AutoPay] Invoice ${event.invoiceId} auto-paid successfully`);
+      logger.info('[AutoPay] Invoice %s auto-paid successfully', event.invoiceId);
 
       // Renew the subscription for the next cycle
       await this.renewSubscription.execute({
@@ -39,7 +40,7 @@ export class AutoPayHandler extends RetryableWebhookHandler {
       // Payment failed — log but don't block. Invoice remains PENDING for manual payment.
       // This is a business-level "failure" (not a transient/system error), so it is
       // NOT re-thrown and therefore NOT retried.
-      console.warn(`[AutoPay] Invoice ${event.invoiceId} auto-pay failed: ${paymentResult.value.message}`);
+      logger.warn('[AutoPay] Invoice %s auto-pay failed: %s', event.invoiceId, paymentResult.value.message);
     }
   }
 }

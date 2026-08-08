@@ -2,12 +2,18 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Demo tenant id referenced by validation/e2e scripts (localStorage tenant_id).
+const DEMO_TENANT_ID = 'c87a3abd-a449-40d7-8152-461a24a27fd5';
+
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Create a sample tenant
-  const tenant = await prisma.tenant.create({
-    data: {
+  // Create the demo tenant (upsert → re-runnable on an already-seeded DB)
+  const tenant = await prisma.tenant.upsert({
+    where: { id: DEMO_TENANT_ID },
+    update: {},
+    create: {
+      id: DEMO_TENANT_ID,
       name: 'Academia Fit Plus',
       slug: 'academia-fit-plus',
       document: '00.000.000/0001-00',
@@ -18,6 +24,21 @@ async function main() {
         apiKey: 'asaas_sandbox_key_here',
         environment: 'sandbox',
       },
+    },
+  });
+
+  // PaymentProviderConfig row — canonical config shape the app reads
+  // (payment-provider-config.repository / per-tenant-hmac-verifier).
+  await prisma.paymentProviderConfig.upsert({
+    where: { tenantId_provider: { tenantId: tenant.id, provider: 'asaas' } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      provider: 'asaas',
+      apiKeyEncrypted: 'asaas_sandbox_key_here',
+      environment: 'sandbox',
+      webhookSecret: 'asaas_webhook_secret_dev',
+      isActive: true,
     },
   });
 

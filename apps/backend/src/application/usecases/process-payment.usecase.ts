@@ -1,15 +1,15 @@
 import { ApplicationError } from '@/application/errors/application.error';
 import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
-import type { EncryptionPort } from '@/application/ports/gateways/encryption.port';
+import type { PaymentGatewayResolverPort } from '@/application/ports/gateways/payment-gateway-resolver.port';
 import type { PaymentGatewayPort, PixChargeResponse } from '@/application/ports/payment-gateway.port';
 import type { ClientRepositoryPort } from '@/application/ports/repositories/client.repository.port';
 import type { InvoiceRepositoryPort } from '@/application/ports/repositories/invoice.repository.port';
 import type { PaymentRepositoryPort } from '@/application/ports/repositories/payment.repository.port';
-import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
 import { type Either, failure, isFailure, success } from '@/application/types/either';
+import { PaymentProvider } from '@/domain/contracts/enums';
 import { InvoiceStatus, PaymentMethod, updateInvoice } from '@/domain/entities/invoice';
-import { createPayment, PaymentProvider } from '@/domain/entities/payment';
-import { generateUUID } from '@/infrastructure/uuid/uuid.service';
+import { createPayment } from '@/domain/entities/payment';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 export interface ProcessPaymentInput {
   invoiceId: string;
@@ -25,8 +25,6 @@ export interface ProcessPaymentOutput {
   };
 }
 
-export type PaymentGatewayFactory = (config: { apiKey: string; environment: string }) => PaymentGatewayPort;
-
 export class ProcessPaymentUseCase {
   constructor(
     private readonly invoiceRepo: InvoiceRepositoryPort,
@@ -34,9 +32,8 @@ export class ProcessPaymentUseCase {
     private readonly paymentRepo: PaymentRepositoryPort,
     private readonly paymentGateway: PaymentGatewayPort,
     readonly _eventBus: EventBusPort,
-    private readonly paymentProviderConfigRepo?: PaymentProviderConfigRepositoryPort,
-    private readonly encryption?: EncryptionPort,
-    private readonly gatewayFactory?: PaymentGatewayFactory,
+    private readonly resolver: PaymentGatewayResolverPort | undefined,
+    private readonly idGenerator: IdGeneratorPort,
   ) {}
 
   async execute(input: ProcessPaymentInput): Promise<Either<ApplicationError, ProcessPaymentOutput>> {
@@ -51,36 +48,15 @@ export class ProcessPaymentUseCase {
       return failure(new ApplicationError('Invoice is already paid', 'ALREADY_PAID', 400));
     }
 
-    // 3. Resolve payment gateway (per-tenant config with fallback to injected gateway).
-    //    Delegates to the PaymentProviderFactory which inspects the per-provider
-    //    rows in `payment_provider_configs` and picks the first active one,
-    //    falling back to Asaas with global env credentials.
+    // 3. Resolve payment gateway (F2): per-tenant configured provider wins;
+    //    falls back to the injected gateway (Asaas) when no resolver is given
+    //    or the tenant has no provider config.
     let gateway = this.paymentGateway;
     let resolvedProvider = PaymentProvider.ASAAS;
-    if (this.paymentProviderConfigRepo && this.encryption && this.gatewayFactory) {
-      // Try each known provider in fallback order; use the first row that exists.
-      const candidateProviders: string[] = ['asaas', 'mercadopago', 'stripe', 'pagbank', 'polar'];
-      for (const provider of candidateProviders) {
-        const config = await this.paymentProviderConfigRepo.findByTenantAndProvider(input.tenantId, provider);
-        if (config) {
-          const decryptedApiKey = this.encryption.decrypt(config.apiKey);
-          gateway = this.gatewayFactory({
-            apiKey: decryptedApiKey,
-            environment: config.environment,
-          });
-          resolvedProvider =
-            provider === 'mercadopago'
-              ? PaymentProvider.MERCADO_PAGO
-              : provider === 'stripe'
-                ? PaymentProvider.STRIPE
-                : provider === 'pagbank'
-                  ? PaymentProvider.PAGBANK
-                  : provider === 'polar'
-                    ? PaymentProvider.POLAR
-                    : PaymentProvider.ASAAS;
-          break;
-        }
-      }
+    if (this.resolver) {
+      const resolved = await this.resolver.resolveForTenant(input.tenantId);
+      gateway = resolved.gateway;
+      resolvedProvider = resolved.provider;
     }
 
     // 4. Create PIX charge via payment provider
@@ -91,14 +67,9 @@ export class ProcessPaymentUseCase {
         description: invoice.description || `Invoice ${invoice.id}`,
         externalReference: invoice.id,
       });
-    } catch (error: any) {
-      return failure(
-        new ApplicationError(
-          `Payment provider error: ${error.message || 'Unknown error'}`,
-          'PAYMENT_PROVIDER_ERROR',
-          502,
-        ),
-      );
+    } catch (error: unknown) {
+      const message = error instanceof Error && error.message ? error.message : 'Unknown error';
+      return failure(new ApplicationError(`Payment provider error: ${message}`, 'PAYMENT_PROVIDER_ERROR', 502));
     }
 
     // 5. Update invoice with PIX data
@@ -110,9 +81,9 @@ export class ProcessPaymentUseCase {
     });
     await this.invoiceRepo.update(updatedInvoice);
 
-    // 6. Record payment
+    // 6. Record payment — provider is the ACTUAL gateway used (F2).
     const paymentResult = createPayment({
-      id: generateUUID(),
+      id: this.idGenerator.generate(),
       tenantId: input.tenantId,
       invoiceId: input.invoiceId,
       clientId: invoice.clientId,

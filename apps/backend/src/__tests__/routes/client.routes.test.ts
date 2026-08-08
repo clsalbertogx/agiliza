@@ -14,7 +14,11 @@ vi.mock('@/infrastructure/database/prisma.service', () => ({
   getPrismaClient: vi.fn(() => ({
     client: {
       findUnique: mockState.findById,
-      findFirst: mockState.findById,
+      findFirst: vi.fn(async (args: { where: Record<string, unknown> }) => {
+        if (args.where.id) return mockState.findById(args.where);
+        if (args.where.phone) return mockState.findByPhone(args.where);
+        return null;
+      }),
       findMany: mockState.findMany,
       create: mockState.create,
       update: mockState.update,
@@ -25,16 +29,19 @@ vi.mock('@/infrastructure/database/prisma.service', () => ({
 
 /**
  * Mock the onboarding factory to capture auto-trigger calls.
- * The route does a dynamic import of create-onboarding.factory when
- * a client is created without preferredChannel/preferredTime.
+ * The event bus handler (registered via registerEventHandlers) uses this factory.
  */
 const mockStartOnboarding = vi.fn().mockResolvedValue(undefined);
+const mockNeedsOnboarding = vi.fn().mockResolvedValue(true);
 vi.mock('@/presentation/factories/create-onboarding.factory', () => ({
   createOnboardingService: vi.fn(() => ({
     startOnboarding: mockStartOnboarding,
+    needsOnboarding: mockNeedsOnboarding,
   })),
 }));
 
+import { getEventBus, resetEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
+import { registerEventHandlers } from '@/presentation/factories/register-event-handlers';
 import { clientRoutes } from '@/routes/client.routes';
 
 const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
@@ -70,6 +77,10 @@ describe('Client API Routes', () => {
       reply.code(401).send({ error: 'Invalid or expired token' });
     });
 
+    // Set up event bus wiring (mirrors index.ts)
+    resetEventBus();
+    registerEventHandlers(getEventBus());
+
     await app.register(clientRoutes);
     await app.ready();
   });
@@ -80,6 +91,13 @@ describe('Client API Routes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockNeedsOnboarding.mockResolvedValue(true);
+    mockState.findByPhone.mockResolvedValue(null);
+    mockState.findById.mockResolvedValue(null);
+    mockState.create.mockResolvedValue(mockClient);
+    mockState.update.mockResolvedValue(mockClient);
+    mockState.findMany.mockResolvedValue([mockClient]);
+    mockState.count.mockResolvedValue(1);
   });
 
   const mockClient = {
@@ -163,7 +181,7 @@ describe('Client API Routes', () => {
     });
 
     it('should return 409 when phone already exists for the same tenant', async () => {
-      mockState.findById.mockResolvedValue(mockClient);
+      mockState.findByPhone.mockResolvedValue(mockClient);
 
       const res = await app.inject({
         method: 'POST',
@@ -284,6 +302,7 @@ describe('Client API Routes', () => {
       mockState.findById.mockResolvedValue(null);
       mockState.create.mockResolvedValue(mockClient);
       mockStartOnboarding.mockClear();
+      mockNeedsOnboarding.mockResolvedValue(true);
 
       const res = await app.inject({
         method: 'POST',
@@ -297,6 +316,7 @@ describe('Client API Routes', () => {
 
       expect(res.statusCode).toBe(201);
       // Auto-trigger should call startOnboarding for clients without preferences
+      await new Promise((resolve) => setTimeout(resolve, 20)); // wait for microtask queue
       expect(mockStartOnboarding).toHaveBeenCalledWith(mockClient.id, TEST_TENANT_ID);
     });
 
@@ -304,6 +324,7 @@ describe('Client API Routes', () => {
       mockState.findById.mockResolvedValue(null);
       mockState.create.mockResolvedValue(mockClient);
       mockStartOnboarding.mockClear();
+      mockNeedsOnboarding.mockResolvedValue(false);
 
       const res = await app.inject({
         method: 'POST',
@@ -319,6 +340,7 @@ describe('Client API Routes', () => {
 
       expect(res.statusCode).toBe(201);
       // Auto-trigger should NOT fire when both preferences are provided
+      await new Promise((resolve) => setTimeout(resolve, 20)); // wait for microtask queue
       expect(mockStartOnboarding).not.toHaveBeenCalled();
     });
   });

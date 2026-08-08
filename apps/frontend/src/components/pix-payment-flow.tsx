@@ -216,7 +216,10 @@ export function PixPaymentFlow({
           {/* Copy button */}
           <div className="w-full max-w-sm">
             <div className="flex gap-2">
-              <code aria-label="Chave PIX para copiar" className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 truncate">
+              <code
+                aria-label="Chave PIX para copiar"
+                className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 truncate"
+              >
                 {pixData.copyPasteKey}
               </code>
               <Button

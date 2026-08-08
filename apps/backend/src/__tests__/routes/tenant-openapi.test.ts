@@ -32,6 +32,7 @@ vi.mock('@/infrastructure/database/prisma.service', () => ({
   })),
 }));
 
+import { VERSION } from '@/config/version';
 import authPlugin from '@/infrastructure/plugins/auth.plugin';
 import { tenantRoutes } from '@/routes/tenant.routes';
 
@@ -42,7 +43,7 @@ describe('OpenAPI — POST /api/tenants (public signup) schema', () => {
     app = Fastify({ logger: false });
     await app.register(fastifySwagger, {
       openapi: {
-        info: { title: 'Agiliza API', version: '0.8.0' },
+        info: { title: 'Agiliza API', version: VERSION },
         servers: [{ url: 'http://localhost:3333' }],
         components: {
           securitySchemes: {

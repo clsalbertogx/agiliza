@@ -113,6 +113,7 @@ describe('ReminderService', () => {
       mocks.eventRepo,
       mocks.queue,
       mocks.messageProvider,
+      { generate: () => 'fixed-id', validate: () => true },
       decisionEngine,
     );
   });
@@ -140,7 +141,8 @@ describe('ReminderService', () => {
           status: 'PENDING',
         }),
       );
-      expect(mocks.clientRepo.findById).toHaveBeenCalledWith(invoice.clientId);
+      // SEC-10: client lookup must be scoped to the same tenant as the invoice.
+      expect(mocks.clientRepo.findById).toHaveBeenCalledWith(invoice.clientId, 'tenant-123');
       expect(vi.mocked(decisionEngine.decideNextAction)).toHaveBeenCalledWith(client, invoice, 'default');
     });
 
@@ -274,7 +276,8 @@ describe('ReminderService', () => {
       expect(result.externalId).toBe('ext-456');
 
       expect(mocks.invoiceRepo.findById).toHaveBeenCalledWith(invoice.id, 'tenant-123');
-      expect(mocks.clientRepo.findById).toHaveBeenCalledWith(client.id);
+      // SEC-10: client lookup must be scoped to the same tenant as the invoice.
+      expect(mocks.clientRepo.findById).toHaveBeenCalledWith(client.id, 'tenant-123');
       expect(mocks.messageProvider.sendTemplate).toHaveBeenCalledWith(
         expect.objectContaining({
           to: client.phone,

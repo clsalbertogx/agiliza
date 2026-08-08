@@ -1,4 +1,5 @@
 import type { EventBusPort } from '@/application/ports/adapters/event-bus.port';
+import { logger } from '@/config/logger';
 import type { DomainEvent, DomainEventType } from '@/domain/events/domain-events';
 
 export class InMemoryEventBus implements EventBusPort {
@@ -12,11 +13,11 @@ export class InMemoryEventBus implements EventBusPort {
           const result = handler(event);
           if (result instanceof Promise) {
             result.catch((error: unknown) => {
-              console.error(error instanceof Error ? error.message : String(error), error);
+              logger.error({ err: error }, 'Event handler failed');
             });
           }
         } catch (error: unknown) {
-          console.error(error instanceof Error ? error.message : String(error), error);
+          logger.error({ err: error }, 'Event handler failed');
         }
       });
     }
@@ -27,4 +28,17 @@ export class InMemoryEventBus implements EventBusPort {
     existing.push(handler);
     this.handlers.set(eventType, existing);
   }
+}
+
+// Module-level singleton getter — ensures all factories and the composition root
+// share the SAME event bus instance so published events reach subscribed handlers.
+let _sharedBus: InMemoryEventBus | null = null;
+
+export function getEventBus(): InMemoryEventBus {
+  if (!_sharedBus) _sharedBus = new InMemoryEventBus();
+  return _sharedBus;
+}
+
+export function resetEventBus(): void {
+  _sharedBus = null;
 }

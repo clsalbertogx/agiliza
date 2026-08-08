@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { isFailure } from '@/application/types/either';
+import { env } from '@/config/env';
 import { createProcessPaymentWebhookUseCase } from '@/presentation/factories';
 
 /**
@@ -107,12 +108,31 @@ export async function webhookRoutes(app: FastifyInstance) {
       config: { rateLimit: webhookRateLimit },
     },
     async (request, reply) => {
-      // Validate API key
+      // Validate API key. S4: fail-closed — if EVOLUTION_API_KEY is not
+      // configured (no expected key) OR the presented key does not match,
+      // the webhook is rejected with 401. An unconfigured webhook must never
+      // silently accept traffic.
       const apiKey = request.headers['x-api-key'] as string;
       const expectedKey = process.env.EVOLUTION_API_KEY;
 
-      if (expectedKey && apiKey !== expectedKey) {
+      if (!expectedKey || apiKey !== expectedKey) {
         reply.code(401).send({ error: 'Invalid API key' });
+        return;
+      }
+
+      // Optional source-IP allowlist (env.EVOLUTION_ALLOWED_IPS, comma-separated).
+      // When configured, only requests from the listed IPs may reach the
+      // handler; the allowlist applies on top of the API key check.
+      // Note (deploy): `request.ip` is the socket address — behind a reverse
+      // proxy, configure Fastify `trustProxy` at the edge (never trust
+      // `x-forwarded-for` without it). The API key stays the primary control.
+      const allowedIps = (env.EVOLUTION_ALLOWED_IPS || '')
+        .split(',')
+        .map((ip) => ip.trim())
+        .filter(Boolean);
+
+      if (allowedIps.length > 0 && !allowedIps.includes(request.ip)) {
+        reply.code(401).send({ error: 'IP not allowed' });
         return;
       }
 

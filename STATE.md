@@ -1,7 +1,7 @@
 # STATE — Pós-inicialização do projeto (fora de sprint formal)
 
 ## Ticket atual
-Consolidação de governança (cadeia de 3 pareceres + autocorreção + specs) CONCLUÍDA e commitada. Backend **1063/103 arquivos** (tenant-isolation 14, auth-plugin 6, signup 8, tenant-openapi 2), frontend **447/33** (sidebar 23, register 8). `tsc --noEmit` 0 erros ambos; biome 0 erros nos arquivos tocados; coverage backend 80.43%, frontend 97.29% (thresholds 70/60).
+Delivery commit da **auditoria multi-wave + correções** (Wave 1 security, Wave 2 event-bus/IdGeneratorPort/multi-provider/enum, Wave 3 versão/logger/dados/órfãos, P3 hygiene, docs/specs, pareceres) CONCLUÍDA e commitada. Backend **1104/115 arquivos**, frontend **258/25**. `tsc --noEmit` 0 erros ambos; biome 0 erros nos arquivos tocados nesta entrega (11 erros pré-existentes em tooling/`get-tenant.ts`/`smoke.test.ts` preservados como estão); `grep query.tenantId` em `apps/backend/src` → 0; arch test `dependency-rule.test.ts` 1/1 PASS (0 imports app→infra).
 
 ## Bloqueios ativos
 Nenhum.
@@ -26,8 +26,8 @@ Journey UX/data (validação 66 PASS / 0 FAIL em browser real):
 - Drawer hamburger no mobile (`sidebar.tsx`, `dashboard/layout.tsx`).
 
 **Tech debt registrado (2 findings não-bloqueantes do re-audit → próximo sprint):**
-1. `env.ts` mantém MASTER_API_KEY com default fail-open (`'agiliza-dev-api-key-change-in-production'`) — alinhar a fail-closed como JWT_SECRET (exigir env, remover default).
-2. `reminder.service.ts:103` `clientRepo.findById(invoice.clientId)` sem tenantId — defense in depth (fatura já é do tenant; escopar o client lookup elimina o raciocínio multi-tenant na cadeia).
+1. ~~`env.ts` mantém MASTER_API_KEY com default fail-open~~ — **RESOLVIDO nesta sessão**: `env.ts` exige `MASTER_API_KEY: z.string().min(1)` (fail-closed como JWT_SECRET e ASAAS_API_KEY); documentado em `specs/security.spec.md` (Env fail-closed contracts).
+2. `reminder.service.ts:103` `clientRepo.findById(invoice.clientId)` sem tenantId — defense in depth (fatura já é do tenant; escopar o client lookup elimina o raciocínio multi-tenant na cadeia) — segue no backlog v0.13.0+.
 
 Decisões de negócio desta sessão (não reabrir sem evidência nova):
 - `GET /api/tenants` removida em vez de role-gated — frontend nunca consumiu (settings usa `/api/tenants/:id/payment-provider` com id próprio).
@@ -37,6 +37,16 @@ Decisões de negócio desta sessão (não reabrir sem evidência nova):
 - Tests novos: `__tests__/security/auth-plugin.test.ts` (6), `__tests__/security/tenant-isolation.test.ts` (14); atualizados: rate-limiting, tenant.routes, tenant-signup, reminder.service, client/invoice/subscription.routes.
 - Journey tooling commitado como test tooling: `scripts/user-journey-full.mjs`, `scripts/user-journey-security.mjs`.
 - Webhook NÃO tocado (HMAC per-tenant preservado). `depcruise` não configurado no repo.
+
+## Auditoria multi-wave + correções — entregue e commitada (novo baseline)
+Commit de consolidação com todo o batch (1104 backend / 258 frontend). Waves documentadas no commit message e nos pareceres em `pareceres/audit-multiwave-corrections.md`.
+
+- **Wave 1 (security)**: `MASTER_API_KEY`/`ASAAS_API_KEY` fail-closed em `env.ts` (`.min(1)`, sem default — boot quebra sem env); webhook Evolution fail-closed (`!expectedKey ||` → 401) + allowlist de IPs `EVOLUTION_ALLOWED_IPS` (401 `IP not allowed`, aplicada além da key); `tenantId` removido da querystring em **todas** as rotas (grep `query.tenantId` = 0; JWT `request.tenantId` autoritativo), incluindo schemas OpenAPI mortos removidos (invoice/reminder/report/subscription/client); `MERCADOPAGO_WEBHOOK_SECRET` → `MERCADO_PAGO_WEBHOOK_SECRET` (nomenclatura unificada, `hmac-verifier.ts` A4) com teste de contrato `env-contract.test.ts` sincronizando `envSchema` ↔ `.env.example`; `reminder.service.ts` escopa lookup de client por tenant (SEC-10, `findById(invoice.clientId, tenantId)`).
+- **Wave 2 (funcional P0)**: event bus compartilhado — `getEventBus()` singleton module-level (`in-memory-event-bus.ts`) para factories/composition root usarem a MESMA instância (eventos chegam aos handlers registrados; `integration/event-bus-wiring.test.ts`); `IdGeneratorPort` (`domain/ports/id-generator.port.ts`) injetado em services — **0 imports app→infra** (arch test `dependency-rule.test.ts` valida); `PaymentGatewayResolverPort` (`resolveForTenant`/`resolveForTenantAndProvider`) + `PaymentProviderFactory implements` — `ProcessPaymentUseCase` desacoplado do Asaas hardcoded, resolve per-tenant (fallback env Asaas), gravando `provider` = gateway realmente usado; enum `PaymentProvider` canônico lowercase em `domain/contracts/enums.ts` (`asaas`/`mercadopago`/`stripe`/`pagbank`/`polar`) + migration A3 `lower()` idempotente + normalização `toLowerCase()` em `tenant.ts`.
+- **Wave 3 (hygiene)**: fonte única de versão (`config/version.ts` + `lib/version.ts`, lido do `npm_package_version`/tag `v0.12.0` — remove o `0.8.0` hardcoded do OpenAPI/health e o `0.1.0` dos package.json base); pino `logger` nos workers de fila (substituiu `console.log`); migration `20260807120000_add_missing_indexes` (invoices.subscriptionId, subscriptions.nextBilling, tenants.email — DATA-12); seed `upsert` idempotente + `PaymentProviderConfig` do tenant demo; **8 componentes órfãos front-end deletados** (`client-detail-card`, `collection-timeline`, `exception-panel`, `kanban-board`, `message-tracking`, `notification-banner`, `onboarding-wizard`, `payment-history` + `index.ts` + 7 testes órfãos — ver parecer creative); invoice-form sem nested-button (`RiskBadge` que renderiza `<button>` dentro de `<button>` do listbox → `Badge` plano) — fix de flake.
+- **P3 hygiene**: `levelToVariant`/`levelLabel` exportados no `risk-badge.tsx` (uso direto com `Badge` no dropdown); versão na Sidebar via `VERSION` do `lib/version.ts`.
+- **Docs/specs**: `specs/multi-provider-payments.spec.md` (AC4/AC9/AC15 → Port F2 + enum lowercase), `specs/security.spec.md` (Env fail-closed contracts + EVOLUTION_ALLOWED_IPS), `README.md` (tabela env, stack, release notes v0.10–12), `docs/sprint` corrigido; backlog registrado na seção abaixo.
+- **Pareceres desta auditoria** (chain completo registrado em `pareceres/`): `security-wave1-rereview.md` (security-specialist APROVADO COM RESSALVAS + tech-nucleus) e `audit-multiwave-corrections.md` (tech-nucleus APROVADO COM RESSALVAS, creative-nucleus APROVADO, compliance APROVADO COM RESSALVAS — 6 itens de autocorreção marcados EXECUTADOS).
 
 ## Autocorreção batch (pareceres tech + creative nucleus) — commitado nesta consolidação
 - OpenAPI drift: `POST /api/tenants` agora `security: []` + `description: 'Público — signup sem autenticação'` (era `[{bearerAuth}]` num endpoint público de verdade). Novo `__tests__/routes/tenant-openapi.test.ts` (2) valida o doc OpenAPI via `app.swagger()`. Comportamento de auth intocado.
@@ -52,6 +62,11 @@ Decisões de negócio desta sessão (não reabrir sem evidência nova):
   2. **creative-nucleus-lead** — APROVADO COM RESSALVAS (2 findings P2 a11y no drawer + 7 P3; autocorreção P2 implementada no batch).
   3. **compliance-auditor** — APROVADO COM RESSALVAS (1 finding média: signup sem AC de spec; instrução de autocorreção executada nesta consolidação).
 - Veredicto consolidado: **APROVADO COM RESSALVAS** (todos não-bloqueantes) — entrega pode prosseguir ao parecer final do CEO.
+- Auditoria multi-wave desta entrega (pareceres em `pareceres/security-wave1-rereview.md` + `pareceres/audit-multiwave-corrections.md`):
+  1. **security-specialist (re-auditoria Wave 1)** — APROVADO COM RESSALVAS (0 findings novos; 3 residuais não-bloqueantes: README EVOLUTION_API_KEY doc-vs-schema — corrigido; dead querystring schemas — removidos na consolidação; nota trustProxy/documentação).
+  2. **tech-nucleus-lead** — APROVADO COM RESSALVAS (7 findings P3; 6 executáveis implementados, 1 posicionado no backlog — ver parecer).
+  3. **creative-nucleus-lead** — APROVADO (deleção de órfãos segura; nested-button fix; componentes mantidos justificados).
+  4. **compliance-auditor** — APROVADO COM RESSALVAS (checklist SDD/TDD/Secure-by-Design/DoD; 6 itens de autocorreção marcados EXECUTADOS com evidência — ver parecer).
 
 ## Últimas decisões (não repita a pergunta)
 - RiskScore: canonical wire/storage = ClientRiskScore GREEN/YELLOW/RED; RiskLevel (LOW/MEDIUM/HIGH/CRITICAL) é refinamento interno de domínio; CRITICAL colapsa em RED na fronteira. Mapeamento vive no VO (fromClientRiskScore + clientRiskScore getter). Spec: specs/frontend-ui-consistency-corrections.spec.md
@@ -68,7 +83,28 @@ Decisões de negócio desta sessão (não reabrir sem evidência nova):
 - .dockerignore na raiz criado (exclui node_modules/**.node_modules/.git/dist/.next/coverage/.env/e2e/*.md etc. do contexto de build — evita artefatos glibc do host entrarem na imagem Alpine).
 - Build Docker do backend VERIFICADO: `docker compose -f docker/docker-compose.dev.yml build backend` → sucesso (imagem docker-backend:latest).
 
+## Backlog v0.13.0+ (registrado na auditoria completa)
+
+> Itens deferidos deliberadamente durante a auditoria/autocorreção — fora do escopo desta sessão (doc-only). Cada item com rationale de uma linha; prontos para virar tickets no planejamento do v0.13.0.
+
+| Item | Rationale |
+|------|-----------|
+| Next.js 14 → 16 upgrade | 9 HIGH CVEs no Next 14 (supply-chain/SSRF/RCE recentes) |
+| Cookie httpOnly auth + CSP no frontend | JWT em localStorage é roubável via XSS; httpOnly + CSP mitiga na borda |
+| Asaas real API calls (COD-16) | PIX hoje simulado em testes (factory injetável); ligar SDK real + contract tests |
+| `/billing` real (pix-payment-flow + invoice-form + `POST /api/invoices/:id/pix-charge`) | página atual é mock estático; sem o POST não existe cobrança de verdade |
+| Error envelope A7 (~80 pontos) | envelope `{error:{code,message,details}}` não é uniforme em ~80 call sites |
+| `@agiliza/shared` package (ARCH-16) | dependência invertida: frontend importa de `apps/backend/src`; shared deve ser a borda do contrato |
+| Onboarding persistence (in-memory) | `StartOnboardingHandler`/service guardam estado em memória — perde no restart; precisa de store |
+| UoW wiring (create-invoice + payment transacional) | `create-invoice` + `create-payment` não são transacionais (Unit of Work não conectado) |
+| Depcruise config (arch fitness function) | README/CI citam depcruise mas o repo não tem config — gate de arquitetura sem execução real |
+| docs/sprint references cleanup | README/tabela de releases com claims obsoletas (contagens de teste, gateways) |
+| README EVOLUTION_API_KEY doc-vs-schema mismatch | doc dizia "sem default"; schema é `default('')` com fail-closed na rota — corrigido nesta sessão; item mantido como lembrete de verificação pós-merge |
+| webhook.test.ts:419 simulated allowlist test | teste mocka a rota em vez de asserts na rota real — substituir por teste real de rota |
+| Unit tests p/ 6 list/read usecases | use cases de leitura sem suite própria (cobertura via rotas apenas) |
+| E2E duplication | `e2e/` e `scripts/user-journey-*` duplicam gatilhos — consolidar |
+
 ## Próximo passo assim que retomar
-1. Sprint v0.13.0 formal a definir; tech debt do re-audit entra no backlog: (a) MASTER_API_KEY fail-closed como JWT_SECRET; (b) escopo tenant no client lookup de `reminder.service.ts`.
+1. Sprint v0.13.0 formal a definir — backlog acima já registrado; tech debt (a) MASTER_API_KEY fail-closed **implementado**, (b) escopo tenant no client lookup de `reminder.service.ts` segue no backlog.
 2. Validar build Docker do FRONTEND (pendente de sessão anterior — mesmo padrão de contexto do backend, mas tem o npm ci do frontend + next build).
 3. Follow-ups opcionais antigos: (a) endpoint de message templates; (b) GET /api/clients/:id deveria retornar ClientProfile com clientRiskScore.

@@ -1,14 +1,20 @@
 import type { EncryptionPort } from '@/application/ports/gateways/encryption.port';
+import type {
+  PaymentGatewayResolverPort,
+  ResolvedPaymentGateway,
+} from '@/application/ports/gateways/payment-gateway-resolver.port';
 import type { PaymentGatewayPort } from '@/application/ports/payment-gateway.port';
 import type { PaymentProviderConfigRepositoryPort } from '@/application/ports/repositories/payment-provider-config.repository.port';
 import { env } from '@/config/env';
+import { logger } from '@/config/logger';
+import { PaymentProvider } from '@/domain/contracts/enums';
 import { AsaasPaymentProvider } from './asaas.provider';
 import { MercadoPagoGateway } from './mercadopago.gateway';
 import { PagBankGateway } from './pagbank.gateway';
 import { PolarGateway } from './polar.gateway';
 import { StripeGateway } from './stripe.gateway';
 
-export type ProviderType = 'asaas' | 'mercadopago' | 'stripe' | 'pagbank' | 'polar';
+export type ProviderType = PaymentProvider;
 
 export interface ProviderConfig {
   type: ProviderType;
@@ -24,22 +30,32 @@ export interface ProviderConfig {
  * Order in which providers are tried when resolving a tenant's active gateway.
  * Asaas is the default fallback because it was the first provider shipped.
  */
-const PROVIDER_FALLBACK_ORDER: ProviderType[] = ['asaas', 'mercadopago', 'stripe', 'pagbank', 'polar'];
+const PROVIDER_FALLBACK_ORDER: ProviderType[] = [
+  PaymentProvider.ASAAS,
+  PaymentProvider.MERCADO_PAGO,
+  PaymentProvider.STRIPE,
+  PaymentProvider.PAGBANK,
+  PaymentProvider.POLAR,
+];
 
 /**
  * Payment Provider Factory — Strategy selector for the payment gateway adapter.
  *
- * Three modes are supported:
- *   1. Direct construction (`static create(config)`) — used in tests and
- *      connection-probe flows that already know which provider to instantiate.
- *   2. Per-tenant resolution (`createForTenant(tenantId)`) — used by request-time
- *      use cases. Reads the tenant's configured provider from the DB, decrypts
- *      the credentials, and returns the right gateway. Falls back to Asaas
- *      with env-based credentials when no DB config exists.
- *   3. Tenant resolver with explicit provider (`createForTenantAndProvider`)
- *      — used by tenant onboarding when the user picks a provider.
+ * Modes:
+ *   1. Direct construction (`static create(config)`) — connection probes and
+ *      onboarding flows that already know which provider to instantiate.
+ *   2. Per-tenant resolution (`resolveForTenant(tenantId)`) — request-time use
+ *      cases. Reads the tenant's configured provider from the DB, decrypts the
+ *      credentials, and returns the right gateway plus the provider that was
+ *      actually used. Falls back to Asaas with env credentials when no DB
+ *      config exists.
+ *   3. Tenant resolver with explicit provider (`resolveForTenantAndProvider`)
+ *      — used when the caller already knows which provider to use.
+ *
+ * Implements `PaymentGatewayResolverPort` so it can be injected straight into
+ * the ProcessPaymentUseCase (F2).
  */
-export class PaymentProviderFactory {
+export class PaymentProviderFactory implements PaymentGatewayResolverPort {
   constructor(
     private readonly configRepo?: PaymentProviderConfigRepositoryPort,
     private readonly encryption?: EncryptionPort,
@@ -94,7 +110,7 @@ export class PaymentProviderFactory {
    * `payment_provider_configs`. The first active row (in `PROVIDER_FALLBACK_ORDER`)
    * wins. If none is configured, falls back to Asaas with global env credentials.
    */
-  async createForTenant(tenantId: string): Promise<PaymentGatewayPort> {
+  async resolveForTenant(tenantId: string): Promise<ResolvedPaymentGateway> {
     if (!this.configRepo) {
       // No repo injected — fall back to env-based Asaas.
       return this.envFallback();
@@ -105,23 +121,32 @@ export class PaymentProviderFactory {
         const row = await this.configRepo.findByTenantAndProvider(tenantId, provider);
         if (!row?.apiKey) continue;
         const apiKey = this.decrypt(row.apiKey);
-        return PaymentProviderFactory.create({
-          type: provider,
-          apiKey,
-          environment: (row.environment as 'sandbox' | 'production') || 'sandbox',
-          webhookSecret: (row as any).webhookSecret ? this.decrypt((row as any).webhookSecret) : undefined,
-        });
-      } catch {}
+        return {
+          gateway: PaymentProviderFactory.create({
+            type: provider,
+            apiKey,
+            environment: (row.environment as 'sandbox' | 'production') || 'sandbox',
+            webhookSecret: (row as { webhookSecret?: string }).webhookSecret
+              ? this.decrypt((row as { webhookSecret?: string }).webhookSecret as string)
+              : undefined,
+          }),
+          provider,
+        };
+      } catch (err) {
+        // DB lookup or decrypt failure for this provider — log and try the next
+        // fallback instead of failing the whole resolution.
+        logger.warn({ err, provider }, 'payment provider resolution failed');
+      }
     }
 
     return this.envFallback();
   }
 
   /**
-   * Create a gateway for a specific provider+tenant combination. Used during
+   * Resolve a gateway for a specific provider+tenant combination. Used during
    * onboarding / configuration updates when the user has just chosen a provider.
    */
-  async createForTenantAndProvider(tenantId: string, provider: ProviderType): Promise<PaymentGatewayPort | null> {
+  async resolveForTenantAndProvider(tenantId: string, provider: ProviderType): Promise<ResolvedPaymentGateway | null> {
     if (!this.configRepo) {
       return this.envFallbackFor(provider);
     }
@@ -129,13 +154,27 @@ export class PaymentProviderFactory {
     if (!row?.apiKey) {
       return this.envFallbackFor(provider);
     }
-    const apiKey = this.decrypt(row.apiKey);
-    return PaymentProviderFactory.create({
-      type: provider,
-      apiKey,
-      environment: (row.environment as 'sandbox' | 'production') || 'sandbox',
-      webhookSecret: (row as any).webhookSecret ? this.decrypt((row as any).webhookSecret) : undefined,
-    });
+    return {
+      gateway: PaymentProviderFactory.create({
+        type: provider,
+        apiKey: this.decrypt(row.apiKey),
+        environment: (row.environment as 'sandbox' | 'production') || 'sandbox',
+        webhookSecret: (row as { webhookSecret?: string }).webhookSecret
+          ? this.decrypt((row as { webhookSecret?: string }).webhookSecret as string)
+          : undefined,
+      }),
+      provider,
+    };
+  }
+
+  /** @deprecated Use `resolveForTenant` — kept for external callers/tests. */
+  createForTenant(tenantId: string): Promise<ResolvedPaymentGateway> {
+    return this.resolveForTenant(tenantId);
+  }
+
+  /** @deprecated Use `resolveForTenantAndProvider` — kept for external callers/tests. */
+  createForTenantAndProvider(tenantId: string, provider: ProviderType): Promise<ResolvedPaymentGateway | null> {
+    return this.resolveForTenantAndProvider(tenantId, provider);
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -153,49 +192,64 @@ export class PaymentProviderFactory {
   }
 
   /** Asaas fallback using global env vars. */
-  private envFallback(): PaymentGatewayPort {
-    return PaymentProviderFactory.create({
-      type: 'asaas',
-      apiKey: env.ASAAS_API_KEY,
-      environment: env.ASAAS_ENVIRONMENT,
-      webhookSecret: env.ASAAS_WEBHOOK_SECRET,
-    });
+  private envFallback(): ResolvedPaymentGateway {
+    return {
+      gateway: PaymentProviderFactory.create({
+        type: PaymentProvider.ASAAS,
+        apiKey: env.ASAAS_API_KEY,
+        environment: env.ASAAS_ENVIRONMENT,
+        webhookSecret: env.ASAAS_WEBHOOK_SECRET,
+      }),
+      provider: PaymentProvider.ASAAS,
+    };
   }
 
   /** Provider-specific env fallback used during onboarding. */
-  private envFallbackFor(provider: ProviderType): PaymentGatewayPort | null {
+  private envFallbackFor(provider: ProviderType): ResolvedPaymentGateway | null {
     switch (provider) {
       case 'mercadopago':
         if (!env.MERCADO_PAGO_ACCESS_TOKEN) return null;
-        return PaymentProviderFactory.create({
-          type: 'mercadopago',
-          apiKey: env.MERCADO_PAGO_ACCESS_TOKEN,
-          publicKey: env.MERCADO_PAGO_PUBLIC_KEY,
-          webhookSecret: env.MERCADO_PAGO_WEBHOOK_SECRET,
-        });
+        return {
+          gateway: PaymentProviderFactory.create({
+            type: PaymentProvider.MERCADO_PAGO,
+            apiKey: env.MERCADO_PAGO_ACCESS_TOKEN,
+            publicKey: env.MERCADO_PAGO_PUBLIC_KEY,
+            webhookSecret: env.MERCADO_PAGO_WEBHOOK_SECRET,
+          }),
+          provider,
+        };
       case 'stripe':
         if (!env.STRIPE_SECRET_KEY) return null;
-        return PaymentProviderFactory.create({
-          type: 'stripe',
-          apiKey: env.STRIPE_SECRET_KEY,
-          publishableKey: env.STRIPE_PUBLISHABLE_KEY,
-          webhookSecret: env.STRIPE_WEBHOOK_SECRET,
-        });
+        return {
+          gateway: PaymentProviderFactory.create({
+            type: PaymentProvider.STRIPE,
+            apiKey: env.STRIPE_SECRET_KEY,
+            publishableKey: env.STRIPE_PUBLISHABLE_KEY,
+            webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+          }),
+          provider,
+        };
       case 'pagbank':
         if (!env.PAGBANK_ACCESS_TOKEN) return null;
-        return PaymentProviderFactory.create({
-          type: 'pagbank',
-          apiKey: env.PAGBANK_ACCESS_TOKEN,
-          publicKey: env.PAGBANK_PUBLIC_KEY,
-          webhookSecret: env.PAGBANK_WEBHOOK_SECRET,
-        });
+        return {
+          gateway: PaymentProviderFactory.create({
+            type: PaymentProvider.PAGBANK,
+            apiKey: env.PAGBANK_ACCESS_TOKEN,
+            publicKey: env.PAGBANK_PUBLIC_KEY,
+            webhookSecret: env.PAGBANK_WEBHOOK_SECRET,
+          }),
+          provider,
+        };
       case 'polar':
         if (!env.POLAR_ACCESS_TOKEN) return null;
-        return PaymentProviderFactory.create({
-          type: 'polar',
-          apiKey: env.POLAR_ACCESS_TOKEN,
-          webhookSecret: env.POLAR_WEBHOOK_SECRET,
-        });
+        return {
+          gateway: PaymentProviderFactory.create({
+            type: PaymentProvider.POLAR,
+            apiKey: env.POLAR_ACCESS_TOKEN,
+            webhookSecret: env.POLAR_WEBHOOK_SECRET,
+          }),
+          provider,
+        };
       case 'asaas':
         return this.envFallback();
       default:

@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { logger } from '@/config/logger';
 
 export interface HmacConfig {
   provider: string;
@@ -16,7 +17,8 @@ const PROVIDER_CONFIGS: Record<string, HmacConfig> = {
   },
   mercadopago: {
     provider: 'mercadopago',
-    secret: process.env.MERCADOPAGO_WEBHOOK_SECRET || '',
+    // A4: canonical name — matches the MERCADO_PAGO_* family in the env schema.
+    secret: process.env.MERCADO_PAGO_WEBHOOK_SECRET || '',
     signatureHeader: 'x-signature',
     algorithm: 'sha256',
   },
@@ -25,7 +27,7 @@ const PROVIDER_CONFIGS: Record<string, HmacConfig> = {
 export function verifyWebhookSignature(provider: string, payload: string, signature: string): boolean {
   const config = PROVIDER_CONFIGS[provider];
   if (!config) {
-    console.warn(`Unknown provider: ${provider}`);
+    logger.warn('Unknown provider: %s', provider);
     return false;
   }
 

@@ -1,4 +1,5 @@
 import type { DLQPort } from '@/application/ports/queue/dlq.port';
+import { logger } from '@/config/logger';
 import type { DomainEvent } from '@/domain/events/domain-events';
 
 /**
@@ -35,11 +36,11 @@ export abstract class RetryableWebhookHandler {
       const err = error instanceof Error ? error : new Error(String(error));
       if (attempt < this.maxRetries) {
         const delay = this.baseDelayMs * 2 ** attempt; // 2s, 4s, 8s, 16s, 32s
-        console.warn(`[${this.constructor.name}] Attempt ${attempt + 1} failed, retrying in ${delay}ms:`, err);
+        logger.warn({ err }, '[%s] Attempt %d failed, retrying in %dms:', this.constructor.name, attempt + 1, delay);
         await this.delay(delay);
         await this.handleWithRetry(event, attempt + 1);
       } else {
-        console.error(`[${this.constructor.name}] All retries exhausted, sending to DLQ:`, err);
+        logger.error({ err }, `[${this.constructor.name}] All retries exhausted, sending to DLQ:`);
         await this.sendToDLQ(event, err);
         throw err; // re-throw to trigger BullMQ retry/DLQ
       }
@@ -55,7 +56,7 @@ export abstract class RetryableWebhookHandler {
       await this.dlqPort.publishToDLQ(event, error);
     } else {
       // Fallback when no DLQ adapter is wired (e.g. unit tests).
-      console.error(`[DLQ] Event ${event.eventId} sent to DLQ:`, error.message);
+      logger.error({ err: error }, `[DLQ] Event ${event.eventId} sent to DLQ:`);
     }
   }
 }

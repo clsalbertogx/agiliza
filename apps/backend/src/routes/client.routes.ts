@@ -141,17 +141,6 @@ export async function clientRoutes(app: FastifyInstance) {
 
       reply.code(201);
 
-      // Auto-trigger onboarding for new clients without preferences
-      if (!data.preferredChannel && !data.preferredTime) {
-        try {
-          const { createOnboardingService } = await import('@/presentation/factories/create-onboarding.factory');
-          const onboardingService = createOnboardingService();
-          await onboardingService.startOnboarding(result.value.id, tenantId);
-        } catch (err) {
-          console.warn('Failed to auto-trigger onboarding:', err);
-        }
-      }
-
       return { data: result.value };
     },
   );
@@ -163,12 +152,12 @@ export async function clientRoutes(app: FastifyInstance) {
       schema: {
         tags: ['Clients'],
         summary: 'List clients',
-        description: 'Paginated client list, filtered by the authenticated tenant unless a tenantId is passed.',
+        description:
+          'Paginated client list, always filtered by the authenticated tenant (JWT).',
         security: [{ bearerAuth: [] }],
         querystring: {
           type: 'object',
           properties: {
-            tenantId: { type: 'string', format: 'uuid' },
             page: { type: 'integer', minimum: 1 },
             perPage: { type: 'integer', minimum: 1 },
             search: { type: 'string' },
@@ -182,7 +171,9 @@ export async function clientRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const query = request.query as Record<string, string | undefined>;
-      const tenantId = request.tenantId || query.tenantId;
+      // A6: the JWT is the authoritative tenant source — a client-supplied
+      // tenantId must never override (or stand in for) the authenticated tenant.
+      const tenantId = request.tenantId;
 
       if (!tenantId) {
         reply.code(401);

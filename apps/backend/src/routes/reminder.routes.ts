@@ -140,7 +140,6 @@ export async function reminderRoutes(app: FastifyInstance) {
         querystring: {
           type: 'object',
           properties: {
-            tenantId: { type: 'string', format: 'uuid' },
             page: { type: 'integer', minimum: 1 },
             perPage: { type: 'integer', minimum: 1 },
             status: { type: 'string' },
@@ -162,7 +161,8 @@ export async function reminderRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const query = request.query as Record<string, string | undefined>;
-      const tenantId = request.tenantId || query.tenantId;
+      // A6: the JWT is the authoritative tenant source.
+      const tenantId = request.tenantId;
 
       if (!tenantId) {
         reply.code(401);

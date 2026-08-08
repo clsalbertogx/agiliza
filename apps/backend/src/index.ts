@@ -6,7 +6,9 @@ import fastifySwaggerUi from '@fastify/swagger-ui';
 import Fastify from 'fastify';
 import Redis from 'ioredis';
 import { env } from './config/env';
-import { InMemoryEventBus } from './infrastructure/event-bus/in-memory-event-bus';
+import { logger } from './config/logger';
+import { VERSION } from './config/version';
+import { getEventBus } from './infrastructure/event-bus/in-memory-event-bus';
 import authPlugin from './infrastructure/plugins/auth.plugin';
 import observabilityPlugin from './infrastructure/plugins/observability.plugin';
 import {
@@ -101,7 +103,7 @@ async function buildApp() {
       info: {
         title: 'Agiliza API',
         description: 'Gestão de Assinaturas e Cobrança Recorrente com IA Preditiva',
-        version: '0.8.0',
+        version: VERSION,
       },
       servers: [{ url: `http://localhost:${env.PORT}` }],
       components: {
@@ -141,7 +143,7 @@ async function buildApp() {
   await registerRoutes(app);
 
   // Event bus with domain event handlers
-  const eventBus = new InMemoryEventBus();
+  const eventBus = getEventBus();
   registerEventHandlers(eventBus);
 
   // Start the reminder worker after event bus setup
@@ -176,7 +178,7 @@ async function start() {
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {
-    console.log(`[Server] Received ${signal}, shutting down gracefully...`);
+    logger.info('[Server] Received %s, shutting down gracefully...', signal);
     try {
       if (reminderWorker) await closeWorker(reminderWorker);
       if (recurringInvoiceWorker) await closeWorker(recurringInvoiceWorker);
@@ -187,7 +189,7 @@ async function start() {
       await closeAllQueues();
       await disconnectRedis();
       await app.close();
-      console.log('[Server] All connections closed');
+      logger.info('[Server] All connections closed');
       process.exit(0);
     } catch (err) {
       console.error('[Server] Error during shutdown:', err);
@@ -200,7 +202,7 @@ async function start() {
 
   try {
     await app.listen({ port: env.PORT, host: env.HOST });
-    console.log(`Server running at http://${env.HOST}:${env.PORT}`);
+    logger.info('Server running at http://%s:%s', env.HOST, env.PORT);
   } catch (err) {
     console.error('Failed to start server:', err);
     process.exit(1);

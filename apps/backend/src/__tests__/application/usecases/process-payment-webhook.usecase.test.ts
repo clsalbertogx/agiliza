@@ -15,7 +15,7 @@ import {
 } from '@/application/usecases/process-payment-webhook.usecase';
 import { type Invoice, InvoiceStatus } from '@/domain/entities/invoice';
 
-// ── Mocks ────────────────────────────────────────────────────────────
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 const mockVerifier: WebhookVerifierPort = {
   verify: vi.fn(),
@@ -84,8 +84,20 @@ const mockInvoice: Invoice = {
   updatedAt: new Date(),
 };
 
-function makeUseCase() {
-  return new ProcessPaymentWebhookUseCase(mockVerifier, mockParser, mockInvoiceRepo, mockPaymentRepo, mockEventBus);
+function makeUseCase(override?: { idGenerator?: IdGeneratorPort }) {
+  const idGenerator: IdGeneratorPort = {
+    generate: () => 'fixed-id',
+    validate: () => true,
+  };
+
+  return new ProcessPaymentWebhookUseCase(
+    mockVerifier,
+    mockParser,
+    mockInvoiceRepo,
+    mockPaymentRepo,
+    mockEventBus,
+    override?.idGenerator || idGenerator,
+  );
 }
 
 // ── Tests ────────────────────────────────────────────────────────────

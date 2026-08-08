@@ -8,7 +8,7 @@ import { type Either, failure, isFailure, success } from '@/application/types/ei
 import { InvoiceStatus, updateInvoice } from '@/domain/entities/invoice';
 import { createPayment, PaymentStatus, updatePayment } from '@/domain/entities/payment';
 import { createDomainEvent } from '@/domain/events/domain-events';
-import { generateUUID } from '@/infrastructure/uuid/uuid.service';
+import type { IdGeneratorPort } from '@/domain/ports/id-generator.port';
 
 export interface ProcessPaymentWebhookInput {
   provider: string;
@@ -29,6 +29,7 @@ export class ProcessPaymentWebhookUseCase {
     private readonly invoiceRepo: InvoiceRepositoryPort,
     private readonly paymentRepo: PaymentRepositoryPort,
     private readonly eventBus: EventBusPort,
+    private readonly idGenerator: IdGeneratorPort,
   ) {}
 
   async execute(input: ProcessPaymentWebhookInput): Promise<Either<ApplicationError, ProcessPaymentWebhookOutput>> {
@@ -75,7 +76,7 @@ export class ProcessPaymentWebhookUseCase {
 
         // Record payment
         const paymentResult = createPayment({
-          id: generateUUID(),
+          id: this.idGenerator.generate(),
           tenantId: input.tenantId,
           invoiceId: webhookData.invoiceId,
           clientId: invoice.clientId,
@@ -106,7 +107,7 @@ export class ProcessPaymentWebhookUseCase {
               providerPaymentId: webhookData.providerPaymentId,
             },
           },
-          generateUUID(),
+          this.idGenerator.generate(),
         );
         this.eventBus.publish(event);
       }

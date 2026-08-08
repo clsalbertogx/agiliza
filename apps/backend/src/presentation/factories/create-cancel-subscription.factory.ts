@@ -1,11 +1,11 @@
 import { CancelSubscriptionUseCase } from '@/application/usecases/cancel-subscription.usecase';
 import { PrismaSubscriptionRepository } from '@/infrastructure/database/repositories/subscription.repository';
-import { InMemoryEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
+import { getEventBus } from '@/infrastructure/event-bus/in-memory-event-bus';
 import { UuidV7Generator } from '@/infrastructure/uuid/uuid-v7-generator';
 
 export function createCancelSubscriptionUseCase(): CancelSubscriptionUseCase {
   const subscriptionRepo = new PrismaSubscriptionRepository();
-  const eventBus = new InMemoryEventBus();
+  const eventBus = getEventBus();
   const idGenerator = new UuidV7Generator();
   return new CancelSubscriptionUseCase(subscriptionRepo, eventBus, idGenerator);
 }
